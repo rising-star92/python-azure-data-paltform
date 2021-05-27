@@ -1,0 +1,2 @@
+**This wiki is being actively developed**  
+If you discover any documentation bugs or would like to request new content, please raise them as an [issue](https://github.com/ingenii-solutions/azure-data-platform/issues) or feel free to contribute to the wiki via a [pull request](https://github.com/ingenii-solutions/azure-data-platform/pulls). The wiki docs are located in the repository in the `docs/wiki/` folder.
