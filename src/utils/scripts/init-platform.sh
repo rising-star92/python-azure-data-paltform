@@ -8,7 +8,7 @@ readonly PLATFORM_REPO_URL="https://github.com/ingenii-solutions/azure-data-plat
 
 # These are the files and directories that will be included in the client repo
 # Other directories and files not matched will be discarded.
-readonly INCLUDED_ASSETS="*/src */configs */docs */README.md"
+readonly INCLUDED_ASSETS="*/src */configs */docs */README.md */.gitignore"
 
 function log {
     local readonly type="$1"
@@ -73,7 +73,8 @@ function setup_github_workflows {
     cp -r ./src/utils/ci/.github .
 }
 
-function write_to_version_file {
+
+function write_to_platform_version_file {
     echo "${PLATFORM_VERSION}" > .platform-version
 }
 
@@ -89,6 +90,6 @@ check_env_variables
 download_platform_source
 init_git_repo
 setup_github_workflows
-write_to_version_file
+write_to_platform_version_file
 
 log "INFO" "Done"

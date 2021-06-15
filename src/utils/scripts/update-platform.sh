@@ -8,7 +8,8 @@ readonly PLATFORM_REPO_URL="https://github.com/ingenii-solutions/azure-data-plat
 
 # These are the files and directories that will be included in the client repo
 # Other directories and files not matched will be discarded.
-readonly INCLUDED_ASSETS="*/src */docs */README.md"
+readonly INCLUDED_ASSETS="*/src */docs */README.md */.gitignore"
+
 
 function log {
     local readonly type="$1"
