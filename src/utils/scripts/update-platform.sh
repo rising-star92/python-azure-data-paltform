@@ -8,7 +8,7 @@ readonly PLATFORM_REPO_URL="https://github.com/ingenii-solutions/azure-data-plat
 
 # These are the files and directories that will be included in the client repo
 # Other directories and files not matched will be discarded.
-readonly INCLUDED_ASSETS="*/src */configs */docs */README.md"
+readonly INCLUDED_ASSETS="*/src */docs */README.md"
 
 function log {
     local readonly type="$1"
@@ -35,6 +35,14 @@ function check_env_variables {
     fi
 }
 
+function remove_previous_platform_source {
+    IFS=' '     
+    read -ra ASSET <<< "$INCLUDED_ASSETS"
+    for i in "${ASSET[@]}"; do
+        rm -rf "$i"
+    done
+}
+
 function download_platform_source {
     local readonly header="Authorization: token ${GITHUB_TOKEN}"
     local readonly url="${PLATFORM_REPO_URL}/archive/refs/tags/${PLATFORM_VERSION}.tar.gz"
@@ -42,15 +50,6 @@ function download_platform_source {
     log "INFO" "Downloading the platform source..."    
     wget --header="$header" -O - $url | \
     tar -xzv --strip-components 1 --wildcards $INCLUDED_ASSETS
-}
-
-function init_git_repo {
-    log "INFO" "Checking if the current directory is a Git repository."
-    if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
-        git init
-    else
-        log "INFO" "The current directory is a Git repository. Do not re-initialize."
-    fi
 }
 
 function setup_github_workflows {
@@ -86,8 +85,8 @@ echo    "##############################################"
 echo
 
 check_env_variables
+remove_previous_platform_source
 download_platform_source
-init_git_repo
 setup_github_workflows
 write_to_version_file
 
