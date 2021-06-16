@@ -2,7 +2,7 @@
 
 ## Getting Started
 
-### Initialize The Platform Repository
+### Initialize The Platform Repo1sitory
 
 ```shell
 # Set your GitHub personal access token
@@ -29,3 +29,8 @@ export PLATFORM_VERSION=""
 sh -c "$(wget --header="Authorization: token ${GITHUB_TOKEN}" -O - \
 https://raw.githubusercontent.com/ingenii-solutions/azure-data-platform/main/src/utils/scripts/update-platform.sh)"
 ```
+
+## Configuration Schema
+
+Our config schema can be found here:
+[YAML Configuration Schema](./docs/yaml_config_schema.md)

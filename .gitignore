@@ -134,6 +134,10 @@ terraform.rc
 .terragrunt-cache
 _generated*
 
+# Terraform lock files
+# We do have a file that tracks all version numbers anyway.
+.terraform.lock.hcl 
+
 ########################################################################################################################
 # Other
 ########################################################################################################################
