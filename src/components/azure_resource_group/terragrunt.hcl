@@ -3,15 +3,13 @@
 ########################################################################################################################
 # Inherit the global configuration as defined in the parent terragrunt.hcl file.
 include {
-  path = find_in_parent_folders()
+  path   = find_in_parent_folders()
+  expose = true
 }
 
 locals {
-  # The global config object. It contains all local values and configurations defined in the parent terragrunt.hcl file.
-  config_obj = read_terragrunt_config(find_in_parent_folders("terragrunt.hcl"))["locals"]
-
   # The YAML config represents a merge between the defaults.<env_type>_env.yml and configs/<env>.yml files.
-  yaml_config = local.config_obj.yaml_config
+  yaml_config = include.locals.yaml_config
 
   # Get the config required for this component.
   component_config = try(
@@ -27,10 +25,10 @@ locals {
 generate = {
 
   # Generate a 'terraform{}' block with core terraform and provider version definitions.
-  terraform_version_config = local.config_obj.terraform_version_config
+  terraform_version_config = include.locals.terraform_version_config
 
   # Generate an Azure RM provider block. This provider is platform-wide, and the majority of the resources are using it.
-  terraform_provider_config_azurerm = local.config_obj.terraform_provider_config.azurerm
+  terraform_provider_config_azurerm = include.locals.terraform_provider_config.azurerm
 
   #... Additional providers can be defined here.
 }
