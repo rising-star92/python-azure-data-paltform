@@ -10,8 +10,8 @@ locals {
   ######################################################################################################################
   paths = {
     root_dir    = chomp(run_cmd("--terragrunt-quiet", "git", "rev-parse", "--show-toplevel"))
-    configs_dir = "${run_cmd("--terragrunt-quiet", "git", "rev-parse", "--show-toplevel")}/configs"
-    src_dir     = "${run_cmd("--terragrunt-quiet", "git", "rev-parse", "--show-toplevel")}/src"
+    configs_dir = chomp("${run_cmd("--terragrunt-quiet", "git", "rev-parse", "--show-toplevel")}/configs")
+    src_dir     = chomp("${run_cmd("--terragrunt-quiet", "git", "rev-parse", "--show-toplevel")}/src")
   }
 
   config_file_paths = {
