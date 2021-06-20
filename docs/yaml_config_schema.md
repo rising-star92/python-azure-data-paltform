@@ -7,6 +7,7 @@
   - [Network Section](#network-section)
   - [Storage Section](#storage-section)
   - [Data Tools Section](#data-tools-section)
+  - [Terraform Section](#terraform-section)
 
 ## Global Keys
 
@@ -19,6 +20,7 @@ We use the keys below as logical sections where the specific component configura
 | `network`    | dict | Network resources and components.                   |
 | `storage`    | dict | Storage resources and components.                   |
 | `data_tools` | dict | Data tools and services components.                 |
+| `terraform`  | dict | Terraform specific configurations.                  |
 
 ```yml
 # Example
@@ -121,4 +123,21 @@ data_tools:
     data_processing:
       resource_group_key_name: "platform"
       #...
+```
+
+## Terraform Section
+
+| Key                    | Type | Component | Description |
+| ---------------------- | ---- | --------- | ----------- |
+| `remote_state_backend` | dict |           |             |
+
+```yml
+# Example
+terraform:
+  remote_state_backend:
+    type: "azurerm"
+    azurerm:
+      resource_group_name: "ingneii"
+      storage_account_name: "ingenii"
+      container_name: "terraform-state"
 ```

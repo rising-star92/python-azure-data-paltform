@@ -9,7 +9,7 @@ locals {
   # PATHS
   ######################################################################################################################
   paths = {
-    root_dir    = run_cmd("--terragrunt-quiet", "git", "rev-parse", "--show-toplevel")
+    root_dir    = chomp(run_cmd("--terragrunt-quiet", "git", "rev-parse", "--show-toplevel"))
     configs_dir = "${run_cmd("--terragrunt-quiet", "git", "rev-parse", "--show-toplevel")}/configs"
     src_dir     = "${run_cmd("--terragrunt-quiet", "git", "rev-parse", "--show-toplevel")}/src"
   }
@@ -56,49 +56,62 @@ locals {
   ######################################################################################################################
   # REMOTE STATE CONFIG
   ######################################################################################################################
-  remote_state_backend_type = get_env("DP_TF_BACKEND_TYPE", "azurerm")
+  remote_state_backend_type = try(
+    local.yaml_config.terraform.remote_state_backend.type,
+    get_env("DP_TF_RS_BACKEND_TYPE", "azurerm")
+  )
 
   remote_state_backend_types = {
 
     # Azure Backend Type
     azurerm = {
-      resource_group_name  = get_env("DP_TF_BACKEND_AZURERM_RESOURCE_GROUP_NAME", "")
-      storage_account_name = get_env("DP_TF_BACKEND_AZURERM_STORAGE_ACCOUNT_NAME", "")
-      container_name       = get_env("DP_TF_BACKEND_AZURERM_CONTAINER_NAME", "")
+      resource_group_name = try(
+        local.yaml_config.terraform.remote_state_backend.azurerm.resource_group_name,
+        get_env("DP_TF_RS_BACKEND_AZURERM_RESOURCE_GROUP_NAME", "")
+      )
+
+      storage_account_name = try(
+        local.yaml_config.terraform.remote_state_backend.azurerm.storage_account_name,
+        get_env("DP_TF_RS_BACKEND_AZURERM_STORAGE_ACCOUNT_NAME", "")
+      )
+
+      container_name = try(
+        local.yaml_config.terraform.remote_state_backend.azurerm.container_name,
+        get_env("DP_TF_RS_BACKEND_AZURERM_CONTAINER_NAME", "")
+      )
 
       key = "ingenii/azure-data-platform/${local.env}/${path_relative_to_include()}/terraform.tfstate"
 
       # Environment
       environment = try(
-        get_env("DP_TF_BACKEND_AZURERM_ENVIRONMENT"),
-        get_env("ARM_ENVIRONMENT"),
-        "public"
+        get_env("DP_TF_RS_BACKEND_AZURERM_ENVIRONMENT"),
+        get_env("ARM_ENVIRONMENT", "public"),
       )
 
       # Authentication Details
       client_id = try(
-        get_env("DP_TF_BACKEND_AZURERM_CLIENT_ID"),
+        get_env("DP_TF_RS_BACKEND_AZURERM_CLIENT_ID"),
         get_env("DP_TF_AUTH_AZURERM_CLIENT_ID"),
         get_env("DP_TF_AUTH_CLIENT_ID"),
         get_env("ARM_CLIENT_ID")
       )
 
       tenant_id = try(
-        get_env("DP_TF_BACKEND_AZURERM_TENANT_ID"),
+        get_env("DP_TF_RS_BACKEND_AZURERM_TENANT_ID"),
         get_env("DP_TF_AUTH_AZURERM_TENANT_ID"),
         get_env("DP_TF_AUTH_TENANT_ID"),
         get_env("ARM_TENANT_ID"),
       )
 
       subscription_id = try(
-        get_env("DP_TF_BACKEND_AZURERM_SUBSCRIPTION_ID"),
+        get_env("DP_TF_RS_BACKEND_AZURERM_SUBSCRIPTION_ID"),
         get_env("DP_TF_AUTH_AZURERM_SUBSCRIPTION_ID"),
         get_env("DP_TF_AUTH_SUBSCRIPTION_ID"),
         get_env("ARM_SUBSCRIPTION_ID"),
       )
 
       client_secret = try(
-        get_env("DP_TF_BACKEND_AZURERM_CLIENT_SECRET"),
+        get_env("DP_TF_RS_BACKEND_AZURERM_CLIENT_SECRET"),
         get_env("DP_TF_AUTH_AZURERM_CLIENT_SECRET"),
         get_env("DP_TF_AUTH_CLIENT_SECRET"),
         get_env("ARM_CLIENT_SECRET"),
