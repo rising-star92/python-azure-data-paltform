@@ -1,6 +1,6 @@
 # Ingenii Azure Data Platform
 
-![](docs/assets/data-lakehouse-arch-extended.png)
+![](docs/assets/adp-arch-extended.png)
 
 Table of Contents
 
