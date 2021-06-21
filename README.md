@@ -9,6 +9,7 @@ Table of Contents
     - [Prerequisites](#prerequisites)
     - [Initialize The Platform Repository](#initialize-the-platform-repository)
     - [Update The Platform Version](#update-the-platform-version)
+  - [Code Structure](#code-structure)
   - [Solution Design](#solution-design)
   - [YAML Configuration Schema](#yaml-configuration-schema)
   - [Dependencies](#dependencies)
@@ -55,6 +56,31 @@ export PLATFORM_VERSION=""
 # Run Update Script
 sh -c "$(wget --header="Authorization: token ${GITHUB_TOKEN}" -O - \
 https://raw.githubusercontent.com/ingenii-solutions/azure-data-platform/main/src/utils/scripts/update-platform.sh)"
+```
+
+## Code Structure
+
+```yaml
+├── configs # <- Customer configuration
+│   ├── dev.yml
+│   ├── globals.yml # <- Global config. Applies to all environments.
+│   ├── prod.yml
+│   ├── shared.yml
+│   └── test.yml
+├── docs # <- Documentation and diagrams
+└── src # <- Infra as Code source files
+    ├── components # <- Infrastructure components
+    │   └── example_component
+    │       ├── src # <- Terraform source
+    │       │   ├── main.tf
+    │       │   ├── outputs.tf
+    │       │   └── variables.tf
+    │       └── terragrunt.hcl # <- Terragrunt wrapper
+    ├── defaults.dtap_env.yml # <- DTAP specific defaults.
+    ├── defaults.shared_env.yml # <- Shared specific defaults.
+    ├── terragrunt.hcl # <- Root terragrunt configs such as terraform remote state etc.
+    ├── utils # <- Utilities such as scripts, CI workflows etc.
+    └── versions.yml # Terraform core and provider version definitions.
 ```
 
 ## Solution Design
