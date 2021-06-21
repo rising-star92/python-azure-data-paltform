@@ -74,12 +74,19 @@ management:
 
 | Key                       | Type | Component                        | Description |
 | ------------------------- | ---- | -------------------------------- | ----------- |
+| `firewall`                | dict | [Network Firewall]()             |             |
 | `virtual_networks`        | dict | [Azure Virtual Network]()        |             |
 | `network_security_groups` | dict | [Azure Network Security Group]() |             |
 
 ```yml
 # Example
 network:
+  # Firewall
+  firewall:
+    ip_access_list:
+      - "1.1.1.1"
+    subnet_access_list:
+
   # Virtual Networks
   virtual_networks:
     main: # <- virtual_network_key_name
@@ -87,10 +94,10 @@ network:
       resource_group_key_name: "infra"
       address_space: "10.50.0.0/16"
       route_tables:
-        private:
+        private: # <- route_table_key_name
           display_name: "private"
       subnets:
-        data_processing_private:
+        data_processing_private: # <- subnet_key_name
           display_name: "data-processing-private"
           address_prefix: "10.50.16.0/20"
           route_table_key_name: "private"
@@ -117,13 +124,11 @@ network:
             actions:
               - "Microsoft.Network/virtualNetworks/subnets/join/action"
 
-
   # Network Security Groups
   network_security_groups:
     databricks: # <- network_security_group_key_name
       display_name: "databricks"
       resource_group_key_name: "infra"
-
 ```
 
 ## Storage Section
@@ -136,9 +141,50 @@ network:
 # Example
 storage:
   data_lakes:
-    platform: # <- data_lake_key_name
-      resource_group_key_name: "infra"
-      display_name: "platform"
+    main: # <- data_lake_key_name
+      display_name: "datalake"
+      resource_group_key_name: "data"
+      iam:
+        role_definitions:
+          read_write: "Storage Blob Data Contributor"
+          read_only: "Storage Blob Data Reader"
+      network:
+        firewall:
+          default_action: "Deny"
+          bypass_services:
+            - "AzureServices"
+            - "Logging"
+          subnet_access_list:
+            - "platform:data_processing_public" # <- Ref: "virtual_network_key_name : subnet_key_name"
+      storage_containers:
+        raw:
+          display_name: "raw"
+          iam:
+            role_assignments:
+              read_write:
+                - "engineers" # <- Ref: user_group_key_name
+        orchestration:
+          display_name: "orchestration"
+          iam:
+            role_assignments:
+              read_write:
+                - "engineers" # <- Ref: user_group_key_name
+              read_only:
+                - "analysts" # <- Ref: user_group_key_name
+        utilities:
+          display_name: "utilities"
+          iam:
+            role_assignments:
+              read_only:
+                - "analysts" # <- Ref: user_group_key_name
+                - "engineers" # <- Ref: user_group_key_name
+        data-structure:
+          display_name: "data-structure"
+          iam:
+            role_assignments:
+              read_only:
+                - "analysts" # <- Ref: user_group_key_name
+                - "engineers" # <- Ref: user_group_key_name
       #...
 ```
 

@@ -16,6 +16,9 @@ management:
     data:
       display_name: "data"
 network:
+  # firewall:
+  #   ip_access_list:
+  #   subnet_access_list:
   virtual_networks:
     main:
       display_name: "main"
@@ -82,6 +85,50 @@ network:
       resource_group_key_name: "infra"
 storage:
   data_lakes:
+    main:
+      display_name: "datalake"
+      resource_group_key_name: "data"
+      iam:
+        role_definitions:
+          read_write: "Storage Blob Data Contributor"
+          read_only: "Storage Blob Data Reader"
+      # network:
+      #   firewall:
+      #     default_action: "Deny"
+      #     bypass_services:
+      #       - "AzureServices"
+      #       - "Logging"
+      #     subnet_access_list:
+      #       - "platform:data_processing_public"
+      storage_containers:
+        raw:
+          display_name: "raw"
+          iam:
+            role_assignments:
+              read_write:
+                - "engineers"
+        orchestration:
+          display_name: "orchestration"
+          iam:
+            role_assignments:
+              read_write:
+                - "engineers"
+              read_only:
+                - "analysts"
+        utilities:
+          display_name: "utilities"
+          iam:
+            role_assignments:
+              read_only:
+                - "analysts"
+                - "engineers"
+        data-structure:
+          display_name: "data-structure"
+          iam:
+            role_assignments:
+              read_only:
+                - "analysts"
+                - "engineers"
 logging:
 monitoring:
 data_tools:
