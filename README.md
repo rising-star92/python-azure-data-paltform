@@ -9,6 +9,7 @@ Table of Contents
     - [Prerequisites](#prerequisites)
     - [Initialize The Platform Repository](#initialize-the-platform-repository)
     - [Update The Platform Version](#update-the-platform-version)
+  - [Solution Design](#solution-design)
   - [YAML Configuration Schema](#yaml-configuration-schema)
   - [Dependencies](#dependencies)
     - [Docker Images](#docker-images)
@@ -55,6 +56,10 @@ export PLATFORM_VERSION=""
 sh -c "$(wget --header="Authorization: token ${GITHUB_TOKEN}" -O - \
 https://raw.githubusercontent.com/ingenii-solutions/azure-data-platform/main/src/utils/scripts/update-platform.sh)"
 ```
+
+## Solution Design
+
+You can find a complete overview of the platform design here: [Solution Design](docs/solution_design.md)
 
 ## YAML Configuration Schema
 
