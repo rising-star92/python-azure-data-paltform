@@ -2,6 +2,8 @@ general:
   region: "UKSouth"
   resource_prefix: "adp01"
   tags:
+    IngeniiSolutionName: "AzureDataPlatform"
+    IngeniiSolutionVersion: "1.0.0"
 management:
   user_groups:
     admins:
@@ -92,14 +94,6 @@ storage:
         role_definitions:
           read_write: "Storage Blob Data Contributor"
           read_only: "Storage Blob Data Reader"
-      # network:
-      #   firewall:
-      #     default_action: "Deny"
-      #     bypass_services:
-      #       - "AzureServices"
-      #       - "Logging"
-      #     subnet_access_list:
-      #       - "platform:data_processing_public"
       storage_containers:
         raw:
           display_name: "raw"
@@ -129,8 +123,42 @@ storage:
               read_only:
                 - "analysts"
                 - "engineers"
-logging:
-monitoring:
 data_tools:
   azure_data_factories:
+    orchestration:
+      name: "data-orchestration"
+      resource_group_key_name: "infra"
+      identity:
+        type: "SystemAssigned"
+      linked_services:
+        main_data_lake:
+          name: "main-datalake"
+          type: "azure_storage_gen_2_data_lake"
+          data_lake:
+            id: "main"
+            iam:
+              role_assignment: "read_write"
   azure_databricks_workspaces:
+    data_processing:
+      name: "data-processing"
+      resource_group_key_name: "infra"
+      sku: "premium"
+      configs:
+        virtual_network_key_name: "main"
+        public_subnet_key_name: "data_processing_public"
+        private_subnet_key_name: "data_processing_private"
+        no_public_ip: true
+        enable_container_services: true
+      clusters:
+        engineering:
+          name: "engineering"
+          cluster_mode: "single_node"
+          worker_node_type_id: "Standard_F4s"
+          auto_termination_in_minutes: 10
+          azure_ad_credential_passthrough_is_enabled: false
+          number_of_workers: 0
+          docker_image:
+            url: "ingeniisolutions/data-platform-databricks-runtime:0.0.3"
+          pypi_packages:
+            - name: "dbt"
+              version: "0.19.1"
