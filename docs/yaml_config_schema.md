@@ -66,24 +66,64 @@ management:
       display_name: "analysts"
   # Resource Groups
   resource_groups:
-    platform: # <- resource_group_key_name
-      display_name: "platform"
+    infra: # <- resource_group_key_name
+      display_name: "infra"
 ```
 
 ## Network Section
 
-| Key                | Type | Component                 | Description |
-| ------------------ | ---- | ------------------------- | ----------- |
-| `virtual_networks` | dict | [Azure Virtual Network]() |             |
+| Key                       | Type | Component                        | Description |
+| ------------------------- | ---- | -------------------------------- | ----------- |
+| `virtual_networks`        | dict | [Azure Virtual Network]()        |             |
+| `network_security_groups` | dict | [Azure Network Security Group]() |             |
 
 ```yml
 # Example
 network:
+  # Virtual Networks
   virtual_networks:
-    platform: # <- virtual_network_key_name
-      resource_group_key_name: "platform"
-      address_space: "10.10.0.0/16"
-      #...
+    main: # <- virtual_network_key_name
+      display_name: "main"
+      resource_group_key_name: "infra"
+      address_space: "10.50.0.0/16"
+      route_tables:
+        private:
+          display_name: "private"
+      subnets:
+        data_processing_private:
+          display_name: "data-processing-private"
+          address_prefix: "10.50.16.0/20"
+          route_table_key_name: "private"
+          network_security_group_key_name: "databricks"
+          service_endpoints:
+            - "Microsoft.Storage"
+            - "Microsoft.KeyVault"
+          delegations:
+            - "databricks"
+        data_analytics_private:
+          display_name: "data-analytics-private"
+          address_prefix: "10.50.48.0/20"
+          route_table_key_name: "private"
+          network_security_group_key_name: "databricks"
+          service_endpoints:
+            - "Microsoft.Storage"
+          delegations:
+            - "databricks"
+      subnet_delegations:
+        databricks:
+          name: "Databricks"
+          service_delegation:
+            name: "Microsoft.Databricks/workspaces"
+            actions:
+              - "Microsoft.Network/virtualNetworks/subnets/join/action"
+
+
+  # Network Security Groups
+  network_security_groups:
+    databricks: # <- network_security_group_key_name
+      display_name: "databricks"
+      resource_group_key_name: "infra"
+
 ```
 
 ## Storage Section
@@ -97,7 +137,7 @@ network:
 storage:
   data_lakes:
     platform: # <- data_lake_key_name
-      resource_group_key_name: "platform"
+      resource_group_key_name: "infra"
       display_name: "platform"
       #...
 ```
@@ -114,14 +154,14 @@ storage:
 data_tools:
   azure_data_factories:
     data_orchestration: # azure_data_factory_key_name
-      resource_group_key_name: "platform"
+      resource_group_key_name: "infra"
       #...
   azure_databricks_worckspaces:
     data_analytics: # <- azure_databricks_workspace_key_name
-      resource_group_key_name: "platform"
+      resource_group_key_name: "infra"
       #...
     data_processing:
-      resource_group_key_name: "platform"
+      resource_group_key_name: "infra"
       #...
 ```
 

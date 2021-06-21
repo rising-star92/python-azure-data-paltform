@@ -17,6 +17,69 @@ management:
       display_name: "data"
 network:
   virtual_networks:
+    main:
+      display_name: "main"
+      resource_group_key_name: "infra"
+      address_space: "10.50.0.0/16"
+      route_tables:
+        public:
+          display_name: "public"
+        private:
+          display_name: "private"
+      subnets:
+        data_processing_public:
+          display_name: "data-processing-public"
+          address_prefix: "10.50.0.0/20"
+          route_table_key_name: "public"
+          network_security_group_key_name: "databricks"
+          service_endpoints:
+            - "Microsoft.Storage"
+            - "Microsoft.KeyVault"
+          delegations:
+            - "databricks"
+        data_processing_private:
+          display_name: "data-processing-private"
+          address_prefix: "10.50.16.0/20"
+          route_table_key_name: "private"
+          network_security_group_key_name: "databricks"
+          service_endpoints:
+            - "Microsoft.Storage"
+            - "Microsoft.KeyVault"
+          delegations:
+            - "databricks"
+        data_analytics_public:
+          display_name: "data-analytics-public"
+          address_prefix: "10.50.32.0/20"
+          route_table_key_name: "public"
+          network_security_group_key_name: "databricks"
+          service_endpoints:
+            - "Microsoft.Storage"
+            - "Microsoft.KeyVault"
+          delegations:
+            - "databricks"
+        data_analytics_private:
+          display_name: "data-analytics-private"
+          address_prefix: "10.50.48.0/20"
+          route_table_key_name: "private"
+          network_security_group_key_name: "databricks"
+          service_endpoints:
+            - "Microsoft.Storage"
+            - "Microsoft.KeyVault"
+          delegations:
+            - "databricks"
+      subnet_delegations:
+        databricks:
+          name: "Databricks"
+          service_delegation:
+            name: "Microsoft.Databricks/workspaces"
+            actions:
+              - "Microsoft.Network/virtualNetworks/subnets/join/action"
+              - "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action"
+              - "Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"
+  network_security_groups:
+    databricks:
+      display_name: "databricks"
+      resource_group_key_name: "infra"
 storage:
   data_lakes:
 logging:

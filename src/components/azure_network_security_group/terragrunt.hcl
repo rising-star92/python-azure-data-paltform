@@ -13,16 +13,15 @@ locals {
 
   # Get the config required for this component.
   component_config = try(
-    local.yaml_config.management.resource_groups == null ? {} : local.yaml_config.management.resource_groups,
+    local.yaml_config.network.network_security_groups == null ? {} : local.yaml_config.network.network_security_groups,
     {}
   )
 
   # If the component config is missing from the YAML files, we are skipping the deployment of this component.
-  skip_deployment = try(!contains(keys(local.yaml_config.management), "resource_groups"), true)
+  skip_deployment = try(!contains(keys(local.yaml_config.network), "network_security_groups"), true)
 }
 
 skip = local.skip_deployment
-
 
 ########################################################################################################################
 # TERRAFORM VERSIONS AND PROVIDERS
@@ -51,6 +50,15 @@ dependency "azuread_user_group" {
   }
 }
 
+# Azure Resource Groups
+dependency "azure_resource_group" {
+  config_path = "..//azure_resource_group"
+
+  mock_outputs = {
+    groups = {}
+  }
+}
+
 ########################################################################################################################
 # MAIN
 ########################################################################################################################
@@ -65,6 +73,7 @@ inputs = {
 
   # Component dependencies
   dependencies = {
-    azuread_user_group = dependency.azuread_user_group.outputs.groups
+    azuread_user_group   = dependency.azuread_user_group.outputs.groups
+    azure_resource_group = dependency.azure_resource_group.outputs.groups
   }
 }

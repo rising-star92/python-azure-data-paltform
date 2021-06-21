@@ -16,7 +16,12 @@ locals {
     local.yaml_config.management.user_groups == null ? {} : local.yaml_config.management.user_groups,
     {}
   )
+
+  # If the component config is missing from the YAML files, we are skipping the deployment of this component.
+  skip_deployment = try(!contains(keys(local.yaml_config.management), "user_groups"), true)
 }
+
+skip = local.skip_deployment
 
 ########################################################################################################################
 # TERRAFORM VERSIONS AND PROVIDERS
@@ -48,5 +53,7 @@ inputs = {
   # Global inputs are also passed as defined in the parent terragrunt.hcl file.
 
   component_config = local.component_config
-  dependencies     = {}
+
+  # Component dependencies
+  dependencies = {}
 }
