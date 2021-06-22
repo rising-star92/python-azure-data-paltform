@@ -49,7 +49,7 @@ dependency "azuread_user_group" {
   # Since no outputs will be generated from each dependency, the mock outputs are used instead.
 
   # Mock outputs should never be used during Terraform apply.
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 
   # Example output:
   # groups = {
@@ -76,7 +76,7 @@ dependency "azure_resource_group" {
   # Since no outputs will be generated from each dependency, the mock outputs are used instead.
 
   # Mock outputs should never be used during Terraform apply.
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 
   # Example output:
   # groups = {
@@ -101,7 +101,7 @@ dependency "azure_virtual_network" {
   # Since no outputs will be generated from each dependency, the mock outputs are used instead.
 
   # Mock outputs should never be used during Terraform apply.
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 
   mock_outputs = {
     virtual_networks = {
@@ -125,7 +125,7 @@ dependency "network_firewall" {
   # Since no outputs will be generated from each dependency, the mock outputs are used instead.
 
   # Mock outputs should never be used during Terraform apply.
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 
   mock_outputs = {
     access_lists = {
