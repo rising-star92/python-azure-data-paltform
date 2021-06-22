@@ -38,7 +38,7 @@ locals {
           network_security_group_id = local.dependencies.azure_network_security_group[subnet_config.network_security_group_key_name].id
           service_endpoints         = subnet_config.service_endpoints
           delegations = {
-            for delegation_id in subnet_config.delegations : delegation_id => network_config.subnet_delegations[delegation_id]
+            for delegation_id in try(subnet_config.delegations, {}) : delegation_id => network_config.subnet_delegations[delegation_id]
           }
         }
       }
