@@ -42,7 +42,7 @@ locals {
                 local.dependencies.network_firewall.access_lists.subnet_access_list
               ]
             )
-          ) : local.dependencies.network.virtual_networks[split(":", subnet_acl)[0]].subnets[split(":", subnet_acl)[1]].id
+          ) : local.dependencies.azure_virtual_network[split(":", subnet_acl)[0]].subnets[split(":", subnet_acl)[1]].id
         ]
       }
       storage_containers = try(data_lake_config.storage_containers, {})

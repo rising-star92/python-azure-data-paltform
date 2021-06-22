@@ -45,8 +45,26 @@ generate = {
 dependency "azuread_user_group" {
   config_path = "..//azuread_user_group"
 
+  # Mock outputs are useful when Terraform plan is ran across all components, before they have been applied yet.
+  # Since no outputs will be generated from each dependency, the mock outputs are used instead.
+
+  # Mock outputs should never be used during Terraform apply.
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+
+  # Example output:
+  # groups = {
+  #   engineers = {
+  #     id        = "engineers"
+  #     object_id = "9b0feca7-121a-4f90-bfd9-b0e96f2e1ba7"
+  #   }
+  # }
   mock_outputs = {
-    groups = {}
+    groups = {
+      for id, config in try(local.yaml_config.management.user_groups, {}) : id => {
+        name      = config.display_name
+        object_id = uuid()
+      }
+    }
   }
 }
 
@@ -54,8 +72,24 @@ dependency "azuread_user_group" {
 dependency "azure_resource_group" {
   config_path = "..//azure_resource_group"
 
+  # Mock outputs are useful when Terraform plan is ran across all components, before they have been applied yet.
+  # Since no outputs will be generated from each dependency, the mock outputs are used instead.
+
+  # Mock outputs should never be used during Terraform apply.
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+
+  # Example output:
+  # groups = {
+  #   infra = {
+  #     id = "infra"
+  #   }
+  # }
   mock_outputs = {
-    groups = {}
+    groups = {
+      for id, config in try(local.yaml_config.management.resource_groups, {}) : id => {
+        name = config.display_name
+      }
+    }
   }
 }
 
@@ -63,8 +97,23 @@ dependency "azure_resource_group" {
 dependency "azure_virtual_network" {
   config_path = "..//azure_virtual_network"
 
+  # Mock outputs are useful when Terraform plan is ran across all components, before they have been applied yet.
+  # Since no outputs will be generated from each dependency, the mock outputs are used instead.
+
+  # Mock outputs should never be used during Terraform apply.
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+
   mock_outputs = {
-    virtual_networks = {}
+    virtual_networks = {
+      for id, config in try(local.yaml_config.network.virtual_networks, {}) : id => {
+        name = config.display_name
+        subnets = {
+          for subnet_id, subnet_config in try(config.subnets) : subnet_id => {
+            id = "/subscriptions/${uuid()}/resourceGroups/temp/providers/Microsoft.Network/virtualNetworks/temp/subnets/${subnet_id}"
+          }
+        }
+      }
+    }
   }
 }
 
@@ -72,8 +121,17 @@ dependency "azure_virtual_network" {
 dependency "network_firewall" {
   config_path = "..//network_firewall"
 
+  # Mock outputs are useful when Terraform plan is ran across all components, before they have been applied yet.
+  # Since no outputs will be generated from each dependency, the mock outputs are used instead.
+
+  # Mock outputs should never be used during Terraform apply.
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+
   mock_outputs = {
-    access_lists = {}
+    access_lists = {
+      ip_access_list     = []
+      subnet_access_list = []
+    }
   }
 }
 
