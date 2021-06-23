@@ -48,8 +48,8 @@ dependency "azuread_user_group" {
   # Mock outputs are useful when Terraform plan is ran across all components, before they have been applied yet.
   # Since no outputs will be generated from each dependency, the mock outputs are used instead.
 
-  # Do not query for outputs if this module will be skipped.
-  skip_outputs = local.skip_deployment
+  # Do not query for outputs if this component will be skipped or the dependent component is not configured.
+  skip_outputs = local.skip_deployment || try(!contains(keys(local.yaml_config.management), "user_groups"), true)
 
   # Mock outputs should never be used during Terraform apply.
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
@@ -78,8 +78,8 @@ dependency "azure_resource_group" {
   # Mock outputs are useful when Terraform plan is ran across all components, before they have been applied yet.
   # Since no outputs will be generated from each dependency, the mock outputs are used instead.
 
-  # Do not query for outputs if this module will be skipped.
-  skip_outputs = local.skip_deployment
+  # Do not query for outputs if this component will be skipped or the dependent component is not configured.
+  skip_outputs = local.skip_deployment || try(!contains(keys(local.yaml_config.management), "resource_groups"), true)
 
   # Mock outputs should never be used during Terraform apply.
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
@@ -106,8 +106,8 @@ dependency "azure_virtual_network" {
   # Mock outputs are useful when Terraform plan is ran across all components, before they have been applied yet.
   # Since no outputs will be generated from each dependency, the mock outputs are used instead.
 
-  # Do not query for outputs if this module will be skipped.
-  skip_outputs = local.skip_deployment
+  # Do not query for outputs if this component will be skipped or the dependent component is not configured.
+  skip_outputs = local.skip_deployment || try(!contains(keys(local.yaml_config.network), "virtual_networks"), true)
 
   # Mock outputs should never be used during Terraform apply.
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
@@ -135,9 +135,6 @@ dependency "network_firewall" {
 
   # Do not query for outputs if this module will be skipped.
   skip_outputs = local.skip_deployment
-
-  # Mock outputs should never be used during Terraform apply.
-  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 
   mock_outputs = {
     access_lists = {
