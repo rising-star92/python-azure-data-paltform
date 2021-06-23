@@ -55,5 +55,6 @@ inputs = {
   component_config = local.component_config
 
   # Component dependencies
+  # Each dependency is wrapped in a try() function to avoid erroring out when the component is skipped.
   dependencies = {}
 }

@@ -48,6 +48,9 @@ dependency "azuread_user_group" {
   # Mock outputs are useful when Terraform plan is ran across all components, before they have been applied yet.
   # Since no outputs will be generated from each dependency, the mock outputs are used instead.
 
+  # Do not query for outputs if this module will be skipped.
+  skip_outputs = local.skip_deployment
+
   # Mock outputs should never be used during Terraform apply.
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 
@@ -75,6 +78,9 @@ dependency "azure_resource_group" {
   # Mock outputs are useful when Terraform plan is ran across all components, before they have been applied yet.
   # Since no outputs will be generated from each dependency, the mock outputs are used instead.
 
+  # Do not query for outputs if this module will be skipped.
+  skip_outputs = local.skip_deployment
+
   # Mock outputs should never be used during Terraform apply.
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 
@@ -100,6 +106,9 @@ dependency "azure_virtual_network" {
   # Mock outputs are useful when Terraform plan is ran across all components, before they have been applied yet.
   # Since no outputs will be generated from each dependency, the mock outputs are used instead.
 
+  # Do not query for outputs if this module will be skipped.
+  skip_outputs = local.skip_deployment
+
   # Mock outputs should never be used during Terraform apply.
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 
@@ -123,6 +132,9 @@ dependency "network_firewall" {
 
   # Mock outputs are useful when Terraform plan is ran across all components, before they have been applied yet.
   # Since no outputs will be generated from each dependency, the mock outputs are used instead.
+
+  # Do not query for outputs if this module will be skipped.
+  skip_outputs = local.skip_deployment
 
   # Mock outputs should never be used during Terraform apply.
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
@@ -148,10 +160,11 @@ inputs = {
   component_config = local.component_config
 
   # Component dependencies
+  # Each dependency is wrapped in a try() function to avoid erroring out when the component is skipped.
   dependencies = {
-    azuread_user_group    = dependency.azuread_user_group.outputs.groups
-    azure_resource_group  = dependency.azure_resource_group.outputs.groups
-    azure_virtual_network = dependency.azure_virtual_network.outputs.virtual_networks
-    network_firewall      = dependency.network_firewall.outputs
+    azuread_user_group    = try(dependency.azuread_user_group.outputs.groups, {})
+    azure_resource_group  = try(dependency.azure_resource_group.outputs.groups, {})
+    azure_virtual_network = try(dependency.azure_virtual_network.outputs.virtual_networks, {})
+    network_firewall      = try(dependency.network_firewall.outputs, {})
   }
 }
