@@ -1,7 +1,0 @@
-terraform:
-  remote_state_backend:
-    type: "azurerm"
-    azurerm:
-      resource_group_name: "ingenii-dev"
-      storage_account_name: "ingenii"
-      container_name: "tfstate-tkdev4"
