@@ -1,6 +1,6 @@
 # Ingenii Azure Data Platform Requirements <!-- omit in toc -->
 
-Table of Contents
+**Table of Contents**
 
 - [1. Introduction](#1-introduction)
 - [2. Azure Subscriptions](#2-azure-subscriptions)

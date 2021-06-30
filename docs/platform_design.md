@@ -1,37 +1,43 @@
-# Solution Design
+# Ingenii Azure Data Platform Design <!-- omit in toc -->
 
 **Table of Contents**
 
-- [Solution Design](#solution-design)
-  - [Introduction](#introduction)
-  - [Customer Requirements](#customer-requirements)
-  - [Modular Infrastructure](#modular-infrastructure)
-  - [Environments](#environments)
-    - [Data Sharing (Shared -> DTAP)](#data-sharing-shared---dtap)
-    - [Data Sharing (Same Environment)](#data-sharing-same-environment)
-  - [Network](#network)
-    - [Network Flow](#network-flow)
-  - [Infrastructure As Code](#infrastructure-as-code)
-    - [Code Structure](#code-structure)
-  - [Cloud Costs](#cloud-costs)
-    - [Network](#network-1)
+- [Overview](#overview)
+- [Definitions and Acronyms](#definitions-and-acronyms)
+- [Architectural Design](#architectural-design)
+- [Data Flow](#data-flow)
+- [Network Flow](#network-flow)
+- [Infrastructure Environments](#infrastructure-environments)
+  - [Data Sharing (Shared -> DTAP)](#data-sharing-shared---dtap)
+  - [Data Sharing (Same Environment)](#data-sharing-same-environment)
+- [Network](#network)
+  - [Network Flow](#network-flow-1)
+- [Infrastructure As Code](#infrastructure-as-code)
+  - [Code Structure](#code-structure)
+- [Cloud Costs](#cloud-costs)
+  - [Network](#network-1)
 
-## Introduction
+## Overview
+
+![Platform Overview](./assets/adp-design-overview.png)
+
+## Definitions and Acronyms
 
 TBD
 
-## Customer Requirements
+## Architectural Design
 
-- Azure Service Principal
-- Azure Subscription(s)
+![Platform High Level Architecture](./assets/adp-design-architecture.png)
 
-## Modular Infrastructure
+## Data Flow
 
-![](./assets/adp-infrastructure-components.png)
+## Network Flow
 
-## Environments
+![](assets/adp-design-network-flow.png)
 
-![](assets/adp-environments.png)
+## Infrastructure Environments
+
+![](assets/adp-design-infra-environments.png)
 
 ### Data Sharing (Shared -> DTAP)
 
@@ -44,8 +50,6 @@ TBD
 ## Network
 
 ### Network Flow
-
-![](assets/adp-network-flow.png)
 
 ## Infrastructure As Code
 
