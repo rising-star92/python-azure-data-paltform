@@ -5,9 +5,11 @@
 - [Overview](#overview)
 - [Definitions and Acronyms](#definitions-and-acronyms)
 - [Architectural Design](#architectural-design)
-- [Data Flow](#data-flow)
-- [Network Flow](#network-flow)
-- [Infrastructure Environments](#infrastructure-environments)
+  - [Azure Subscriptions](#azure-subscriptions)
+  - [Azure Resource Groups](#azure-resource-groups)
+  - [Network Flow](#network-flow)
+  - [Data Flow](#data-flow)
+  - [Infrastructure Environments](#infrastructure-environments)
 - [Infrastructure As Code](#infrastructure-as-code)
   - [Code Structure](#code-structure)
 - [Costs](#costs)
@@ -25,15 +27,21 @@ TODO
 
 ![Platform High Level Architecture](./assets/adp-design-architecture.png)
 
-## Data Flow
+### Azure Subscriptions
 
-TODO
+![Azure Subscriptions](assets/adp-design-subscriptions.png)
 
-## Network Flow
+### Azure Resource Groups
+
+### Network Flow
 
 ![](assets/adp-design-network-flow.png)
 
-## Infrastructure Environments
+### Data Flow
+
+TODO
+
+### Infrastructure Environments
 
 ![](assets/adp-design-infra-environments.png)
 
