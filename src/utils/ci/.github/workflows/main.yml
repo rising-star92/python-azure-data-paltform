@@ -1,0 +1,243 @@
+#----------------------------------------------------------------------------------------------------------------------
+# Ingenii Data Platform CI
+# Version 0.1
+#----------------------------------------------------------------------------------------------------------------------
+name: Ingenii Data Platform CI
+
+#----------------------------------------------------------------------------------------------------------------------
+# Workflow Triggers
+#
+# - Manual Run
+# - Pull Request (specific events)
+# - Push to Main (specific files/folders)
+#----------------------------------------------------------------------------------------------------------------------
+on:
+  workflow_dispatch:
+  pull_request:
+    types: ["opened", "reopened", "synchronize"]
+  push:
+    branches:
+      - "main"
+    paths-ignore:
+      - "README.md"
+      - .gitignore
+
+#----------------------------------------------------------------------------------------------------------------------
+# Global Environment Variables
+# These variables are accessible from all jobs and their steps.
+#----------------------------------------------------------------------------------------------------------------------
+env:
+  PLATFORM_REPO_URL: "git@github.com:ingenii-solutions/azure-data-platform.git"
+  DOWNLOAD_DIR: "/tmp/ii/platform_source"
+  ARTIFACTS_DIR: "/tmp/ii/artifacts"
+  TF_PLUGIN_CACHE_DIR: "/tmp/ii/cache/terraform-plugins"
+  SEMVER_REGEX: '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
+  SSH_AUTH_SOCK: "/tmp/ssh_agent.sock"
+
+#----------------------------------------------------------------------------------------------------------------------
+# Concurrency Policy
+# We are making sure only one instance of this workflow can be running at a time.
+# Concurrent Terraform plan/apply runs could cause config/state corruption.
+#----------------------------------------------------------------------------------------------------------------------
+concurrency: "data-platform"
+
+jobs:
+  #--------------------------------------------------------------------------------------------------------------------
+  # Build (All Envs)
+  #--------------------------------------------------------------------------------------------------------------------
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env: ["shared", "dev", "test", "prod"]
+    steps:
+      #---------------------------------
+      - name: Checkout Repo
+        uses: actions/checkout@v1
+      #---------------------------------
+      - name: Setup SSH Authentication
+        run: |
+          ssh-agent -a "${{ env.SSH_AUTH_SOCK }}" > /dev/null
+          ssh-add - <<< "${{ secrets.SSH_DEPLOY_KEY }}"
+      #---------------------------------
+      - name: Extract Platform Version
+        run: |
+          echo "PLATFORM_VERSION=$(grep -Po '${{ env.SEMVER_REGEX }}' .platform-version)" >> $GITHUB_ENV
+      #---------------------------------
+      - name: Download Platform Source
+        env:
+          SSH_AUTH_SOCK: "${{ env.SSH_AUTH_SOCK }}"
+        run: |
+          mkdir -p ${{ env.DOWNLOAD_DIR }}
+          cd ${{ env.DOWNLOAD_DIR }}
+          git clone --depth 1 --branch ${{ env.PLATFORM_VERSION }} ${{ env.PLATFORM_REPO_URL }} .
+      #---------------------------------
+      - name: Consolidate Configs and Platform Source
+        run: |
+          mkdir -p ${{ env.ARTIFACTS_DIR }}
+          cp -r ${{ env.DOWNLOAD_DIR }}/src ${{ env.ARTIFACTS_DIR }}/src
+          cp -r configs ${{ env.ARTIFACTS_DIR }}/configs
+      #---------------------------------
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.env }}-build-artifacts
+          path: ${{ env.ARTIFACTS_DIR }}
+      #---------------------------------
+
+  #--------------------------------------------------------------------------------------------------------------------
+  # Plan (All Envs)
+  #--------------------------------------------------------------------------------------------------------------------
+  plan:
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: ingeniisolutions/terraform-runtime:0.0.3
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - env: shared
+            client_id: SHARED_ARM_CLIENT_ID
+            client_secret: SHARED_ARM_CLIENT_SECRET
+            subscription_id: SHARED_ARM_SUBSCRIPTION_ID
+            tenant_id: SHARED_ARM_TENANT_ID
+          - env: dev
+            client_id: DEV_ARM_CLIENT_ID
+            client_secret: DEV_ARM_CLIENT_SECRET
+            subscription_id: DEV_ARM_SUBSCRIPTION_ID
+            tenant_id: DEV_ARM_TENANT_ID
+          - env: test
+            client_id: TEST_ARM_CLIENT_ID
+            client_secret: TEST_ARM_CLIENT_SECRET
+            subscription_id: TEST_ARM_SUBSCRIPTION_ID
+            tenant_id: TEST_ARM_TENANT_ID
+          - env: prod
+            client_id: PROD_ARM_CLIENT_ID
+            client_secret: PROD_ARM_CLIENT_SECRET
+            subscription_id: PROD_ARM_SUBSCRIPTION_ID
+            tenant_id: PROD_ARM_TENANT_ID
+    env:
+      DP_ENV_NAME: ${{ matrix.env }}
+      ARM_CLIENT_ID: ${{ secrets[matrix.client_id] }}
+      ARM_CLIENT_SECRET: ${{ secrets[matrix.client_secret] }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets[matrix.subscription_id] }}
+      ARM_TENANT_ID: ${{ secrets[matrix.tenant_id] }}
+    steps:
+      #---------------------------------
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ matrix.env }}-build-artifacts
+      #---------------------------------
+      - name: Create Terraform Cache Dir
+        run: mkdir -p ${{ env.TF_PLUGIN_CACHE_DIR }}
+      #---------------------------------
+      - name: Terraform Init
+        id: init
+        run: |
+          git init
+          cd src
+          terragrunt run-all init
+      #---------------------------------
+      - name: Terraform Plan
+        id: plan
+        run: |
+          cd src
+          terragrunt run-all plan
+          # find . -name "plan.tfplan" -exec bash -c 'DEST=$(echo {} | sed "s/\.terragrunt-cache.*//"); mv {} $DEST' \;
+          find . -type d -name ".terragrunt-cache" -prune -exec rm -rf {} \;
+
+  #--------------------------------------------------------------------------------------------------------------------
+  # Apply Shared
+  #--------------------------------------------------------------------------------------------------------------------
+  apply-shared:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: plan
+    runs-on: ubuntu-latest
+    container:
+      image: ingeniisolutions/terraform-runtime:0.0.3
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - env: shared
+            client_id: SHARED_ARM_CLIENT_ID
+            client_secret: SHARED_ARM_CLIENT_SECRET
+            subscription_id: SHARED_ARM_SUBSCRIPTION_ID
+            tenant_id: SHARED_ARM_TENANT_ID
+    env:
+      DP_ENV_NAME: ${{ matrix.env }}
+      ARM_CLIENT_ID: ${{ secrets[matrix.client_id] }}
+      ARM_CLIENT_SECRET: ${{ secrets[matrix.client_secret] }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets[matrix.subscription_id] }}
+      ARM_TENANT_ID: ${{ secrets[matrix.tenant_id] }}
+    steps:
+      #---------------------------------
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ matrix.env }}-build-artifacts
+      #---------------------------------
+      - name: Create Terraform Cache Dir
+        run: mkdir -p ${{ env.TF_PLUGIN_CACHE_DIR }}
+      #---------------------------------
+      - name: Terraform Apply
+        run: |
+          git init  
+          cd src
+          terragrunt run-all init
+          terragrunt run-all apply --terragrunt-non-interactive
+      #---------------------------------
+
+  #--------------------------------------------------------------------------------------------------------------------
+  # Apply Dev, Test, Acceptance, Prod (DTAP)
+  #--------------------------------------------------------------------------------------------------------------------
+  apply-dtap:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [plan, apply-shared]
+    runs-on: ubuntu-latest
+    container:
+      image: ingeniisolutions/terraform-runtime:0.0.3
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - env: dev
+            client_id: DEV_ARM_CLIENT_ID
+            client_secret: DEV_ARM_CLIENT_SECRET
+            subscription_id: DEV_ARM_SUBSCRIPTION_ID
+            tenant_id: DEV_ARM_TENANT_ID
+          - env: test
+            client_id: TEST_ARM_CLIENT_ID
+            client_secret: TEST_ARM_CLIENT_SECRET
+            subscription_id: TEST_ARM_SUBSCRIPTION_ID
+            tenant_id: TEST_ARM_TENANT_ID
+          - env: prod
+            client_id: PROD_ARM_CLIENT_ID
+            client_secret: PROD_ARM_CLIENT_SECRET
+            subscription_id: PROD_ARM_SUBSCRIPTION_ID
+            tenant_id: PROD_ARM_TENANT_ID
+    env:
+      DP_ENV_NAME: ${{ matrix.env }}
+      ARM_CLIENT_ID: ${{ secrets[matrix.client_id] }}
+      ARM_CLIENT_SECRET: ${{ secrets[matrix.client_secret] }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets[matrix.subscription_id] }}
+      ARM_TENANT_ID: ${{ secrets[matrix.tenant_id] }}
+    steps:
+      #---------------------------------
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ matrix.env }}-build-artifacts
+      #---------------------------------
+      - name: Create Terraform Cache Dir
+        run: mkdir -p ${{ env.TF_PLUGIN_CACHE_DIR }}
+      #---------------------------------
+      - name: Terraform Apply
+        run: |
+          git init  
+          cd src
+          terragrunt run-all init
+          terragrunt run-all apply --terragrunt-non-interactive
+      #---------------------------------

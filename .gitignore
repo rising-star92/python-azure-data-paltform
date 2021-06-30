@@ -145,7 +145,7 @@ _generated*
 .idea
 
 # Various
-.temp
+*.temp
 *.env
 *.creds
 dummy.yml

@@ -4,10 +4,8 @@
   - [Global Keys](#global-keys)
   - [General Section](#general-section)
   - [Management Section](#management-section)
-  - [Network Section](#network-section)
-  - [Storage Section](#storage-section)
-  - [Data Tools Section](#data-tools-section)
-  - [Terraform Section](#terraform-section)
+    - [User Groups](#user-groups)
+    - [Resource Groups](#resource-groups)
 
 ## Global Keys
 
@@ -33,27 +31,51 @@ data_tools:
 
 ## General Section
 
-| Key               | Type   | Rules and Recommendations     | Description |
-| ----------------- | ------ | ----------------------------- | ----------- |
-| `region`          | string | `none`                        |             |
-| `resource_prefix` | string | lowercase, 4 characters limit |             |
-| `tags`            | dict   | `none`                        |             |
+| Key      | Type   | Rules and Recommendations         | Description |
+| -------- | ------ | --------------------------------- | ----------- |
+| `region` | string | `none`                            |             |
+| `prefix` | string | `lowercase`, `4 characters limit` |             |
+| `tags`   | dict   | `none`                            |             |
 
 ```yml
 # Example
 general:
   region: "UKWest"
-  resource_prefix: "adp01"
+  prefix: "adp01"
   tags:
-    key: value
+    ResourceManagedWith: Terraform
 ```
 
 ## Management Section
 
-| Key               | Type | Component                | Description |
-| ----------------- | ---- | ------------------------ | ----------- |
-| `user_groups`     | dict | [AzureAD Group]()        |
-| `resource_groups` | dict | [Azure Resource Group]() |
+| Key               | Type | Component         | Description |
+| ----------------- | ---- | ----------------- | ----------- |
+| `user_groups`     | dict | `management-core` |             |
+| `resource_groups` | dict | `management-core` |             |
+
+```yml
+# Example
+management:
+  # User Groups
+  user_groups:
+    engineers:
+      display_name: "engineers"
+    analysts:
+      display_name: "analysts"
+
+  # Resource Groups
+  resource_groups:
+    infra:
+      display_name: "infra"
+      iam:
+        role_assignments:
+          - user_group_key_name: "engineers"
+            role_definition_name: "Contributor"
+```
+
+### User Groups
+
+The user groups represent Azure AD Groups.
 
 ```yml
 # Example
@@ -62,15 +84,51 @@ management:
   user_groups:
     engineers: # <- user_group_key_name
       display_name: "engineers"
-    analysts:
+    analysts: # <- user_group_key_name
       display_name: "analysts"
+```
+
+Namespace: `management`
+
+Key: `user_groups`
+
+Attributes:
+
+- `display_name` - (Required) [**string**] The name of the User Group. End result: `<PREFIX>-<Env>-<DisplayName>`
+
+### Resource Groups
+
+The resource groups are standard Azure RM Resource Groups.
+
+```yml
+management:
   # Resource Groups
   resource_groups:
     infra: # <- resource_group_key_name
       display_name: "infra"
+      tags:
+        Owner: "Infra Team"
+      iam:
+        role_assignments:
+          - user_group_key_name: "engineers" # <- ref: user_groups.user_group_key_name
+            role_definition_name: "Contributor" # The name of a built-in Azure Role.
 ```
 
-## Network Section
+Namespace: `management`
+
+Key: `resource_groups`
+
+Attributes:
+
+- `display_name` - (Required) [**string**] The name of the Resource Group. End result: `<prefix>-<env>-<display_name>`
+- `iam` - (Optional) [**dict**] Identity and access management
+  - `role_assignments` - (Optional) [**list**] A list of role assignments
+    - `user_group_key_name` - (Required) [**string**] The [**user group**](#user-groups) key name.
+    - `role_definition_name` - (Optional) [**string**] The name of the built-in Azure Role. Conflicts with `role_definition_id`.
+    - `role_definition_id` - (Optional) [**string**] The Scoped-ID of the role definition.
+- `tags` - (Optional) [**dict**] Map of key/value tags which are resource specific.
+
+<!-- ## Network Section
 
 | Key                       | Type | Component                        | Description |
 | ------------------------- | ---- | -------------------------------- | ----------- |
@@ -226,4 +284,4 @@ terraform:
       resource_group_name: "ingneii"
       storage_account_name: "ingenii"
       container_name: "terraform-state"
-```
+``` -->

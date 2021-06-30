@@ -1,0 +1,5 @@
+general:
+  region: "UKSouth"
+  prefix: "adp06"
+  tags:
+    GlobalTag: "GlobalValue"

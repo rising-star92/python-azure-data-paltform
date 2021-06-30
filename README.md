@@ -1,21 +1,34 @@
 # Ingenii Azure Data Platform
 
-![](docs/assets/adp-arch-extended.png)
+![Ingenii Azure Data Platform](./docs/assets/adp-design-overall.png)
 
-Table of Contents
+## Introduction
 
-- [Ingenii Azure Data Platform](#ingenii-azure-data-platform)
-  - [Getting Started](#getting-started)
-    - [Prerequisites](#prerequisites)
-    - [Initialize The Platform Repository](#initialize-the-platform-repository)
-    - [Update The Platform Version](#update-the-platform-version)
-  - [Code Structure](#code-structure)
-  - [Solution Design](#solution-design)
-  - [YAML Configuration Schema](#yaml-configuration-schema)
-  - [Dependencies](#dependencies)
-    - [Docker Images](#docker-images)
+The data landscape today can be considered a rich ecosystem of tools and services. You no longer need to depend on expensive and proprietary technologies to collect and analyze data. Open source tools are as good, if not better, than commercial software. Cloud providers have made it easy to build cost-effective and scale on-demand solutions with zero capital investment. It has never been this easy to analyze data!
+
+The solution you have in your hands is built to take advantage of the latest technologies.
+
+At the core of the infrastructure, we have [Azure Databricks](https://docs.microsoft.com/en-us/azure/databricks/scenarios/what-is-azure-databricks) analyzing and processing data.
+[Azure Data Factory](https://azure.microsoft.com/en-us/services/data-factory/) is responsible for data orchestration. [Azure Data Lake](https://azure.microsoft.com/en-us/solutions/data-lake/), alongside the [Delta Lake layer](https://delta.io), are providing us with infinite scale storage.
+
+The platform support ingestion for structured, semi-structured, or unstructured data via numerous sources, some of which are: APIs, SFTP, Amazon S3, etc.
+
+Last but not least, we have spent a lot of time thinking about how to automate the deployment of these tools and services. The current repository is the result of our hard work. We use Terraform, Terragrunt, GitHub Workflows, etc., to deliver a fully automated platform that is easy to deploy and maintain.
+
+Our documentation section can help you navigate around and make yourself familiar with the platform.
+
+## Documentation
+
+- [Getting Started](#getting-started)
+- [Requirements](./docs/platform_requirements.md)
+- [Platform Design](./docs/platform_design.md)
+- [YAML Configuration Schema](./docs/yaml_config_schema.md)
+- [FAQ](./docs/faq.md)
+- [Troubleshooting](./docs/troubleshooting.md)
 
 ## Getting Started
+
+Before you start, please review the [platform requirements](./docs/platform_requirements.md). Make sure to have all credentials prepared.
 
 ### Prerequisites
 
@@ -57,40 +70,6 @@ export PLATFORM_VERSION=""
 sh -c "$(wget --header="Authorization: token ${GITHUB_TOKEN}" -O - \
 https://raw.githubusercontent.com/ingenii-solutions/azure-data-platform/main/src/utils/scripts/update-platform.sh)"
 ```
-
-## Code Structure
-
-```yaml
-├── configs # <- Customer configuration
-│   ├── dev.yml
-│   ├── globals.yml # <- Global config. Applies to all environments.
-│   ├── prod.yml
-│   ├── shared.yml
-│   └── test.yml
-├── docs # <- Documentation and diagrams
-└── src # <- Infra as Code source files
-    ├── components # <- Infrastructure components
-    │   └── example_component
-    │       ├── src # <- Terraform source
-    │       │   ├── main.tf
-    │       │   ├── outputs.tf
-    │       │   └── variables.tf
-    │       └── terragrunt.hcl # <- Terragrunt wrapper
-    ├── defaults.dtap_env.yml # <- DTAP specific defaults.
-    ├── defaults.shared_env.yml # <- Shared specific defaults.
-    ├── terragrunt.hcl # <- Root terragrunt configs such as terraform remote state etc.
-    ├── utils # <- Utilities such as scripts, CI workflows etc.
-    └── versions.yml # Terraform core and provider version definitions.
-```
-
-## Solution Design
-
-You can find a complete overview of the platform design here: [Solution Design](docs/solution_design.md)
-
-## YAML Configuration Schema
-
-Our config schema can be found here:
-[YAML Configuration Schema](./docs/yaml_config_schema.md)
 
 ## Dependencies
 
