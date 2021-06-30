@@ -1,10 +1,10 @@
 <mxfile>
     <diagram id="FB0lLMp8adpU2UOfi77A" name="Page-1">
-        <mxGraphModel dx="4306" dy="1632" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="2708" dy="592" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="-sU8y2Q3AdZbQh8XbGMl-0"/>
                 <mxCell id="-sU8y2Q3AdZbQh8XbGMl-1" parent="-sU8y2Q3AdZbQh8XbGMl-0"/>
-                <mxCell id="-sU8y2Q3AdZbQh8XbGMl-2" value="&lt;span style=&quot;font-family: &amp;#34;helvetica&amp;#34;&quot;&gt;Ingenii Azure Data Platform&lt;/span&gt;&lt;br style=&quot;font-family: &amp;#34;helvetica&amp;#34;&quot;&gt;&lt;font style=&quot;font-family: &amp;#34;helvetica&amp;#34; ; font-size: 25px&quot;&gt;Network Flow&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;labelBackgroundColor=none;sketch=0;fontSize=45;align=center;fontFamily=Verdana;verticalAlign=top;" parent="-sU8y2Q3AdZbQh8XbGMl-1" vertex="1">
+                <mxCell id="-sU8y2Q3AdZbQh8XbGMl-2" value="&lt;span style=&quot;font-family: &amp;#34;helvetica&amp;#34;&quot;&gt;High Level Architecture&lt;/span&gt;&lt;br style=&quot;font-family: &amp;#34;helvetica&amp;#34;&quot;&gt;&lt;font style=&quot;font-family: &amp;#34;helvetica&amp;#34; ; font-size: 25px&quot;&gt;Ingenii Azure Data Platform&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;labelBackgroundColor=none;sketch=0;fontSize=45;align=center;fontFamily=Verdana;verticalAlign=top;" parent="-sU8y2Q3AdZbQh8XbGMl-1" vertex="1">
                     <mxGeometry x="-880" y="200" width="2520" height="1830" as="geometry"/>
                 </mxCell>
                 <mxCell id="-sU8y2Q3AdZbQh8XbGMl-5" value="" style="rounded=0;whiteSpace=wrap;html=1;labelPosition=center;verticalLabelPosition=middle;align=center;verticalAlign=top;horizontal=1;direction=south;strokeColor=#666666;fontColor=#333333;fontSize=15;sketch=0;fillColor=none;fontFamily=Verdana;" parent="-sU8y2Q3AdZbQh8XbGMl-1" vertex="1">
@@ -42,7 +42,7 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="13" value="Outbound Internet Access" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;" vertex="1" connectable="0" parent="7xWn3VJRYGwJ2Aq6T1ND-41">
+                <mxCell id="13" value="Outbound Internet Access" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;" parent="7xWn3VJRYGwJ2Aq6T1ND-41" vertex="1" connectable="0">
                     <mxGeometry x="-0.7572" y="4" relative="1" as="geometry">
                         <mxPoint x="95" y="-184" as="offset"/>
                     </mxGeometry>
@@ -61,7 +61,7 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="15" value="&lt;span style=&quot;&quot;&gt;Access to Azure Services&lt;/span&gt;&lt;br style=&quot;&quot;&gt;&lt;span style=&quot;&quot;&gt;(over Microsoft Private Network)&lt;/span&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;labelBackgroundColor=none;" vertex="1" connectable="0" parent="g8gtufJMEGG4L0LgHNhl-18">
+                <mxCell id="15" value="&lt;span style=&quot;&quot;&gt;Access to Azure Services&lt;/span&gt;&lt;br style=&quot;&quot;&gt;&lt;span style=&quot;&quot;&gt;(over Microsoft Private Network)&lt;/span&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;labelBackgroundColor=none;" parent="g8gtufJMEGG4L0LgHNhl-18" vertex="1" connectable="0">
                     <mxGeometry x="0.0316" y="-1" relative="1" as="geometry">
                         <mxPoint x="121" as="offset"/>
                     </mxGeometry>
@@ -84,7 +84,7 @@
                 <mxCell id="7xWn3VJRYGwJ2Aq6T1ND-40" value="e.g. pypi.org" style="html=1;strokeColor=none;fillColor=#0079D6;labelPosition=center;verticalLabelPosition=middle;verticalAlign=top;align=center;fontSize=14;outlineConnect=0;spacingTop=-6;fontColor=#FFFFFF;shape=mxgraph.sitemap.cloud;rounded=0;dashed=1;sketch=0;fontFamily=Verdana;" parent="-sU8y2Q3AdZbQh8XbGMl-1" vertex="1">
                     <mxGeometry x="-700" y="690" width="150" height="95" as="geometry"/>
                 </mxCell>
-                <mxCell id="12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.158;entryY=-0.012;entryDx=0;entryDy=0;entryPerimeter=0;fontSize=14;dashed=1;startArrow=classic;startFill=1;fillColor=#f8cecc;strokeColor=#b85450;" edge="1" parent="-sU8y2Q3AdZbQh8XbGMl-1" source="7xWn3VJRYGwJ2Aq6T1ND-5" target="7xWn3VJRYGwJ2Aq6T1ND-4">
+                <mxCell id="12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.158;entryY=-0.012;entryDx=0;entryDy=0;entryPerimeter=0;fontSize=14;dashed=1;startArrow=classic;startFill=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="-sU8y2Q3AdZbQh8XbGMl-1" source="7xWn3VJRYGwJ2Aq6T1ND-5" target="7xWn3VJRYGwJ2Aq6T1ND-4" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="7xWn3VJRYGwJ2Aq6T1ND-5" value="NAT Gateway" style="aspect=fixed;html=1;points=[];align=left;image;fontSize=14;image=img/lib/azure2/networking/NAT.svg;rounded=0;labelBackgroundColor=white;sketch=0;labelPosition=right;verticalLabelPosition=middle;verticalAlign=middle;fontFamily=Verdana;" parent="-sU8y2Q3AdZbQh8XbGMl-1" vertex="1">
@@ -177,19 +177,19 @@
                 <mxCell id="g8gtufJMEGG4L0LgHNhl-19" value="" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/azure2/networking/Private_Link.svg;dashed=1;labelBackgroundColor=none;strokeColor=#000000;fillColor=none;" parent="-sU8y2Q3AdZbQh8XbGMl-1" vertex="1">
                     <mxGeometry x="-350" y="1494" width="50.18" height="46" as="geometry"/>
                 </mxCell>
-                <mxCell id="5" value="Worker" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/mscae/Databricks.svg;shadow=1;labelBackgroundColor=none;sketch=0;fillColor=none;fontFamily=Verdana;" vertex="1" parent="-sU8y2Q3AdZbQh8XbGMl-1">
+                <mxCell id="5" value="Worker" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/mscae/Databricks.svg;shadow=1;labelBackgroundColor=none;sketch=0;fillColor=none;fontFamily=Verdana;" parent="-sU8y2Q3AdZbQh8XbGMl-1" vertex="1">
                     <mxGeometry x="-42.000000000000014" y="1333" width="41.67" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="6" value="Worker" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/mscae/Databricks.svg;shadow=1;labelBackgroundColor=none;sketch=0;fillColor=none;fontFamily=Verdana;" vertex="1" parent="-sU8y2Q3AdZbQh8XbGMl-1">
+                <mxCell id="6" value="Worker" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/mscae/Databricks.svg;shadow=1;labelBackgroundColor=none;sketch=0;fillColor=none;fontFamily=Verdana;" parent="-sU8y2Q3AdZbQh8XbGMl-1" vertex="1">
                     <mxGeometry x="171.32" y="1333" width="41.67" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="7" value="Worker" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/mscae/Databricks.svg;shadow=1;labelBackgroundColor=none;sketch=0;fillColor=none;fontFamily=Verdana;" vertex="1" parent="-sU8y2Q3AdZbQh8XbGMl-1">
+                <mxCell id="7" value="Worker" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/mscae/Databricks.svg;shadow=1;labelBackgroundColor=none;sketch=0;fillColor=none;fontFamily=Verdana;" parent="-sU8y2Q3AdZbQh8XbGMl-1" vertex="1">
                     <mxGeometry x="67.01999999999998" y="1333" width="41.67" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="10" value="Worker" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/mscae/Databricks.svg;shadow=1;labelBackgroundColor=none;sketch=0;fillColor=none;fontFamily=Verdana;" vertex="1" parent="-sU8y2Q3AdZbQh8XbGMl-1">
+                <mxCell id="10" value="Worker" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/mscae/Databricks.svg;shadow=1;labelBackgroundColor=none;sketch=0;fillColor=none;fontFamily=Verdana;" parent="-sU8y2Q3AdZbQh8XbGMl-1" vertex="1">
                     <mxGeometry x="280" y="1333" width="41.67" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="11" value="Worker" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/mscae/Databricks.svg;shadow=1;labelBackgroundColor=none;sketch=0;fillColor=none;fontFamily=Verdana;" vertex="1" parent="-sU8y2Q3AdZbQh8XbGMl-1">
+                <mxCell id="11" value="Worker" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/mscae/Databricks.svg;shadow=1;labelBackgroundColor=none;sketch=0;fillColor=none;fontFamily=Verdana;" parent="-sU8y2Q3AdZbQh8XbGMl-1" vertex="1">
                     <mxGeometry x="384.29999999999995" y="1333" width="41.67" height="40" as="geometry"/>
                 </mxCell>
             </root>
