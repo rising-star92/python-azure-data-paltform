@@ -8,14 +8,10 @@
 - [Data Flow](#data-flow)
 - [Network Flow](#network-flow)
 - [Infrastructure Environments](#infrastructure-environments)
-  - [Data Sharing (Shared -> DTAP)](#data-sharing-shared---dtap)
-  - [Data Sharing (Same Environment)](#data-sharing-same-environment)
-- [Network](#network)
-  - [Network Flow](#network-flow-1)
 - [Infrastructure As Code](#infrastructure-as-code)
   - [Code Structure](#code-structure)
-- [Cloud Costs](#cloud-costs)
-  - [Network](#network-1)
+- [Costs](#costs)
+  - [Network](#network)
 
 ## Overview
 
@@ -23,13 +19,15 @@
 
 ## Definitions and Acronyms
 
-TBD
+TODO
 
 ## Architectural Design
 
 ![Platform High Level Architecture](./assets/adp-design-architecture.png)
 
 ## Data Flow
+
+TODO
 
 ## Network Flow
 
@@ -39,19 +37,9 @@ TBD
 
 ![](assets/adp-design-infra-environments.png)
 
-### Data Sharing (Shared -> DTAP)
-
-![](assets/adp-sharing-data-between-environments.png)
-
-### Data Sharing (Same Environment)
-
-![](assets/adp-sharing-data-within-the-same-environment.png)
-
-## Network
-
-### Network Flow
-
 ## Infrastructure As Code
+
+TODO
 
 ### Code Structure
 
@@ -76,10 +64,13 @@ TBD
     │       ├── defaults.yml  # Default values for the Shared environment
     │       └── env.hcl       # Environment (Shared) specific Terragrunt configs
     ├── modules               # Pure Terraform code
+    ├── utils                 # Utilities, scripts, CI workflows
     └── terragrunt.hcl        # Base Terragrunt file
 ```
 
-## Cloud Costs
+## Costs
+
+TODO
 
 ### Network
 
