@@ -72,7 +72,7 @@ platform:
 **Attributes**:
 
 - `region` - (Required) [**string**] The name of the Azure region.
-- `prefix` - (Required) [**string**] The resource prefix that will be used for the deployment.
+- `prefix` - (Required) [**string**] The resource prefix used for the deployment.
 - `tags`- (Optional) [**map**] A map of key (name) and value tags that will be assigned to all resources in the deployment.
 
 ### Management
@@ -115,10 +115,10 @@ platform:
 
 **Attributes**:
 
-- `display_name` - (Required) [**string**] The name of the User Group. The platform is following an opinionated naming convention. The final name of the group will be in the following format: `<PREFIX>-<Env>-<DisplayName>`, e.g. ADP-Dev-Engineers if `display_name` is engineers.
+- `display_name` - (Required) [**string**] The name of the User Group. The platform is following an opinionated naming convention. Please check our [naming conventions document][naming_conventions_doc].
 
 **Referred By**:
-This is merely a convention. There is no code in the current module that exposes this value. The convention is for other modules, when they need to refer to instances of the current module.
+This is merely a convention. There is no code in the current module that exposes this value. The convention is for other modules when they need to refer to instances of the current module.
 
 - `user_group_key_name` - Other modules/components referring to User Groups should use `user_group_key_name` in their definitions.
 
@@ -149,7 +149,7 @@ platform:
 
 **Attributes**:
 
-- `display_name` - (Required) [**string**] The name of the Resource Group. The platform is following an opinionated naming convention. Please check our naming conventions [Naming Conventions][naming_conventions] for more details.
+- `display_name` - (Required) [**string**] The name of the Resource Group. The platform is following an opinionated naming convention. Please check our [naming conventions document][naming_conventions_doc].
 - `iam` - (Optional) [**map**] Identity and access management
   - `role_assignments` - (Optional) [**list**] A list of role assignments
     - `user_group_key_name` - (Required) [**string**] The [**user group**](#management-user-groups) key name.
@@ -158,7 +158,7 @@ platform:
 - `tags` - (Optional) [**map**] Map of key/value tags which are resource specific.
 
 **Referred By**:
-This is merely a convention. There is no code in the current module that exposes this value. The convention is for other modules, when they need to refer to instances of the current module.
+This is merely a convention. There is no code in the current module that exposes this value. The convention is for other modules when they need to refer to instances of the current module.
 
 - `resource_group_key_name` - Other modules/components referring to Resource Groups should use `resource_group_key_name` in their definitions.
 
