@@ -1,7 +1,7 @@
 # YAML Configuration Schema <!-- omit in toc -->
 
-- [Global Keys](#global-keys)
-- [Platform Configuration](#platform-configuration)
+- [Global](#global)
+- [Platform](#platform)
   - [General](#general)
   - [Management](#management)
   - [Management: User Groups](#management-user-groups)
@@ -11,7 +11,7 @@
 
 > Please make sure to read the [documentation][yaml_config_design_doc] on how the platform gets configured using various YAML files.
 
-## Global Keys
+## Global
 
 We support only two config keys at the root namespace of the YAML config file.
 
@@ -27,7 +27,7 @@ platform: #...
 terraform: #...
 ```
 
-## Platform Configuration
+## Platform
 
 | Key          | Type                                   |
 | ------------ | -------------------------------------- |
