@@ -4,8 +4,8 @@
 - [Platform Configuration](#platform-configuration)
   - [General](#general)
   - [Management](#management)
-    - [Management: User Groups](#management-user-groups)
-    - [Management: Resource Groups](#management-resource-groups)
+  - [Management: User Groups](#management-user-groups)
+  - [Management: Resource Groups](#management-resource-groups)
   - [Network](#network)
 - [Terraform Configuration](#terraform-configuration)
 
@@ -92,7 +92,7 @@ platform:
 #...
 ```
 
-#### Management: User Groups
+### Management: User Groups
 
 The user groups config objects represent Azure AD groups.
 
@@ -122,7 +122,7 @@ This is merely a convention. There is no code in the current module that exposes
 
 - `user_group_key_name` - Other modules/components referring to User Groups should use `user_group_key_name` in their definitions.
 
-#### Management: Resource Groups
+### Management: Resource Groups
 
 The user groups config objects represent Azure AD groups.
 
