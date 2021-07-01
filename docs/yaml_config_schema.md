@@ -1,287 +1,178 @@
-# YAML Configuration Schema
+# YAML Configuration Schema <!-- omit in toc -->
 
-- [YAML Configuration Schema](#yaml-configuration-schema)
-  - [Global Keys](#global-keys)
-  - [General Section](#general-section)
-  - [Management Section](#management-section)
-    - [User Groups](#user-groups)
-    - [Resource Groups](#resource-groups)
+- [Global Keys](#global-keys)
+- [Platform Configuration](#platform-configuration)
+  - [General](#general)
+  - [Management](#management)
+    - [Management: User Groups](#management-user-groups)
+    - [Management: Resource Groups](#management-resource-groups)
+  - [Network](#network)
+- [Terraform Configuration](#terraform-configuration)
+
+> Please make sure to read the [documentation][yaml_config_design_doc] on how the platform gets configured using various YAML files.
 
 ## Global Keys
 
-We use the keys below as logical sections where the specific component configurations reside.
+We support only two config keys at the root namespace of the YAML config file.
 
-| Key          | Type | Description                                         |
-| ------------ | ---- | --------------------------------------------------- |
-| `general`    | dict | General configs such as Region, Prefixes, Tags etc. |
-| `management` | dict | Management resources and components.                |
-| `network`    | dict | Network resources and components.                   |
-| `storage`    | dict | Storage resources and components.                   |
-| `data_tools` | dict | Data tools and services components.                 |
-| `terraform`  | dict | Terraform specific configurations.                  |
+| Key         | Type                                               |
+| ----------- | -------------------------------------------------- |
+| `platform`  | [PlatformConfig](#platform-configuration) object   |
+| `terraform` | [TerraformConfig](#terraform-configuration) object |
+
+`example.yml`
 
 ```yml
-# Example
-general:
-management:
-network:
-storage:
-data_tools:
+platform: #...
+terraform: #...
 ```
 
-## General Section
+## Platform Configuration
 
-| Key      | Type   | Rules and Recommendations         | Description |
-| -------- | ------ | --------------------------------- | ----------- |
-| `region` | string | `none`                            |             |
-| `prefix` | string | `lowercase`, `4 characters limit` |             |
-| `tags`   | dict   | `none`                            |             |
+| Key          | Type                                   |
+| ------------ | -------------------------------------- |
+| `general`    | [GeneralConfig](#general) object       |
+| `management` | [ManagementConfig](#management) object |
+| `network`    | [NetworkConfig](#network) object       |
+
+`example.yml`
 
 ```yml
-# Example
-general:
-  region: "UKWest"
-  prefix: "adp01"
-  tags:
-    ResourceManagedWith: Terraform
+platform:
+  general: #...
+  management: #...
+  network: #...
+#...
 ```
 
-## Management Section
+### General
 
-| Key               | Type | Component         | Description |
-| ----------------- | ---- | ----------------- | ----------- |
-| `user_groups`     | dict | `management-core` |             |
-| `resource_groups` | dict | `management-core` |             |
+| Key      | Type   |
+| -------- | ------ |
+| `region` | string |
+| `prefix` | string |
+| `tags`   | map    |
+
+`example.yml`
 
 ```yml
-# Example
-management:
-  # User Groups
-  user_groups:
-    engineers:
-      display_name: "engineers"
-    analysts:
-      display_name: "analysts"
-
-  # Resource Groups
-  resource_groups:
-    infra:
-      display_name: "infra"
-      iam:
-        role_assignments:
-          - user_group_key_name: "engineers"
-            role_definition_name: "Contributor"
+platform:
+  general:
+    region: "EastUS"
+    prefix: "adp"
+    tags:
+      ResourceManagedWith: "Terraform"
+#...
 ```
 
-### User Groups
+**Namespace**: `platform`
 
-The user groups represent Azure AD Groups.
+**Key**: `general`
+
+**Attributes**:
+
+- `region` - (Required) [**string**] The name of the Azure region.
+- `prefix` - (Required) [**string**] The resource prefix that will be used for the deployment.
+- `tags`- (Optional) [**map**] A map of key (name) and value tags that will be assigned to all resources in the deployment.
+
+### Management
+
+| Key               | Type                                                    | Providing Module  |
+| ----------------- | ------------------------------------------------------- | ----------------- |
+| `user_groups`     | [UserGroupsConfig](#management-user-groups) map         | `management-core` |
+| `resource_groups` | [ResourceGroupsConfig](#management-resource-groups) map | `management-core` |
+
+`example.yml`
 
 ```yml
-# Example
-management:
-  # User Groups
-  user_groups:
-    engineers: # <- user_group_key_name
-      display_name: "engineers"
-    analysts: # <- user_group_key_name
-      display_name: "analysts"
+platform:
+  management:
+    user_groups: #...
+    resource_groups: #...
+#...
 ```
 
-Namespace: `management`
+#### Management: User Groups
 
-Key: `user_groups`
+The user groups config objects represent Azure AD groups.
 
-Attributes:
-
-- `display_name` - (Required) [**string**] The name of the User Group. End result: `<PREFIX>-<Env>-<DisplayName>`
-
-### Resource Groups
-
-The resource groups are standard Azure RM Resource Groups.
+`example.yml`
 
 ```yml
-management:
-  # Resource Groups
-  resource_groups:
-    infra: # <- resource_group_key_name
-      display_name: "infra"
-      tags:
-        Owner: "Infra Team"
-      iam:
-        role_assignments:
-          - user_group_key_name: "engineers" # <- ref: user_groups.user_group_key_name
-            role_definition_name: "Contributor" # The name of a built-in Azure Role.
+platform:
+  management:
+    user_groups:
+      engineers: # <- user_group_key_name
+        display_name: "engineers"
+      admins: # <- user_group_key_name
+        display_name: "admins"
+#...
 ```
 
-Namespace: `management`
+**Namespace**: `platform.management`
 
-Key: `resource_groups`
+**Key**: `user_groups`
 
-Attributes:
+**Attributes**:
 
-- `display_name` - (Required) [**string**] The name of the Resource Group. End result: `<prefix>-<env>-<display_name>`
-- `iam` - (Optional) [**dict**] Identity and access management
+- `display_name` - (Required) [**string**] The name of the User Group. The platform is following an opinionated naming convention. The final name of the group will be in the following format: `<PREFIX>-<Env>-<DisplayName>`, e.g. ADP-Dev-Engineers if `display_name` is engineers.
+
+**Referred By**:
+This is merely a convention. There is no code in the current module that exposes this value. The convention is for other modules, when they need to refer to instances of the current module.
+
+- `user_group_key_name` - Other modules/components referring to User Groups should use `user_group_key_name` in their definitions.
+
+#### Management: Resource Groups
+
+The user groups config objects represent Azure AD groups.
+
+`example.yml`
+
+```yml
+platform:
+  management:
+    resource_groups:
+      infra: # <- resource_group_key_name
+        display_name: "infra"
+        tags:
+          Owner: "Infra Team"
+        iam:
+          role_assignments:
+            - user_group_key_name: "engineers" # <- ref: management.user_groups.user_group_key_name
+              role_definition_name: "Contributor" # The name of a built-in Azure Role.
+#...
+```
+
+**Namespace**: `platform.management`
+
+**Key**: `resource_groups`
+
+**Attributes**:
+
+- `display_name` - (Required) [**string**] The name of the Resource Group. The platform is following an opinionated naming convention. Please check our naming conventions [Naming Conventions][naming_conventions] for more details.
+- `iam` - (Optional) [**map**] Identity and access management
   - `role_assignments` - (Optional) [**list**] A list of role assignments
-    - `user_group_key_name` - (Required) [**string**] The [**user group**](#user-groups) key name.
+    - `user_group_key_name` - (Required) [**string**] The [**user group**](#management-user-groups) key name.
     - `role_definition_name` - (Optional) [**string**] The name of the built-in Azure Role. Conflicts with `role_definition_id`.
     - `role_definition_id` - (Optional) [**string**] The Scoped-ID of the role definition.
-- `tags` - (Optional) [**dict**] Map of key/value tags which are resource specific.
+- `tags` - (Optional) [**map**] Map of key/value tags which are resource specific.
 
-<!-- ## Network Section
+**Referred By**:
+This is merely a convention. There is no code in the current module that exposes this value. The convention is for other modules, when they need to refer to instances of the current module.
 
-| Key                       | Type | Component                        | Description |
-| ------------------------- | ---- | -------------------------------- | ----------- |
-| `firewall`                | dict | [Network Firewall]()             |             |
-| `virtual_networks`        | dict | [Azure Virtual Network]()        |             |
-| `network_security_groups` | dict | [Azure Network Security Group]() |             |
+- `resource_group_key_name` - Other modules/components referring to Resource Groups should use `resource_group_key_name` in their definitions.
 
-```yml
-# Example
-network:
-  # Firewall
-  firewall:
-    ip_access_list:
-      - "1.1.1.1"
-    subnet_access_list:
+### Network
 
-  # Virtual Networks
-  virtual_networks:
-    main: # <- virtual_network_key_name
-      display_name: "main"
-      resource_group_key_name: "infra"
-      address_space: "10.50.0.0/16"
-      route_tables:
-        private: # <- route_table_key_name
-          display_name: "private"
-      subnets:
-        data_processing_private: # <- subnet_key_name
-          display_name: "data-processing-private"
-          address_prefix: "10.50.16.0/20"
-          route_table_key_name: "private"
-          network_security_group_key_name: "databricks"
-          service_endpoints:
-            - "Microsoft.Storage"
-            - "Microsoft.KeyVault"
-          delegations:
-            - "databricks"
-        data_analytics_private:
-          display_name: "data-analytics-private"
-          address_prefix: "10.50.48.0/20"
-          route_table_key_name: "private"
-          network_security_group_key_name: "databricks"
-          service_endpoints:
-            - "Microsoft.Storage"
-          delegations:
-            - "databricks"
-      subnet_delegations:
-        databricks:
-          name: "Databricks"
-          service_delegation:
-            name: "Microsoft.Databricks/workspaces"
-            actions:
-              - "Microsoft.Network/virtualNetworks/subnets/join/action"
+TODO
 
-  # Network Security Groups
-  network_security_groups:
-    databricks: # <- network_security_group_key_name
-      display_name: "databricks"
-      resource_group_key_name: "infra"
-```
+## Terraform Configuration
 
-## Storage Section
+TODO
 
-| Key          | Type | Component                        | Description |
-| ------------ | ---- | -------------------------------- | ----------- |
-| `data_lakes` | dict | [Azure Storage Gen2 Data Lake]() |             |
-
-```yml
-# Example
-storage:
-  data_lakes:
-    main: # <- data_lake_key_name
-      display_name: "datalake"
-      resource_group_key_name: "data"
-      iam:
-        role_definitions:
-          read_write: "Storage Blob Data Contributor"
-          read_only: "Storage Blob Data Reader"
-      network:
-        firewall:
-          default_action: "Deny"
-          bypass_services:
-            - "AzureServices"
-            - "Logging"
-          subnet_access_list:
-            - "platform:data_processing_public" # <- Ref: "virtual_network_key_name : subnet_key_name"
-      storage_containers:
-        raw:
-          display_name: "raw"
-          iam:
-            role_assignments:
-              read_write:
-                - "engineers" # <- Ref: user_group_key_name
-        orchestration:
-          display_name: "orchestration"
-          iam:
-            role_assignments:
-              read_write:
-                - "engineers" # <- Ref: user_group_key_name
-              read_only:
-                - "analysts" # <- Ref: user_group_key_name
-        utilities:
-          display_name: "utilities"
-          iam:
-            role_assignments:
-              read_only:
-                - "analysts" # <- Ref: user_group_key_name
-                - "engineers" # <- Ref: user_group_key_name
-        data-structure:
-          display_name: "data-structure"
-          iam:
-            role_assignments:
-              read_only:
-                - "analysts" # <- Ref: user_group_key_name
-                - "engineers" # <- Ref: user_group_key_name
-      #...
-```
-
-## Data Tools Section
-
-| Key                          | Type | Component                      | Description |
-| ---------------------------- | ---- | ------------------------------ | ----------- |
-| `azure_data_factories`       | dict | [Azure Data Factory]()         |             |
-| `azure_dataricks_workspaces` | dict | [Azure Databricks Workspace]() |             |
-
-```yml
-# Example
-data_tools:
-  azure_data_factories:
-    data_orchestration: # azure_data_factory_key_name
-      resource_group_key_name: "infra"
-      #...
-  azure_databricks_worckspaces:
-    data_analytics: # <- azure_databricks_workspace_key_name
-      resource_group_key_name: "infra"
-      #...
-    data_processing:
-      resource_group_key_name: "infra"
-      #...
-```
-
-## Terraform Section
-
-| Key                    | Type | Component | Description |
-| ---------------------- | ---- | --------- | ----------- |
-| `remote_state_backend` | dict |           |             |
-
-```yml
-# Example
-terraform:
-  remote_state_backend:
-    type: "azurerm"
-    azurerm:
-      resource_group_name: "ingneii"
-      storage_account_name: "ingenii"
-      container_name: "terraform-state"
-``` -->
+[//]: # "-------------------------"
+[//]: # "INSERT LINK LABELS BELOW"
+[//]: # "-------------------------"
+[yaml_config_design_doc]: https://github.com/ingenii-solutions/azure-data-platform/blob/main/docs/yaml_config_design.md
+[platform_design_doc]: https://github.com/ingenii-solutions/azure-data-platform/blob/main/docs/platform_design.md
+[naming_conventions_doc]: https://github.com/ingenii-solutions/azure-data-platform/blob/main/docs/naming_conventions.md
