@@ -47,11 +47,12 @@ platform:
 
 ### General
 
-| Key      | Type   |
-| -------- | ------ |
-| `region` | string |
-| `prefix` | string |
-| `tags`   | map    |
+| Key                 | Type   |
+| ------------------- | ------ |
+| `region`            | string |
+| `region_short_name` | string |
+| `prefix`            | string |
+| `tags`              | map    |
 
 `example.yml`
 
@@ -59,6 +60,7 @@ platform:
 platform:
   general:
     region: "EastUS"
+    region_short_name: "eus"
     prefix: "adp"
     tags:
       ResourceManagedWith: "Terraform"
