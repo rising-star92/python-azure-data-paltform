@@ -60,6 +60,7 @@ The majority of the abbreviations are following the [official Microsoft standard
 | Azure Cosmos DB Database          | `cosmos`     |
 | Azure Databricks Workspace        | `dbw`        |
 | Log Analytics Workspace           | `log`        |
+| Azure AD Group                    | `aadg`       |
 
 ## Examples
 
@@ -78,7 +79,8 @@ The majority of the abbreviations are following the [official Microsoft standard
 | Subnet                 | `<prefix>-<region>-<env>-snet-<name>` | **adp-eus-d-snet-public** <br/> **adp-eus-t-snet-private** |
 | Route Table            | `<prefix>-<region>-<env>-rt-<name>`   | **adp-eus-d-rt-public** <br/> **adp-eus-p-rt-private**     |
 | Network Security Group | `<prefix>-<region>-<env>-nsg-<name>`  | **adp-eus-d-nsg-databricks** <br/> **adp-eus-p-nsg-ftp**   |
-| NAT Gateway            | ?                                     |                                                            |
+| NAT Gateway            | `<prefix>-<region>-<env>-ngw-<name>`  | **adp-eus-d-ngw-main** <br/> **adp-eus-p-ngw-primary**     |
+| Public IP              | `<prefix>-<region>-<env>-pip-<name>`  | **adp-eus-d-pip-nat** <br/> **adp-eus-p-pip-outbound**     |
 
 [//]: # "-------------------------"
 [//]: # "INSERT LINK LABELS BELOW "

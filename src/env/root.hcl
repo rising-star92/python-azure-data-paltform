@@ -1,7 +1,8 @@
 locals {
   #--------------------------------------------------------------------------------------------------------------------
   # ENVIRONMENT
-  # Extract the environment name and set the environment type. Dev, Test, Prod environments will be considered DTAP.
+  # Extract the environment name and set the environment type. 
+  # Dev, Test, Prod environments will be considered of DTAP type.
   #--------------------------------------------------------------------------------------------------------------------
   env      = lower(get_env("DP_ENV_NAME"))
   env_type = local.env == "shared" ? "shared" : "dtap"

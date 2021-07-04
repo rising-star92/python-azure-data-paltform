@@ -20,7 +20,8 @@
     - [Step 2 - Click on your User icon at the top right corner](#step-2---click-on-your-user-icon-at-the-top-right-corner)
     - [Step 3 - Select "Personal access tokens"](#step-3---select-personal-access-tokens)
     - [Step 4 - Create a new token](#step-4---create-a-new-token)
-- [5. Requirements Checklist](#5-requirements-checklist)
+- [5. Additional Questions](#5-additional-questions)
+- [6. Requirements Checklist](#6-requirements-checklist)
 
 ## 1. Introduction
 
@@ -261,7 +262,12 @@ Keep the token safe in your password manager.
 
 ---
 
-## 5. Requirements Checklist
+## 5. Additional Questions
+
+- Which Azure region should the platform be deployed to?
+- What Azure VNET address space (CIDR) should we use? - It must be /16 RFC1918 CIDR.
+
+## 6. Requirements Checklist
 
 - **Azure Subscriptions**
   - [x] Shared
@@ -275,3 +281,6 @@ Keep the token safe in your password manager.
   - [x] Prod
 - **Azure DevOps Personal Access Token**
   - [x] Shared
+- **Additional Questions**
+  - [x] Azure Region
+  - [x] Azure VNET Address Space
