@@ -23,9 +23,15 @@
 - [5. Additional Questions](#5-additional-questions)
 - [6. Requirements Checklist](#6-requirements-checklist)
 
+<div style="page-break-after: always; break-after: page;"></div>
+
+---
+
 ## 1. Introduction
 
 The consumer of this platform will have to complete specific pre-requisite steps to ensure all requirements are in place before the deployment can start.
+
+<div style="page-break-after: always; break-after: page;"></div>
 
 ---
 
@@ -54,6 +60,8 @@ Suggested Subscription Names
 - **ADPProd**
 
 **ADP** stands for Azure Data Platform.
+
+<div style="page-break-after: always; break-after: page;"></div>
 
 ---
 
@@ -179,6 +187,8 @@ These permissions will only allow us to create/manage Applications and Groups bu
 Once you have assigned the permissions, you will need to grant admin consent. This requires that you are signed to the Azure Portal as a Global Administrator.
 Click the "Grant admin consent" button and confirm this action.
 
+<div style="page-break-after: always; break-after: page;"></div>
+
 ---
 
 ## 4. Azure DevOps
@@ -262,10 +272,15 @@ Keep the token safe in your password manager.
 
 ---
 
+<div style="page-break-after: always; break-after: page;"></div>
+
 ## 5. Additional Questions
 
-- Which Azure region should the platform be deployed to?
-- What Azure VNET address space (CIDR) should we use? - It must be /16 RFC1918 CIDR.
+- Which is the primary Azure region we should use for the deployment? - e.g. **UKSouth**
+- What Azure VNET address space (CIDR) should we use?
+  - We require 3x /16 (255.255.0.0) ranges. One for each environment (Dev, Test, Prod)
+  - We require 1x /20 (255.255.240.0) range. Reserved for the Shared services environment.
+- What resource prefix can we use? - The resource prefix will be added to every deployed resource. E.g. **`prefix`-resource-name**. For example, if your company name is **Fabrikam**, the prefix can be **fbrkm**. _The prefix is limited to 5 alphanumerical characters_.
 
 ## 6. Requirements Checklist
 
@@ -284,3 +299,6 @@ Keep the token safe in your password manager.
 - **Additional Questions**
   - [x] Azure Region
   - [x] Azure VNET Address Space
+  - [x] 3x /16 ranges
+  - [x] 1x /20 range
+  - [x] Resource Prefix
