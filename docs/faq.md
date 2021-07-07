@@ -20,3 +20,8 @@ See the [Requirements](./docs/platform_requirements.md) for the prerequisities t
 * Troubleshooting any issues with the prerequisities such as:
   * Subscription
   * Azure Principals and Azure AD permissions
+
+## What are the security settings of the platform?
+
+TODO
+
