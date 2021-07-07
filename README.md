@@ -22,9 +22,11 @@ Our documentation section can help you navigate around and make yourself familia
 - [Getting Started](#getting-started)
 - [Requirements](./docs/platform_requirements.md)
 - [Platform Design](./docs/platform_design.md)
-- [YAML Configuration Schema](./docs/yaml_config_schema.md)
 - [FAQ](./docs/faq.md)
 - [Troubleshooting](./docs/troubleshooting.md)
+- References
+  - [Naming Conventions](./docs/naming_conventions.md)
+  - [YAML Config Schema](./docs/yaml_config_schema.md)
 
 ## Getting Started
 

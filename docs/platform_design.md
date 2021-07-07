@@ -3,7 +3,6 @@
 **Table of Contents**
 
 - [Overview](#overview)
-- [Definitions and Acronyms](#definitions-and-acronyms)
 - [Architectural Design](#architectural-design)
   - [Azure Subscriptions](#azure-subscriptions)
   - [Azure Resource Groups](#azure-resource-groups)
@@ -19,10 +18,6 @@
 
 ![Platform Overview](./assets/adp-design-overview.png)
 
-## Definitions and Acronyms
-
-TODO
-
 ## Architectural Design
 
 ![Platform High Level Architecture](./assets/adp-design-architecture.png)
@@ -32,6 +27,8 @@ TODO
 ![Azure Subscriptions](assets/adp-design-subscriptions.png)
 
 ### Azure Resource Groups
+
+TODO
 
 ### Network Flow
 
@@ -43,7 +40,7 @@ TODO
 
 ### Infrastructure Environments
 
-![](assets/adp-design-infra-environments.png)
+![](assets/adp-design-deployment-environments.png)
 
 ## Infrastructure As Code
 
