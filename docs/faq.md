@@ -21,8 +21,6 @@
 
 ## Security
 
----
-
 ### Is the data encrypted at rest?
 
 - Yes, all data stored via the Ingenii Platform is encrypted at rest.
@@ -52,8 +50,6 @@ TODO
 
 ## Authentication and Permissions
 
----
-
 ### How do users or administrators authenticate?
 
 - All users (admins included) are authenticated via Azure Active Directory (AAD).
@@ -82,8 +78,6 @@ TODO
 
 ## Deployment
 
----
-
 ### Can the Azure deployment be run in a separate tenant from our Azure AD?
 
 - No. At present, we only support deployments in the same AAD tenant.
@@ -91,14 +85,12 @@ TODO
 
 ## Support
 
----
-
 ### We have a third party providing support for our cloud environments, what would they be responsible for?
 
-See the [Requirements](./docs/platform_requirements.md) for the prerequisities that are required from a third party outsourced support or managed service provider (MSP). As a summary the support that the third party would have to provide is:
+See the [Requirements](./docs/platform_requirements.md) for the prerequisites that are required from a third party outsourced support or managed service provider (MSP). As a summary the support that the third party would have to provide is:
 
 - General vendor management of Microsoft for any escalations
-- Ensuring the [Requirements](./docs/platform_requirements.md) for the prerequisities are available on an ongoing basis
-- Troubleshooting any issues with the prerequisities such as:
+- Ensuring the [Requirements](./docs/platform_requirements.md) for the prerequisites are available on an ongoing basis
+- Troubleshooting any issues with the prerequisites such as:
   - Subscription
   - Azure Principals and Azure AD permissions
