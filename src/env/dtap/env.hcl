@@ -2,7 +2,7 @@
 # LOAD ROOT CONFIG
 #--------------------------------------------------------------------------------------------------------------------
 locals {
-  root_hcl_config = read_terragrunt_config(find_in_parent_folders("root.hcl"))["locals"]["exports"]
+  root_hcl_exports = read_terragrunt_config(find_in_parent_folders("root.hcl"))["locals"]["exports"]
 }
 
 #--------------------------------------------------------------------------------------------------------------------
@@ -11,9 +11,9 @@ locals {
 # backend config.
 #--------------------------------------------------------------------------------------------------------------------
 remote_state {
-  backend = local.root_hcl_config.remote_state_config.type
+  backend = local.root_hcl_exports.remote_state_config.type
   config = merge(
-    local.root_hcl_config.remote_state_config.config,
+    local.root_hcl_exports.remote_state_config.config,
     {
       # The final key path is a combination of a base key config (defined in root.hcl) plus the additional config
       # defined below. The decision to keep the config definition split is because how (path_relative_to_include())
@@ -21,7 +21,7 @@ remote_state {
       # "included" by the downstream components.
       key = format(
         "%s/%s",
-        local.root_hcl_config.remote_state_config.config.key,
+        local.root_hcl_exports.remote_state_config.config.key,
         "${path_relative_to_include()}/terraform.tfstate"
       )
     }
@@ -62,6 +62,6 @@ EOF
 # All downstream components will have the "config" object passed to them.
 #--------------------------------------------------------------------------------------------------------------------
 inputs = {
-  config       = local.root_hcl_config.platform_config
+  config       = local.root_hcl_exports.platform_config
   dependencies = {}
 }

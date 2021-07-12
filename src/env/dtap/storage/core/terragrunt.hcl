@@ -43,11 +43,40 @@ dependency "management_core" {
   }
 }
 
+dependency "network_core" {
+  config_path = "..//..//network//core"
+
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
+
+  mock_outputs = {
+    virtual_networks = {
+      for vnet_ref_key, vnet_config in try(local.config.platform.network.virtual_networks, {}) :
+      vnet_ref_key => {
+        subnets = {
+          for subnet_ref_key, subnet_config in try(vnet_config.subnets, {}) :
+          subnet_ref_key => {
+            id   = "/subscriptions/${uuid()}/resourceGroups/${uuid()}/providers/Microsoft.Network/virtualNetworks/${uuid()}/subnets/${uuid()}"
+            name = "mock-${uuid()}"
+          }
+        }
+      }
+    }
+    dns = {
+      private_zones = {
+        for dns_zone_ref_key, dns_zone_config in try(local.config.platform.network.dns.private_zones, {}) :
+        dns_zone_ref_key => {
+          id = "/subscriptions/${uuid()}/resourceGroups/${uuid()}/providers/Microsoft.Network/privateDnsZones/${uuid()}"
+        }
+      }
+    }
+  }
+}
+
 #--------------------------------------------------------------------------------------------------------------------
 # TERRAFORM SOURCE
 #--------------------------------------------------------------------------------------------------------------------
 terraform {
-  source = "${local.root_hcl_exports.modules_dir}//network-core"
+  source = "${local.root_hcl_exports.modules_dir}//storage-core"
 }
 
 #--------------------------------------------------------------------------------------------------------------------
@@ -61,6 +90,11 @@ inputs = {
     management = {
       user_groups     = dependency.management_core.outputs.user_groups
       resource_groups = dependency.management_core.outputs.resource_groups
+    }
+
+    network = {
+      virtual_networks = dependency.network_core.outputs.virtual_networks
+      dns              = dependency.network_core.outputs.dns
     }
   }
 }

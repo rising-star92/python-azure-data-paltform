@@ -1,0 +1,171 @@
+platform:
+  # Management
+  management:
+    user_groups:
+      admins:
+        display_name: admins
+      engineers:
+        display_name: engineers
+      analysts:
+        display_name: analysts
+    resource_groups:
+      infra:
+        display_name: infra
+      data:
+        display_name: data
+
+  # Storage
+  storage:
+    data_lakes:
+      default:
+        display_name: datalake
+        resource_group_ref_key: data
+        iam:
+          role_assignments:
+            - user_group_ref_key: admins
+              role_definition_name: Owner
+        network:
+          firewall:
+            default_action: Deny
+            ip_rules:
+              - "151.251.5.72"
+            bypass:
+              - AzureServices
+          private_endpoints:
+            blob_primary:
+              resource_group_ref_key: infra
+              vnet_ref_key: default
+              subnet_ref_key: privatelink
+              dns_zone_group_name: privatelink
+              private_dns_zone_ref_key: storage_blob_privatelink
+              subresource_names:
+                - "blob"
+            dfs_primary:
+              resource_group_ref_key: infra
+              vnet_ref_key: default
+              subnet_ref_key: privatelink
+              dns_zone_group_name: privatelink
+              private_dns_zone_ref_key: storage_dfs_privatelink
+              subresource_names:
+                - "dfs"
+        containers:
+          utilities:
+            display_name: utilities
+            iam:
+              role_assignments:
+                - user_group_ref_key: admins
+                  role_definition_name: Owner
+            paths:
+              - path_name: test
+
+  # Network
+  network:
+    dns:
+      private_zones:
+        storage_blob_privatelink:
+          name: privatelink.blob.core.windows.net
+          resource_group_ref_key: infra
+        storage_dfs_privatelink:
+          name: privatelink.dfs.core.windows.net
+          resource_group_ref_key: infra
+        key_vault_privatelink:
+          name: privatelink.vaultcore.azure.net
+          resource_group_ref_key: infra
+    virtual_networks:
+      default:
+        display_name: default
+        resource_group_ref_key: infra
+        address_space: "10.110.0.0/16"
+        nat_gateway:
+          enabled: true
+          display_name: default
+        route_tables:
+          databricks:
+            display_name: databricks
+        network_security_groups:
+          databricks:
+            display_name: databricks
+        subnets:
+          gateway:
+            type: gateway-subnet
+            subnet_network_id: 0
+            subnet_range_size: 8
+          privatelink:
+            display_name: "privatelink"
+            is_associated_to_nat_gateway: false
+            subnet_network_id: 1
+            subnet_range_size: 8
+            enforce_private_link_endpoint_network_policies: true
+          databricks_engineering_hosts:
+            display_name: "dbw-engineering-hosts"
+            subnet_network_id: 1
+            subnet_range_size: 6
+            route_table_ref_key: databricks
+            network_security_group_ref_key: databricks
+            service_endpoints:
+              - Microsoft.KeyVault
+              - Microsoft.Storage
+            delegations:
+              databricks:
+                display_name: "databricks"
+                service_delegation:
+                  name: "Microsoft.Databricks/workspaces"
+                  actions:
+                    - "Microsoft.Network/virtualNetworks/subnets/join/action"
+                    - "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action"
+                    - "Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"
+          databricks_engineering_containers:
+            display_name: "dbw-engineering-containers"
+            subnet_network_id: 2
+            subnet_range_size: 6
+            route_table_ref_key: databricks
+            network_security_group_ref_key: databricks
+            service_endpoints:
+              - Microsoft.KeyVault
+              - Microsoft.Storage
+            delegations:
+              databricks:
+                display_name: "databricks"
+                service_delegation:
+                  name: "Microsoft.Databricks/workspaces"
+                  actions:
+                    - "Microsoft.Network/virtualNetworks/subnets/join/action"
+                    - "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action"
+                    - "Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"
+          databricks_analytics_hosts:
+            display_name: "dbw-analytics-hosts"
+            subnet_network_id: 3
+            subnet_range_size: 6
+            route_table_ref_key: databricks
+            network_security_group_ref_key: databricks
+            service_endpoints:
+              - Microsoft.KeyVault
+              - Microsoft.Storage
+            delegations:
+              databricks:
+                display_name: "databricks"
+                service_delegation:
+                  name: "Microsoft.Databricks/workspaces"
+                  actions:
+                    - "Microsoft.Network/virtualNetworks/subnets/join/action"
+                    - "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action"
+                    - "Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"
+          databricks_analytics_containers:
+            display_name: "dbw-analytics-containers"
+            subnet_network_id: 4
+            subnet_range_size: 6
+            route_table_ref_key: databricks
+            network_security_group_ref_key: databricks
+            service_endpoints:
+              - Microsoft.KeyVault
+              - Microsoft.Storage
+            delegations:
+              databricks:
+                display_name: "databricks"
+                service_delegation:
+                  name: "Microsoft.Databricks/workspaces"
+                  actions:
+                    - "Microsoft.Network/virtualNetworks/subnets/join/action"
+                    - "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action"
+                    - "Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"
+terraform:

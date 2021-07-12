@@ -11,6 +11,7 @@
   - [Infrastructure Environments](#infrastructure-environments)
 - [Infrastructure As Code](#infrastructure-as-code)
   - [Code Structure](#code-structure)
+  - [IaC Design](#iac-design)
 - [Costs](#costs)
   - [Network](#network)
 
@@ -44,9 +45,9 @@ TODO
 
 ## Infrastructure As Code
 
-TODO
-
 ### Code Structure
+
+TODO
 
 ```shell
 ├── Makefile                  # Helper functions
@@ -72,6 +73,11 @@ TODO
     ├── utils                 # Utilities, scripts, CI workflows
     └── terragrunt.hcl        # Base Terragrunt file
 ```
+
+### IaC Design
+
+- Terraform `outputs` and their structure act as a contract. Changing the output structure will lead to breaking changes.
+- **Local value** names starting with `__` are considered internal to the `local` scope they are defined to.
 
 ## Costs
 

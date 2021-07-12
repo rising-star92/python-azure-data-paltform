@@ -149,3 +149,4 @@ _generated*
 *.env
 *.creds
 dummy.yml
+*.ignore

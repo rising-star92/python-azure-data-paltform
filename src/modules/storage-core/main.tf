@@ -12,5 +12,9 @@ locals {
   tags   = local.config.platform.general.tags
 
   # Dependencies
-  dependencies = jsondecode(var.dependencies)
+  dependencies     = jsondecode(var.dependencies)
+  user_groups      = local.dependencies.management.user_groups
+  resource_groups  = local.dependencies.management.resource_groups
+  virtual_networks = local.dependencies.network.virtual_networks
+  dns              = local.dependencies.network.dns
 }

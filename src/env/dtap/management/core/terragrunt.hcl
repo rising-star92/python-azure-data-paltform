@@ -10,8 +10,7 @@ include {
 # PREPARE LOCAL VALUES
 #--------------------------------------------------------------------------------------------------------------------
 locals {
-  root_hcl_config = include.locals.root_hcl_config
-  env_hcl_config  = include.locals
+  root_hcl_exports = include.locals.root_hcl_exports
 }
 
 #--------------------------------------------------------------------------------------------------------------------
@@ -22,7 +21,7 @@ locals {
 # TERRAFORM SOURCE
 #--------------------------------------------------------------------------------------------------------------------
 terraform {
-  source = "${local.root_hcl_config.modules_dir}//management-core"
+  source = "${local.root_hcl_exports.modules_dir}//management-core"
 }
 
 #--------------------------------------------------------------------------------------------------------------------
@@ -31,5 +30,5 @@ terraform {
 inputs = {
   # The global inputs from (env.hcl) file are automatically passed here.
 
-  # Define additional inputs that are not already included from the global inputs.
+  # Define additional inputs that are not already included in the global inputs.
 }

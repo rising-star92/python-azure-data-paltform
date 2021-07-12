@@ -8,11 +8,10 @@
 - [**Management: User Groups**](#management-user-groups)
 - [**Management: Resource Groups**](#management-resource-groups)
 - [**Network**](#network)
-- [**Network: Virtual Networks**](#network-virtual-networks)
+- [**Network: Virtual Network**](#network-virtual-network)
 - [**Network: Route Tables**](#network-route-tables)
 - [**Network: Network Security Groups**](#network-network-security-groups)
-- [**Network: NAT Gateways**](#network-nat-gateways)
-- [**Network: Public IP Addresses**](#network-public-ip-addresses)
+- [**Network: NAT Gateway**](#network-nat-gateway)
 - [**Terraform Configuration**](#terraform-configuration)
 
 > Please make sure to read the [**documentation**][yaml_config_design_doc] on how the platform gets configured using various YAML files.
@@ -221,10 +220,10 @@ The `role_assignment` object has the following attributes:
 ```yml
 platform:
   network:
-    virtual_networks: #...
+    virtual_network: #...
     route_tables: #...
     network_security_groups: #...
-    nat_gateways: #...
+    nat_gateway: #...
     public_ip_addresses: #...
 #...
 ```
@@ -235,15 +234,15 @@ platform:
 
 ### **Attributes** <!-- omit in toc -->
 
-- `virtual_networks` - [**VirtualNetworksConfig Object**](#network-virtual-networks) - Providing Module: `network-core`
+- `virtual_network` - [**VirtualNetworkConfig Object**](#network-virtual-network) - Providing Module: `network-core`
 - `route_tables` - [**RouteTablesConfig Object**](#network-route-tables) - Providing Module: `network-core`
 - `network_security_groups` - [**NetworkSecurityGroupsConfig Object**](#network-network-security-groups) - Providing Module: `network-core`
-- `nat_gateways` - [**NatGatewaysConfig Object**](#network-nat-gateways)
+- `nat_gateway` - [**NatGatewayConfig Object**](#network-nat-gateway)
 - `public_ip_addresses` - [**PublicIpAddressesConfig Object**](#network-public-ip-addresses)
 
 ---
 
-## **Network: Virtual Networks**
+## **Network: Virtual Network**
 
 ### **Examples** <!-- omit in toc -->
 
@@ -256,6 +255,10 @@ platform:
       engineers: # <- user_group_ref_key
         display_name: "engineers"
   network:
+    nat_gateway:
+      enabled: true
+      display_name: main
+      resource_group_ref_key: infra
     route_tables:
       private: # <- route_table_ref_key
         display_name: "private"
@@ -264,51 +267,44 @@ platform:
       databricks: # <- network_security_group_ref_key
         display_name: "databricks"
         resource_group_ref_key: "infra"
-    virtual_networks:
-      main: # <- virtual_network_ref_key
-        display_name: "main"
-        iam:
-          role_assignments:
-            - user_group_ref_key: "engineers"
-              role_definition_name: "Contributor" # <- The name of a built-in Azure Role.
-        resource_group_ref_key: "infra"
-        address_space: ["10.10.0.0/16"]
-        dns_servers: ["10.10.0.5"]
-        subnets:
-          public:
-            display_name: "public"
-            address_prefixes: ["10.10.1.0/24"]
-            route_table_ref_key: "private"
-            network_security_group_ref_key: "databricks"
-            enforce_private_link_endpoint_network_policies: false
-            enforce_private_link_service_network_policies: false
-            service_endpoints:
-              - "Microsoft.KeyVault"
-              - "Microsoft.Storage"
-            delegations:
-              databricks:
-                display_name: "databricks"
-                service_delegation:
-                  name: "Microsoft.Databricks/workspaces"
-                  actions:
-                    - "Microsoft.Network/networkinterfaces/*"
-                    - "Microsoft.Network/virtualNetworks/subnets/action"
-                    - "Microsoft.Network/virtualNetworks/subnets/join/action"
-                    - "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action"
-                    - "Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"
+   virtual_network:
+      display_name: main
+      resource_group_ref_key: infra
+      address_space: 10.110.0.0/16
+      subnet_network_size: 6
+      subnets:
+        databricks_private:
+          display_name: dbw-private
+          network_number: 0
+          route_table_ref_key: private
+          network_security_group_ref_key: databricks
+          is_associated_to_nat_gateway: true
+          service_endpoints:
+            - Microsoft.Storage
+            - Microsoft.KeyVault
+          delegations:
+            databricks:
+              display_name: "databricks"
+              service_delegation:
+                name: "Microsoft.Databricks/workspaces"
+                actions:
+                  - "Microsoft.Network/virtualNetworks/subnets/join/action"
+                  - "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action"
+                  - "Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"
 #...
 ```
 
 ### **Scope** <!-- omit in toc -->
 
-`platform.network.virtual_networks`
+`platform.network.virtual_network`
 
 ### **Attributes** <!-- omit in toc -->
 
 - `display_name` (_Required_) **string** - The name of the Virtual Network. The platform is following an opinionated naming convention. Please check our [**naming conventions document**][naming_conventions_doc].
 - `iam` (_Optional_) **object** - The identity and access management object. As described below.
 - `resource_group_ref_key` (_Required_) **string** - The [**resource group**](#management-resource-groups) reference key name.
-- `address_space` (_Required_) **list[string]** - A list of network ranges. e.g. 10.10.0.0/16
+- `address_space` (_Required_) **string** - The virtual network network range. e.g. 10.10.0.0/16
+- `subnet_network_size` - (_Optional_) **[number]** - A number of additional bits added to the _address_space_ when generating the subnet prefixes. e.g. _address_space_ = 10.10.0.0/16, _subnet_network_size_ = 6, the first subnet prefix to be generated will be _10.10.0.0/22_, next _10.10.4.0/22_, and so on. Defaults to: `6`
 - `dns_servers` (_Optional_) **list[string]** - A list of IP addresses of DNS servers.
 - `bgp_community` (_Optional_) **string** - BGP community attribute in the following format: `<as-number>:<community-value>`
 - `subnets` (_Optional_) **map[string:object]** - A map of `subnet_ref_key`:`subnet_object` (below) elements.
@@ -333,10 +329,10 @@ The `role_assignment` object has the following attributes:
 The `subnet` object has the following attributes:
 
 - `display_name` (_Required_) **string** - The name of the Subnet. The platform is following an opinionated naming convention. Please check our [**naming conventions document**][naming_conventions_doc].
-- `address_prefixes` (_Required_) **list[string]** - A list of network ranges. e.g. 10.10.0.0/24
+- `network_number` (_Required_) **number** - The network number of the subnet. It is based on the VNET _address_space_, VNET _subnet_network_size_ plus the SUBNET _network_number_. e.g. _address_space_ = 10.10.0.0/16, _subnet_network_size_ = 6, _network_number_ = 0 will result in subnet prefix of _10.10.0.0/22_; _network_number_ = 1 will result in subnet prefix of _10.10.4.0/22_
 - `network_security_group_ref_key` (_Optional_) **string** - The ref key of the NSG we want attached to this subnet.
 - `route_table_ref_key` (_Optional_) **string** - The ref key of the Route Table we want to attach this subnet.
-- `nat_gateway_ref_key` (_Optional_) **string** - The ref key of the NAT Gateway we want to attach to this subnet.
+- `is_associated_to_nat_gateway` (_Optional_) **bool** - It only works if the NAT gateway is enabled. Defaults to `true`.
 - `delegations` (_Optional_) **map[string:object]** - A map of `delegation_ref_key`:`delegation_object` (below) elements.
 - `enforce_private_link_endpoint_network_policies` (_Optional_) **bool** - Enable or Disable network policies for the private link endpoint on the subnet. Default value is `false`. Conflicts with `enforce_private_link_service_network_policies`.
 - `enforce_private_link_service_network_policies` (_Optional_) **bool** - Enable or Disable network policies for the private link service on the subnet. Default value is `false`. Conflicts with `enforce_private_link_endpoint_network_policies`.
@@ -359,7 +355,7 @@ The `service_delegation` object has the following attributes:
 
 ### **Reference Key** <!-- omit in toc -->
 
-`virtual_network_ref_key`
+`n/a`
 
 ## **Network: Route Tables**
 
@@ -517,7 +513,7 @@ The `rule` object has the following attributes:
 
 `network_security_group_ref_key`
 
-## **Network: NAT Gateways**
+## **Network: NAT Gateway**
 
 ### **Examples** <!-- omit in toc -->
 
@@ -530,121 +526,27 @@ platform:
     engineers: # <- user_group_ref_key
       display_name: "engineers"
   network:
-    public_ip_addresses:
-      nat: # <- public_ip_address_ref_key
-        display_name: "nat"
-        resource_group_ref_key: "infra"
-    nat_gateways:
-      main: # <- nat_gateway_ref_key
-        display_name: "main"
-        iam:
-          role_assignments:
-            - user_group_ref_key: "engineers"
-              role_definition_name: "Contributor" # The name of a built-in Azure Role.
-        resource_group_ref_key: "infra"
-        idle_timeout_in_minutes: 4
-        sku_name: "Standard"
-        public_ip_address_ref_key: "nat"
+    nat_gateway:
+      enabled: true
+      display_name: "main"
+      resource_group_ref_key: "infra"
 #...
 ```
 
 ### **Scope** <!-- omit in toc -->
 
-`platform.network.nat_gateways`
+`platform.network.nat_gateway`
 
 ### **Attributes** <!-- omit in toc -->
 
-- `display_name` (_Required_) **string** - The name of the Public IP. The platform is following an opinionated naming convention. Please check our [**naming conventions document**][naming_conventions_doc].
-- `iam` (_Optional_) **object** - The identity and access management object. As described below.
+- `enabled` - (_Required_) **bool** - Enable or disable the NAT gateway. Defaults to `true`.
+- `display_name` (_Required_) **string** - The name of the NAT gateway. The platform is following an opinionated naming convention. Please check our [**naming conventions document**][naming_conventions_doc].
 - `resource_group_ref_key` (_Required_) **string** - The [**resource group**](#management-resource-groups) reference key name.
-- `public_ip_address_ref_key` (_Required_) **string** - The [**public ip**](#network-public-ip-addresses) reference key name.
-- `idle_timeout_in_minutes` (_Optional_) **number** - The idle timeout which should be used in minutes. Defaults to `4`.
-- `sku_name` (_Optional_) **string** - The SKU which should be used. At this time the only supported value is `Standard`. Defaults to `Standard`.
-- `availability_zones` (_Optional_) **list[string]** - A list of availability zones where the NAT Gateway should be provisioned.
 - `tags` (_Optional_) **map[string:string]** - Map of key/value tags which are resource specific.
-
----
-
-The `iam` object has the following attributes:
-
-- `role_assignments` - (_Optional_) **list[object]** - A list of `role_assignment` objects (below).
-
----
-
-The `role_assignment` object has the following attributes:
-
-- `user_group_ref_key` - (_Required_) **string** - The [**user group**](#management-user-groups) reference key name.
-- `role_definition_name` - (_Optional_) **string** - The name of the built-in Azure Role. Conflicts with `role_definition_id`.
-- `role_definition_id` - (_Optional_) **string** - The Scoped-ID of the role definition.
-
----
 
 ### **Reference Key** <!-- omit in toc -->
 
-`nat_gateway_ref_key`
-
-## **Network: Public IP Addresses**
-
-### **Examples** <!-- omit in toc -->
-
-```yml
-platform:
-  management:
-    resource_groups:
-      infra: # <- resource_group_ref_key
-  user_groups:
-    engineers: # <- user_group_ref_key
-      display_name: "engineers"
-  network:
-    public_ip_addresses:
-      outbound: # <- public_ip_address_ref_key
-        display_name: "outbound"
-        iam:
-          role_assignments:
-            - user_group_ref_key: "engineers"
-              role_definition_name: "Contributor" # The name of a built-in Azure Role.
-        resource_group_ref_key: "infra"
-      nat: # <- public_ip_address_ref_key
-        display_name: "nat"
-        resource_group_ref_key: "infra"
-#...
-```
-
-### **Scope** <!-- omit in toc -->
-
-`platform.network.public_ip_addresses`
-
-### **Attributes** <!-- omit in toc -->
-
-- `display_name` (_Required_) **string** - The name of the Public IP. The platform is following an opinionated naming convention. Please check our [**naming conventions document**][naming_conventions_doc].
-- `iam` (_Optional_) **object** - The identity and access management object. As described below.
-- `resource_group_ref_key` (_Required_) **string** - The [**resource group**](#management-resource-groups) reference key name.
-- `sku_name` (_Optional_) **string** - The SKU of the Public IP. Accepted values are `Basic` and `Standard`. Defaults to `Standard`
-- `allocation_method` (_Optional_) **string** - Defines the allocation method for this IP address. Possible values are **Static** or **Dynamic**. Defaults to `Static`.
-- `availability_zone` (_Optional_) **string** - The availability zone to allocate the Public IP in. Possible values are `Zone-Redundant`, `1`, `2`, `3`, and `No-Zone`. Defaults to `Zone-Redundant`.
-- `ip_version` (_Optional_) **string** - Possible options are `IPv4` or `IPv6`. Defaults to `IPv4`.
-- `idle_timeout_in_minutes` (_Optional_) **number** - Specifies the timeout for the TCP idle connection. The value can be set between 4 and 30 minutes.
-- `domain_name_label` (_Optional_) **string** - Label for the Domain Name. Will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system.
-- `reverse_fqdn` (_Optional_) **string** - A fully qualified domain name that resolves to this public IP address. If the reverseFqdn is specified, then a PTR DNS record is created pointing from the IP address in the in-addr.arpa domain to the reverse FQDN.
-- `tags` (_Optional_) **map[string:string]** - Map of key/value tags which are resource specific.
-
----
-
-The `iam` object has the following attributes:
-
-- `role_assignments` - (_Optional_) **list[object]** - A list of `role_assignment` objects (below).
-
----
-
-The `role_assignment` object has the following attributes:
-
-- `user_group_ref_key` - (_Required_) **string** - The [**user group**](#management-user-groups) reference key name.
-- `role_definition_name` - (_Optional_) **string** - The name of the built-in Azure Role. Conflicts with `role_definition_id`.
-- `role_definition_id` - (_Optional_) **string** - The Scoped-ID of the role definition.
-
-### **Reference Key** <!-- omit in toc -->
-
-`public_ip_address_ref_key`
+`n/a`
 
 ## **Terraform Configuration**
 

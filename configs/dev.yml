@@ -1,0 +1,13 @@
+platform:
+  network:
+    virtual_network:
+      address_space: # Example: 10.110.0.0/16; /16 range is required.
+
+terraform:
+  remote_state_backend:
+    type: "azurerm"
+    azurerm:
+      resource_group_name: "ingenii-dev"
+      storage_account_name: "ingenii"
+      container_name: "tfstate-teo"
+      
