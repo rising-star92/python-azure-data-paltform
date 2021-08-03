@@ -8,7 +8,6 @@ config_object = ConfigParser(
     schema_path="./schema.yml",
     default_config_path="./defaults.yml",
     customer_config_path=f"**/configs/{get_stack()}.yml").validate_schema().load_as_dynaconf()
-)
 
 # The platform configuration object.
 # It holds all config data needed from the rest of the resources.
