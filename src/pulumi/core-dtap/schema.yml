@@ -1,0 +1,145 @@
+#----------------------------------------------------------------------------------------------------------------------
+# ROOT
+# Below are the root keys of the expected YAML config file.
+#----------------------------------------------------------------------------------------------------------------------
+general: include('general')
+management: include('management', required=False)
+network: include('network', required=False)
+storage: include('storage', required=False)
+security: include('security', required=False)
+analytics_services: include('analytics_services', required=False)
+---
+#----------------------------------------------------------------------------------------------------------------------
+# GENERAL
+#----------------------------------------------------------------------------------------------------------------------
+general:
+  prefix: str(max=4)
+  unique_id: str(max=3)
+  region: str()
+  tags: map()
+
+#----------------------------------------------------------------------------------------------------------------------
+# MANAGEMENT
+#----------------------------------------------------------------------------------------------------------------------
+management: 
+  user_groups: map(include('user_group'),key=str())
+
+# management.user_groups
+user_group:
+  display_name: str()
+  object_id: str(required=False)
+
+#----------------------------------------------------------------------------------------------------------------------
+# NETWORK
+#----------------------------------------------------------------------------------------------------------------------
+network:
+  firewall: include('_network_firewall')
+  nat_gateway:
+    enabled: bool()
+  virtual_network: include('_network_virtual_network')
+
+# network.firewall
+_network_firewall:
+  enabled: bool()
+  ip_access_list: list(ip(), required=False)
+
+# network.virtual_networks
+_network_virtual_network:
+  display_name: str()
+  address_space: str()
+
+#----------------------------------------------------------------------------------------------------------------------
+# STORAGE
+#----------------------------------------------------------------------------------------------------------------------
+storage: 
+  datalake:
+    display_name: str(max=9)
+    containers: map(include('storage_datalake_container'),key=str())
+    iam: include('_iam', required=False)
+
+# storage.datalake.containers
+storage_datalake_container:
+  display_name: str()
+  iam: include('_iam', required=False)
+
+#----------------------------------------------------------------------------------------------------------------------
+# SECURITY
+#----------------------------------------------------------------------------------------------------------------------
+security:
+  credentials_store:
+    network:
+      firewall:
+        enabled: bool()
+    iam: include('_iam', required=False)
+
+#----------------------------------------------------------------------------------------------------------------------
+# ANALYTICS SERVICES
+#----------------------------------------------------------------------------------------------------------------------
+analytics_services:
+  databricks: include('_databricks')
+  datafactory: include('_datafactory')
+
+_databricks:
+  workspaces: map(include('_databricks_workspace'),key=str())
+
+_databricks_workspace:
+  config: include('_databricks_workspace_config', required=False)
+  iam: include('_iam', required=False)
+  storage_mounts: list(include('_databricks_storage_mount'), required=False)
+  clusters: map(include('_databricks_single_node_cluster'),include('_databricks_high_concurrency_cluster'),key=str(), required=False)
+
+_databricks_workspace_config:
+  enable_container_services: str(required=False)
+  enable_ip_access_lists: str(required=False)
+
+_databricks_storage_mount:
+  type: str()
+  mount_name: str()
+  container_name: str(required=False)
+
+_databricks_single_node_cluster:
+  type: regex('.*^single_node$')
+  display_name: str()
+  spark_version: str()
+  node_type_id: str()
+  autotermination_minutes: int(min=10)
+  docker_image_url: str(required=False)
+  spark_env_vars: map(required=False)
+  spark_conf: map(required=False)
+  libraries: include('_databricks_cluster_libraries', required=False)
+
+_databricks_high_concurrency_cluster:
+  type: regex('.*^high_concurrency$')
+  display_name: str()
+  spark_version: str()
+  node_type_id: str()
+  auto_scale_min_workers: int(min=1)
+  auto_scale_max_workers: int(min=2)
+  autotermination_minutes: int(min=10)
+  docker_image_url: str(required=False)
+  spark_env_vars: map(required=False)
+  spark_conf: map(required=False)
+  libraries: include('_databricks_cluster_libraries', required=False)
+
+_databricks_cluster_libraries:
+  pypi: list(include('_databricks_cluster_library_pypi'), required=False)
+
+_databricks_cluster_library_pypi:
+  package: str()
+
+_datafactory:
+  factories: map(include('_datafactory_factory'),key=str())
+
+_datafactory_factory:
+  display_name: str()
+#----------------------------------------------------------------------------------------------------------------------
+# COMMON
+# These are common definitions that are reused across the schema.
+#----------------------------------------------------------------------------------------------------------------------
+_iam:
+  role_assignments: list(include('_iam_role_assignment'))
+
+_iam_role_assignment:
+  role_definition_name: str()
+  object_id: str(required=False)
+  user_group_ref_key: str(required=False)

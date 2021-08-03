@@ -8,6 +8,7 @@
 - [Examples](#examples)
   - [General Resources](#general-resources)
   - [Network Resources](#network-resources)
+  - [Data Tools](#data-tools)
 
 ## Overview
 
@@ -59,6 +60,7 @@ The majority of the abbreviations are following the [official Microsoft standard
 | Azure Synapse Analytics           | `syn`        |
 | Azure Cosmos DB Database          | `cosmos`     |
 | Azure Databricks Workspace        | `dbw`        |
+| Azure Data Factory                | `adf`        |
 | Log Analytics Workspace           | `log`        |
 | Azure AD Group                    | `aadg`       |
 
@@ -81,6 +83,13 @@ The majority of the abbreviations are following the [official Microsoft standard
 | Network Security Group | `<prefix>-<region>-<env>-nsg-<name>`  | **adp-eus-d-nsg-databricks** <br/> **adp-eus-p-nsg-ftp**   |
 | NAT Gateway            | `<prefix>-<region>-<env>-ngw-<name>`  | **adp-eus-d-ngw-main** <br/> **adp-eus-p-ngw-primary**     |
 | Public IP              | `<prefix>-<region>-<env>-pip-<name>`  | **adp-eus-d-pip-nat** <br/> **adp-eus-p-pip-outbound**     |
+
+### Data Tools
+
+| Resource Type | Naming Format                        | Examples                        |
+| ------------- | ------------------------------------ | ------------------------------- |
+| Data Factory  | `<prefix>-<region>-<env>-adf-<name>` | **adp-eus-d-adf-orchestration** |
+| Databricks    | `<prefix>-<region>-<env>-dbw-<name>` | **adp-eus-d-dbw-engineering**   |
 
 [//]: # "-------------------------"
 [//]: # "INSERT LINK LABELS BELOW "

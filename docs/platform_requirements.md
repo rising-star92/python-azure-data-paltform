@@ -20,8 +20,9 @@
     - [Step 2 - Click on your User icon at the top right corner](#step-2---click-on-your-user-icon-at-the-top-right-corner)
     - [Step 3 - Select "Personal access tokens"](#step-3---select-personal-access-tokens)
     - [Step 4 - Create a new token](#step-4---create-a-new-token)
-- [5. Additional Questions](#5-additional-questions)
-- [6. Requirements Checklist](#6-requirements-checklist)
+- [5. Temporary Permissions](#5-temporary-permissions)
+- [6. Additional Questions](#6-additional-questions)
+- [7. Requirements Checklist](#7-requirements-checklist)
 
 <div style="page-break-after: always; break-after: page;"></div>
 
@@ -178,9 +179,13 @@ Go to the `API Permissions` blade and click `Add a permission`. In the new pane 
 Choose `Application Permissions` for the permission type, and check the permissions below:
 
 - `Application.ReadWrite.All`
-- `Directory.ReadWrite.All`
+- `Directory.ReadWrite.All`\*
 
 These permissions will only allow us to create/manage Applications and Groups but not delete them.
+
+> \* The 'Directory.ReadWrite.All' is considered high-level permission. Unfortunately, this is the only way to automate the Azure AD Group creation.  
+> Alternatively - You can omit the 'Directory.ReadWrite.All' permission.
+> We have a [script](https://github.com/ingenii-solutions/public/tree/main/scripts/data-platform/azuread-groups-creation) that you can review and use to create all necessary Azure AD Groups.
 
 #### Step 2 - Consent the API Permissions
 
@@ -274,7 +279,24 @@ Keep the token safe in your password manager.
 
 <div style="page-break-after: always; break-after: page;"></div>
 
-## 5. Additional Questions
+## 5. Temporary Permissions
+
+The platform will be deployed automatically using the Service Principal credentials for each subscription.
+Once the deployment is complete, the Ingenii team would require access to your Azure Portal to:
+
+1. Verify the deployment
+2. (Optional) Walk you through the deployed resources
+
+A simple Azure AD user can be created and assigned the following permissions:
+
+- `Owner` access to each of the four Azure subscriptions that you have created.
+- `Project Admin` access to the Data Platform project in Azure DevOps
+
+As soon as the deployment is verified, the temporary user can be disabled and deleted.
+
+> Please note: The temporary user has to be a regular member of the Azure Active Directory. Guest users are not supported.
+
+## 6. Additional Questions
 
 - Which is the primary Azure region we should use for the deployment? - e.g. **UKSouth**
 - What Azure VNET address space (CIDR) should we use?
@@ -282,7 +304,7 @@ Keep the token safe in your password manager.
   - We require 1x /20 (255.255.240.0) range. Reserved for the Shared services environment.
 - What resource prefix can we use? - The resource prefix will be added to every deployed resource. E.g. **`prefix`-resource-name**. For example, if your company name is **Fabrikam**, the prefix can be **fbrkm**. _The prefix is limited to 5 alphanumerical characters_.
 
-## 6. Requirements Checklist
+## 7. Requirements Checklist
 
 - **Azure Subscriptions**
   - [x] Shared
