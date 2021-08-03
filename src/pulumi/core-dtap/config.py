@@ -7,8 +7,8 @@ from ingenii_azure_data_platform import helpers
 config_object = ConfigParser(
     schema_path="./schema.yml",
     default_config_path="./defaults.yml",
-    customer_config_path="./defaults.yml").validate_schema().load_as_dynaconf()
-# customer_config_path=f"**/configs/{get_stack()}.yml").validate_schema().load_as_dynaconf()
+    customer_config_path=f"**/configs/{get_stack()}.yml").validate_schema().load_as_dynaconf()
+)
 
 # The platform configuration object.
 # It holds all config data needed from the rest of the resources.
