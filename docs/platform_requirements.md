@@ -5,6 +5,7 @@
 - [1. Introduction](#1-introduction)
 - [2. Azure Subscriptions](#2-azure-subscriptions)
   - [2.1 Create Azure Subscriptions](#21-create-azure-subscriptions)
+  - [2.2 Quota Increase](#22-quota-increase)
 - [3. Azure Service Principals](#3-azure-service-principals)
   - [3.1 Create Azure Service Principal](#31-create-azure-service-principal)
     - [Step 1 - Log in to the Azure CLI](#step-1---log-in-to-the-azure-cli)
@@ -62,7 +63,52 @@ Suggested Subscription Names
 
 **ADP** stands for Azure Data Platform.
 
-<div style="page-break-after: always; break-after: page;"></div>
+### 2.2 Quota Increase
+
+> If your subscription type is different from Free Trial or Pay as You Go. You do not need to follow the quota increase steps.
+> CSP and Enterprise agreement subscriptions have sufficient quota limits.
+
+The new Azure subscriptions will have an imposed quota of how many instances can be running simultaneously.  
+We need to request a quota increase for each subscription by following the process below:
+
+Step 1
+
+Go to the [Azure Portal](https://portal.azure.com) and open the **Subscriptions** pane.
+
+Step 2
+
+Locate the `Usage + quotas` pane and click on it
+
+![subscriptions-quota](assets/adp-reqs-subscription-quota-1.png)
+
+
+Step 3
+
+Click on the `Request Quota Increase` button and choose the following options:
+
+- What is your issue related to? - `Azure Services`
+- Summary - `Quota increase`
+- Issue type - `Service and subscription limits (quotas)`
+- Subscription - One of the ADP subscriptions
+- Quota type: `Compute-VM (cores-vCPUs) subscription limit increases`
+
+Click Next to proceed
+
+Step 4
+
+Click on **Enter details** to provide details for the request.
+
+A new pane with the title `Quota details` will pop up.
+
+Select the locations (regions) you are requesting the quota increase. This is the region where your platform will be deployed.
+
+Step 5
+
+Populate the the new limit fields and submit the form.
+
+![](assets/adp-reqs-subscription-quota-2.png)
+
+It will take around 30 minutes or more for Microsoft to approve the quota increase.
 
 ---
 
