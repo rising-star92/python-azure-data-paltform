@@ -7,7 +7,6 @@
   - [2.1 Create Azure Subscriptions](#21-create-azure-subscriptions)
   - [2.2 Quota Increase](#22-quota-increase)
   - [2.3 Resource Providers](#23-resource-providers)
-- [!Network Delegation Provider](#)
 - [3. Azure Service Principals](#3-azure-service-principals)
   - [3.1 Create Azure Service Principal](#31-create-azure-service-principal)
     - [Step 1 - Log in to the Azure CLI](#step-1---log-in-to-the-azure-cli)
@@ -118,7 +117,8 @@ We need to enable the **Microsoft.DelegatedNetwork** provider for each subscript
 
 Click on **Subscriptions** -> **subscription name** -> **Resource providers** -> Search for **Microsoft.DelegatedNetwork** -> **Select** and click **Register**.
 
-![Network Delegation Provider](assets/adp-reqs-subscription-res-provider.png)
+![resource-providers](assets/adp-reqs-subscription-res-provider.png)
+
 ---
 
 ## 3. Azure Service Principals
