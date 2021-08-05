@@ -6,6 +6,8 @@
 - [2. Azure Subscriptions](#2-azure-subscriptions)
   - [2.1 Create Azure Subscriptions](#21-create-azure-subscriptions)
   - [2.2 Quota Increase](#22-quota-increase)
+  - [2.3 Resource Providers](#23-resource-providers)
+- [!Network Delegation Provider](#)
 - [3. Azure Service Principals](#3-azure-service-principals)
   - [3.1 Create Azure Service Principal](#31-create-azure-service-principal)
     - [Step 1 - Log in to the Azure CLI](#step-1---log-in-to-the-azure-cli)
@@ -106,10 +108,17 @@ Step 5
 
 Populate the the new limit fields and submit the form.
 
-![](assets/adp-reqs-subscription-quota-2.png)
+![subscriptions-quota-2](assets/adp-reqs-subscription-quota-2.png)
 
 It will take around 30 minutes or more for Microsoft to approve the quota increase.
 
+### 2.3 Resource Providers
+
+We need to enable the **Microsoft.DelegatedNetwork** provider for each subscription.
+
+Click on **Subscriptions** -> **subscription name** -> **Resource providers** -> Search for **Microsoft.DelegatedNetwork** -> **Select** and click **Register**.
+
+![Network Delegation Provider](assets/adp-reqs-subscription-res-provider.png)
 ---
 
 ## 3. Azure Service Principals
