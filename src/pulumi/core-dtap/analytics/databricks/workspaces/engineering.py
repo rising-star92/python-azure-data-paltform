@@ -107,18 +107,29 @@ secret_scope = databricks.SecretScope(
     opts=ResourceOptions(provider=databricks_provider))
 
 # DBT TOKEN
+dbt_token_name = f"{workspace_short_name}-token-for-dbt"
+dbt_token_resource_name = f"{workspace_name}-token-for-dbt"
+
 dbt_token = databricks.Token(
-    resource_name=f"{workspace_name}-token-for-dbt",
+    resource_name=dbt_token_resource_name,
     comment="Data Build Tool Token - Used for DBT automation",
     opts=ResourceOptions(provider=databricks_provider))
 
+dbt_token_as_scope_secret = databricks.Secret(
+    resource_name=dbt_token_resource_name,
+    scope=secret_scope.id,
+    string_value=dbt_token.token_value,
+    key=dbt_token_name,
+    opts=ResourceOptions(provider=databricks_provider)
+)
+
 dbt_token_as_key_vault_secret = azure_native.keyvault.Secret(
-    resource_name=f"{workspace_name}-token-for-dbt",
+    resource_name=dbt_token_resource_name,
     properties=azure_native.keyvault.SecretPropertiesArgs(
         value=dbt_token.token_value,
     ),
     resource_group_name=resource_groups.security.name,
-    secret_name=f'{workspace_name}-token-for-dbt',
+    secret_name=dbt_token_name,
     vault_name=credentials_store.key_vault.name
 )
 
@@ -208,7 +219,8 @@ except:
 clusters = {}
 for ref_key in cluster_definitions:
     cluster_config = cluster_definitions[ref_key]
-    cluster_resource_name = p.generate_name("databricks_cluster", f'{workspace_short_name}-{ref_key}')
+    cluster_resource_name = p.generate_name(
+        "databricks_cluster", f'{workspace_short_name}-{ref_key}')
 
     # Cluster Libraries
     cluster_libraries = []
