@@ -110,13 +110,13 @@ The cost covers all four environments (Dev, Test, Prod, Shared) and its added on
 
 #### Bandwidth
 
-| Item                            | Cost      |
-| ------------------------------- | --------- |
-| 200GB Ingress (via NAT Gateway) | $10.00    |
-| 10GB Internet Egress            | $0.40     |
-| 200GB Privatelink Inbound Data  | $2.00     |
-| 200GB Privatelink Outbound Data | $2.00     |
-| **Bandwidth Cost Total**        | **$14.4** |
+| Item                            | Cost (per month) |
+| ------------------------------- | ---------------- |
+| 200GB Ingress (via NAT Gateway) | $10.00           |
+| 10GB Internet Egress            | $0.40            |
+| 200GB Privatelink Inbound Data  | $2.00            |
+| 200GB Privatelink Outbound Data | $2.00            |
+| **Bandwidth Cost Total**        | **$14.4**        |
 
 #### Total
 
