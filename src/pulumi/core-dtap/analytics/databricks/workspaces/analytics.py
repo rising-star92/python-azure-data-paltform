@@ -12,7 +12,9 @@ from network import vnet
 # ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS DATABRICKS WORKSPACE
 # ----------------------------------------------------------------------------------------------------------------------
-workspace_config = p.config_object["analytics_services"]["databricks"]["workspaces"]["analytics"]
+workspace_config = p.config_object["analytics_services"]["databricks"]["workspaces"][
+    "analytics"
+]
 workspace_short_name = "analytics"
 workspace_name = p.generate_name("databricks_workspace", workspace_short_name)
 workspace_managed_resource_group_name = f"/subscriptions/{azure_client.subscription_id}/resourceGroups/{p.generate_name('resource_group', f'dbw-{workspace_short_name}')}"
@@ -33,7 +35,8 @@ workspace = azure_native.databricks.Workspace(
             value=vnet.vnet.id,
         ),
         enable_no_public_ip=azure_native.databricks.WorkspaceCustomBooleanParameterArgs(
-            value=True),
+            value=True
+        ),
     ),
     sku=azure_native.databricks.SkuArgs(name="Premium"),
     resource_group_name=resource_groups.infra.name,
@@ -56,15 +59,17 @@ for assignment in iam_role_assignments:
         azure_native.authorization.RoleAssignment(
             # Hash the resource_name to guarantee uniqueness
             resource_name=p.generate_hash(
-                assignment["user_group_ref_key"], assignment["role_definition_name"], workspace_name),
-            principal_id=user_groups[assignment["user_group_ref_key"]].get(
-                "object_id"),
+                assignment["user_group_ref_key"],
+                assignment["role_definition_name"],
+                workspace_name,
+            ),
+            principal_id=user_groups[assignment["user_group_ref_key"]].get("object_id"),
             principal_type="Group",
             role_definition_id=p.azure_iam_role_definitions[
                 assignment["role_definition_name"]
             ],
             scope=workspace.id,
-            opts=ResourceOptions(delete_before_replace=True)
+            opts=ResourceOptions(delete_before_replace=True),
         )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -75,11 +80,11 @@ databricks_provider = DatabricksProvider(
     args=DatabricksProviderArgs(
         azure_client_id=os.getenv("ARM_CLIENT_ID") or azure_client.client_id,
         azure_client_secret=os.getenv("ARM_CLIENT_SECRET"),
-        azure_subscription_id=os.getenv(
-            "ARM_SUBSCRIPTION_ID") or azure_client.subscription_id,
+        azure_subscription_id=os.getenv("ARM_SUBSCRIPTION_ID")
+        or azure_client.subscription_id,
         azure_tenant_id=os.getenv("ARM_TENANT_ID") or azure_client.tenant_id,
-        azure_workspace_resource_id=workspace.id
-    )
+        azure_workspace_resource_id=workspace.id,
+    ),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -88,10 +93,12 @@ databricks_provider = DatabricksProvider(
 databricks.WorkspaceConf(
     resource_name=workspace_name,
     custom_config={
-        "enableDcs": workspace_config["config"].get("enable_container_services") or "false",
-        "enableIpAccessLists": workspace_config["config"].get("enable_ip_access_lists") or "false"
+        "enableDcs": workspace_config["config"].get("enable_container_services")
+        or "false",
+        "enableIpAccessLists": workspace_config["config"].get("enable_ip_access_lists")
+        or "false",
     },
-    opts=ResourceOptions(provider=databricks_provider)
+    opts=ResourceOptions(provider=databricks_provider),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -105,10 +112,10 @@ except:
     cluster_definitions = {}
 
 clusters = {}
-for ref_key in cluster_definitions:
-    cluster_config = cluster_definitions[ref_key]
+for ref_key, cluster_config in cluster_definitions.items():
     cluster_resource_name = p.generate_name(
-        "databricks_cluster", f'{workspace_short_name}-{ref_key}')
+        "databricks_cluster", f"{workspace_short_name}-{ref_key}"
+    )
 
     # Cluster Libraries
     cluster_libraries = []
@@ -117,91 +124,81 @@ for ref_key in cluster_definitions:
         for lib in cluster_config["libraries"]["pypi"]:
             cluster_libraries.append(
                 databricks.ClusterLibraryArgs(
-                    pypi=databricks.ClusterLibraryPypiArgs(
-                        package=lib["package"])
+                    pypi=databricks.ClusterLibraryPypiArgs(package=lib["package"])
                 )
             )
-    except:
+    except KeyError:
         pass
+
+    base_cluster_configuration = {
+        "resource_name": cluster_resource_name,
+        "cluster_name": cluster_config["display_name"],
+        "spark_version": cluster_config["spark_version"],
+        "node_type_id": cluster_config["node_type_id"],
+        "autotermination_minutes": cluster_config["autotermination_minutes"],
+        "libraries": cluster_libraries or None,
+        "spark_env_vars": {
+            "PYSPARK_PYTHON": "/databricks/python3/bin/python3",
+            "DATABRICKS_WORKSPACE_HOSTNAME": workspace.workspace_url,
+            "DATABRICKS_CLUSTER_NAME": cluster_config["display_name"],
+            **cluster_config.get("spark_env_vars", {}),
+        },
+        "opts": ResourceOptions(provider=databricks_provider),
+    }
+    if cluster_config.get("docker_image_url"):
+        base_cluster_configuration["docker_image"] = databricks.ClusterDockerImageArgs(
+            url=cluster_config["docker_image_url"]
+        )
 
     # Single Node Cluster Type
     if cluster_config["type"] == "single_node":
         clusters[ref_key] = databricks.Cluster(
-            resource_name=cluster_resource_name,
-            cluster_name=cluster_config["display_name"],
-
-            spark_version=cluster_config["spark_version"],
-
-            node_type_id=cluster_config["node_type_id"],
-
-            autotermination_minutes=cluster_config["autotermination_minutes"],
-
-            docker_image=databricks.ClusterDockerImageArgs(
-                url=cluster_config["docker_image_url"]
-            ) if cluster_config.get("docker_image_url") else None,
-
-            libraries=cluster_libraries or None,
-
-            spark_env_vars={
-                "PYSPARK_PYTHON": "/databricks/python3/bin/python3"
-            } | (cluster_config.get("spark_env_vars") or {}),
-
+            **base_cluster_configuration,
             spark_conf={
                 "spark.databricks.cluster.profile": "singleNode",
                 "spark.master": "local[*]",
-                "spark.databricks.delta.preview.enabled": "true"
-            } | (cluster_config.get("spark_conf") or {}),
-
-            custom_tags={
-                "ResourceClass": "SingleNode"
-            } | p.tags,
-
-            opts=ResourceOptions(provider=databricks_provider)
+                "spark.databricks.delta.preview.enabled": "true",
+                **cluster_config.get("spark_conf", {}),
+            },
+            custom_tags={"ResourceClass": "SingleNode", **p.tags},
         )
     # High Concurrency Cluster Type
     elif cluster_config["type"] == "high_concurrency":
         clusters[ref_key] = databricks.Cluster(
-            resource_name=cluster_resource_name,
-            cluster_name=cluster_config["display_name"],
-
-            spark_version=cluster_config["spark_version"],
-
-            node_type_id=cluster_config["node_type_id"],
-
-            autotermination_minutes=cluster_config["autotermination_minutes"],
-
-            docker_image=databricks.ClusterDockerImageArgs(
-                url=cluster_config["docker_image_url"]
-            ) if cluster_config.get("docker_image_url") else None,
-
+            **base_cluster_configuration,
             autoscale=databricks.ClusterAutoscaleArgs(
                 min_workers=cluster_config["auto_scale_min_workers"],
-                max_workers=cluster_config["auto_scale_max_workers"]
+                max_workers=cluster_config["auto_scale_max_workers"],
             ),
-
             azure_attributes=databricks.ClusterAzureAttributesArgs(
                 availability="SPOT_WITH_FALLBACK_AZURE",
                 first_on_demand=1,
-                spot_bid_max_price=100
+                spot_bid_max_price=100,
             ),
-
-            libraries=cluster_libraries or None,
-
-            spark_env_vars={
-                "PYSPARK_PYTHON": "/databricks/python3/bin/python3"
-            } | (cluster_config.get("spark_env_vars") or {}),
-
             spark_conf={
                 "spark.databricks.cluster.profile": "serverless",
                 "spark.databricks.repl.allowedLanguages": "python,sql",
                 "spark.databricks.passthrough.enabled": "true",
                 "spark.databricks.pyspark.enableProcessIsolation": "true",
-                "spark.databricks.delta.preview.enabled": "true"
-            } | (cluster_config.get("spark_conf") or {}),
-
-            custom_tags={
-                "ResourceClass": "Serverless"
-            } | p.tags,
-
-            opts=ResourceOptions(provider=databricks_provider)
+                "spark.databricks.delta.preview.enabled": "true",
+                **cluster_config.get("spark_conf", {}),
+            },
+            custom_tags={"ResourceClass": "Serverless", **p.tags},
         )
+
+# ----------------------------------------------------------------------------------------------------------------------
+# ANALYTICS DATABRICKS WORKSPACE -> CLUSTERS -> PERMISSIONS
+# ----------------------------------------------------------------------------------------------------------------------
+
+# Allow all users to be able to attach to the clusters
+for ref_key, cluster_config in clusters.items():
+    databricks.Permissions(
+        resource_name=p.generate_hash(workspace_short_name, ref_key, "users"),
+        cluster_id=clusters[ref_key].cluster_id,
+        access_controls=[
+            databricks.PermissionsAccessControlArgs(
+                permission_level="CAN_ATTACH_TO", group_name="users"
+            )
+        ],
+        opts=ResourceOptions(provider=databricks_provider),
+    )

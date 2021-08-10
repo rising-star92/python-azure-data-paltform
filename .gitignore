@@ -144,6 +144,9 @@ _generated*
 # JetBrains IDE
 .idea
 
+# VSCode
+.vscode
+
 # Various
 *.temp
 *.env

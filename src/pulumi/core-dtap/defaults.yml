@@ -2,9 +2,9 @@
 # GENERAL
 # ----------------------------------------------------------------------------------------------------------------------
 general:
-  prefix: adp
+  prefix: ii
   region: EastUS
-  unique_id: iii
+  unique_id: i13
   tags:
     IngeniiApplication: Azure Data Platform
     IngeniiApplicationVersion: 0.1.0
@@ -112,6 +112,7 @@ analytics_services:
             spark_version: "8.4.x-scala2.12"
             node_type_id: "Standard_F4s"
             autotermination_minutes: 15
+            docker_image_url: "ingeniisolutions/databricks-runtime:0.3.1"
         storage_mounts:
           - type: datalake
             container_name: utilities
