@@ -13,7 +13,11 @@
   - [Code Structure](#code-structure)
   - [IaC Design](#iac-design)
 - [Costs](#costs)
-  - [Network](#network)
+  - [Small to Medium Sized Infrastructure Example](#small-to-medium-sized-infrastructure-example)
+    - [Compute Resources](#compute-resources)
+    - [Storage Resources](#storage-resources)
+    - [Bandwidth](#bandwidth)
+    - [Total](#total)
 
 ## Overview
 
@@ -81,9 +85,39 @@ TODO
 
 ## Costs
 
-TODO
+> All platform deployments incur a cost of **~$245.00** per month. This includes NAT Gateways, Private Endpoints, Key Vaults etc.
+The cost covers all four environments (Dev, Test, Prod, Shared) and its added on top of the Compute, Storage and Bandwidth costs.
 
-### Network
+### Small to Medium Sized Infrastructure Example
 
-- [Azure Bandwidth Pricing](https://azure.microsoft.com/en-us/pricing/details/bandwidth/)
-- [Azure Virtual Network Pricing](https://azure.microsoft.com/en-gb/pricing/details/virtual-network/)
+#### Compute Resources
+
+| Item                                                                                                  | Cost (per month) |
+| ----------------------------------------------------------------------------------------------------- | ---------------- |
+| 1x DS3 v2 (4vCPU, 14GB RAM) Driver Node (Incl. Databricks license) **5 hours per day, 5 days a week** | $70.55           |
+| 3x DS3 v2 (4vCPU, 14GB RAM) Worker Node (Incl. Databricks license) **5 hours per day, 5 days a week** | $211.65          |
+| **Total Compute**                                                                                     | **$282.20**      |
+
+
+#### Storage Resources
+
+| Item                                                       | Cost (per month) |
+| ---------------------------------------------------------- | ---------------- |
+| 500GB Data Lake Storage Gen2 (RA-GRS, Hot, Gen Purpose v2) | $29.45           |
+| 10GB Meta-Data Storage                                     | $0.84            |
+| Read/Write/Other Operations                                | $15.06           |
+| **Storage Cost Total**                                     | **$45.35**       |
+
+#### Bandwidth
+
+| Item                            | Cost      |
+| ------------------------------- | --------- |
+| 200GB Ingress (via NAT Gateway) | $10.00    |
+| 10GB Internet Egress            | $0.40     |
+| 200GB Privatelink Inbound Data  | $2.00     |
+| 200GB Privatelink Outbound Data | $2.00     |
+| **Bandwidth Cost Total**        | **$14.4** |
+
+#### Total
+
+$245.00 (Infrastructure) + $282.20 (Compute) + $45.35 (Storage) + $14.4 (Bandwidth) = **$586.95** per month
