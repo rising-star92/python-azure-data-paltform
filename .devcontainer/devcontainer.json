@@ -1,0 +1,68 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.191.0/containers/python-3
+{
+  "name": "Ingenii Azure Data Platform",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "VARIANT": "3.9",
+      "PULUMI_VERSION": "3.9.1"
+    }
+  },
+
+  // Set *default* container specific settings.json values on container create.
+  "settings": {
+    "python.pythonPath": "/usr/local/bin/python",
+    "python.languageServer": "Pylance",
+    "python.formatting.provider": "black",
+    "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
+    "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+    "python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
+    "python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
+    "python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
+    "python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
+    "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
+    "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.completeFunctionParens": true,
+    "python.autoComplete.showAdvancedMembers": true,
+    "python.terminal.activateEnvInCurrentTerminal": true
+  },
+
+  // Add the IDs of extensions you want installed when the container is created.
+  "extensions": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "coenraads.bracket-pair-colorizer-2",
+    "christian-kohler.path-intellisense",
+    "emeraldwalk.runonsave",
+    "gruntfuggly.todo-tree",
+    "oderwat.indent-rainbow",
+    "redhat.vscode-yaml",
+    "geeebe.duplicate",
+    "eamodio.gitlens",
+    "codezombiech.gitignore",
+    "donjayamanne.githistory",
+    "mhutchie.git-graph",
+    "esbenp.prettier-vscode",
+    "netcorext.uuid-generator",
+    "hitode909.zentabs",
+    "visualstudioexptteam.vscodeintellicode",
+    "redvanworkshop.explorer-exclude-vscode-extension",
+    "streetsidesoftware.code-spell-checker"
+  ],
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  // "forwardPorts": [],
+
+  // Use 'postCreateCommand' to run commands after the container is created.
+  // Install the platform requirements.
+  // "postCreateCommand": "pip3 install --user -r ./src/pulumi/requirements.txt",
+
+  // Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+  "remoteUser": "vscode"
+}
