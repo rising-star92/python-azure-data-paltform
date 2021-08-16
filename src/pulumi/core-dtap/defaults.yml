@@ -154,6 +154,10 @@ analytics_services:
             auto_scale_min_workers: 1
             auto_scale_max_workers: 4
             autotermination_minutes: 15
+        storage_mounts:
+          - type: datalake
+            container_name: utilities
+            mount_name: utilities
   datafactory:
     factories:
       orchestration:
