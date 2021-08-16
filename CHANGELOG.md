@@ -2,6 +2,7 @@
 
 IMPROVEMENT:  
 - **Databricks:** - Mounting the 'utilities' container in the Analytics workspace
+- **Development:** - Improving the .devcontainer experience
 
 ## 0.1.4
 
