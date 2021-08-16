@@ -1,3 +1,8 @@
+## 0.1.5
+
+IMPROVEMENT:
+- **Databricks:** - Mounting the 'utilities' container in the Analytics workspace
+
 ## 0.1.4
 
 IMPROVEMENT:
