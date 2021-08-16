@@ -7,7 +7,7 @@
     "context": "..",
     "args": {
       "VARIANT": "3.9",
-      "PULUMI_VERSION": "3.9.1"
+      "PULUMI_VERSION": "3.10.1"
     }
   },
 
@@ -39,7 +39,6 @@
     "ms-python.vscode-pylance",
     "coenraads.bracket-pair-colorizer-2",
     "christian-kohler.path-intellisense",
-    "emeraldwalk.runonsave",
     "gruntfuggly.todo-tree",
     "oderwat.indent-rainbow",
     "redhat.vscode-yaml",
@@ -48,10 +47,6 @@
     "codezombiech.gitignore",
     "donjayamanne.githistory",
     "mhutchie.git-graph",
-    "esbenp.prettier-vscode",
-    "netcorext.uuid-generator",
-    "hitode909.zentabs",
-    "visualstudioexptteam.vscodeintellicode",
     "redvanworkshop.explorer-exclude-vscode-extension",
     "streetsidesoftware.code-spell-checker"
   ],
