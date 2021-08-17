@@ -151,73 +151,6 @@ datafactory_token = databricks.Token(
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
-# ENGINEERING DATABRICKS WORKSPACE -> STORAGE MOUNTS
-# ----------------------------------------------------------------------------------------------------------------------
-
-# AZURE AD SERVICE PRINCIPAL USED FOR STORAGE MOUNTING
-storage_mounts_sp_name = p.generate_name("service_principal", "dbw-eng-mounts")
-storage_mounts_sp_app = azuread.Application(
-    resource_name=storage_mounts_sp_name,
-    display_name=storage_mounts_sp_name,
-    identifier_uris=[f"api://{storage_mounts_sp_name}"],
-    owners=[azure_client.object_id],
-)
-
-storage_mounts_sp = azuread.ServicePrincipal(
-    resource_name=storage_mounts_sp_name,
-    application_id=storage_mounts_sp_app.application_id,
-    app_role_assignment_required=False,
-)
-
-storage_mounts_sp_password = azuread.ServicePrincipalPassword(
-    resource_name=storage_mounts_sp_name,
-    service_principal_id=storage_mounts_sp.object_id,
-)
-
-storage_mounts_dbw_password = databricks.Secret(
-    resource_name=storage_mounts_sp_name,
-    scope=secret_scope.id,
-    string_value=storage_mounts_sp_password.value,
-    key=storage_mounts_sp_name,
-    opts=ResourceOptions(provider=databricks_provider),
-)
-
-# ----------------------------------------------------------------------------------------------------------------------
-# ENGINEERING DATABRICKS WORKSPACE -> STORAGE MOUNTS -> ADLS GEN 2
-# ----------------------------------------------------------------------------------------------------------------------
-
-# IAM ROLE ASSIGNMENT
-# Allow the Storage Mounts service principal to access the Datalake.
-storage_mounts_datalake_role_assignment = azure_native.authorization.RoleAssignment(
-    resource_name=p.generate_hash(storage_mounts_sp_name),
-    principal_id=storage_mounts_sp.object_id,
-    principal_type="ServicePrincipal",
-    role_definition_id=p.azure_iam_role_definitions["Storage Blob Data Contributor"],
-    scope=datalake.id,
-)
-
-# CONTAINER MOUNTS
-# If no storage mounts are defined in the YAML files, we'll not attempt to create any.
-try:
-    storage_mount_definitions = workspace_config["storage_mounts"]
-except:
-    storage_mount_definitions = []
-
-for definition in storage_mount_definitions:
-    resource = databricks.AzureAdlsGen2Mount(
-        resource_name=f'{workspace_name}-{definition["mount_name"]}',
-        client_id=storage_mounts_sp.application_id,
-        client_secret_key=storage_mounts_dbw_password.key,
-        tenant_id=azure_client.tenant_id,
-        client_secret_scope=secret_scope.name,
-        storage_account_name=datalake.name,
-        initialize_file_system=False,
-        container_name=definition["container_name"],
-        mount_name=definition["mount_name"],
-        opts=ResourceOptions(provider=databricks_provider),
-    )
-
-# ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> CLUSTERS
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -321,4 +254,75 @@ for ref_key, cluster_config in clusters.items():
             )
         ],
         opts=ResourceOptions(provider=databricks_provider),
+    )
+
+# ----------------------------------------------------------------------------------------------------------------------
+# ENGINEERING DATABRICKS WORKSPACE -> STORAGE MOUNTS
+# ----------------------------------------------------------------------------------------------------------------------
+
+# AZURE AD SERVICE PRINCIPAL USED FOR STORAGE MOUNTING
+storage_mounts_sp_name = p.generate_name("service_principal", "dbw-eng-mounts")
+storage_mounts_sp_app = azuread.Application(
+    resource_name=storage_mounts_sp_name,
+    display_name=storage_mounts_sp_name,
+    identifier_uris=[f"api://{storage_mounts_sp_name}"],
+    owners=[azure_client.object_id],
+)
+
+storage_mounts_sp = azuread.ServicePrincipal(
+    resource_name=storage_mounts_sp_name,
+    application_id=storage_mounts_sp_app.application_id,
+    app_role_assignment_required=False,
+)
+
+storage_mounts_sp_password = azuread.ServicePrincipalPassword(
+    resource_name=storage_mounts_sp_name,
+    service_principal_id=storage_mounts_sp.object_id,
+)
+
+storage_mounts_dbw_password = databricks.Secret(
+    resource_name=storage_mounts_sp_name,
+    scope=secret_scope.id,
+    string_value=storage_mounts_sp_password.value,
+    key=storage_mounts_sp_name,
+    opts=ResourceOptions(provider=databricks_provider),
+)
+
+# ----------------------------------------------------------------------------------------------------------------------
+# ENGINEERING DATABRICKS WORKSPACE -> STORAGE MOUNTS -> ADLS GEN 2
+# ----------------------------------------------------------------------------------------------------------------------
+
+# IAM ROLE ASSIGNMENT
+# Allow the Storage Mounts service principal to access the Datalake.
+storage_mounts_datalake_role_assignment = azure_native.authorization.RoleAssignment(
+    resource_name=p.generate_hash(storage_mounts_sp_name),
+    principal_id=storage_mounts_sp.object_id,
+    principal_type="ServicePrincipal",
+    role_definition_id=p.azure_iam_role_definitions["Storage Blob Data Contributor"],
+    scope=datalake.id,
+)
+
+# CONTAINER MOUNTS
+# If no storage mounts are defined in the YAML files, we'll not attempt to create any.
+try:
+    storage_mount_definitions = workspace_config["storage_mounts"]
+except:
+    storage_mount_definitions = []
+
+for definition in storage_mount_definitions:
+    resource = databricks.AzureAdlsGen2Mount(
+        resource_name=f'{workspace_name}-{definition["mount_name"]}',
+        client_id=storage_mounts_sp.application_id,
+        client_secret_key=storage_mounts_dbw_password.key,
+        tenant_id=azure_client.tenant_id,
+        client_secret_scope=secret_scope.name,
+        storage_account_name=datalake.name,
+        initialize_file_system=False,
+        container_name=definition["container_name"],
+        mount_name=definition["mount_name"],
+        cluster_id=clusters["default"].id,
+        opts=ResourceOptions(
+            provider=databricks_provider,
+            delete_before_replace=True,
+            ),
     )
