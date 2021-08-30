@@ -1,13 +1,12 @@
-import pulumi
 import pulumi_azure_native as azure_native
 
 from ingenii_azure_data_platform.iam import ServicePrincipalRoleAssignment
-from ingenii_azure_data_platform.utils import generate_resource_name, generate_hash
+from ingenii_azure_data_platform.utils import generate_resource_name
 
 from config import platform_config
 from management import resource_groups
-from management.user_groups import user_groups
-from storage.datalake import datalake, datalake_name
+from storage.datalake import datalake
+from security import credentials_store
 from analytics.databricks.workspaces import engineering as databricks_engineering
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -56,6 +55,26 @@ datalake_linked_service = azure_native.datafactory.LinkedService(
     ),
     resource_group_name=resource_groups.infra.name,
 )
+
+# CREDENTIALS STORE
+# Datafactory Access to Credentials Store (Key Vault)
+datafactory_acccess_to_credentials_store = ServicePrincipalRoleAssignment(
+    role_name="Key Vault Secrets Reader",
+    service_principal_object_id=datafactory.identity.principal_id,
+    scope=credentials_store.key_vault.id,
+)
+
+credentials_store_linked_service = azure_native.datafactory.LinkedService(
+    resource_name=f"{datafactory_name}-link-to-credentials-store",
+    factory_name=datafactory.name,
+    linked_service_name="Credentials Store",
+    properties=azure_native.datafactory.AzureKeyVaultLinkedServiceArgs(
+        base_url=f"https://{credentials_store.key_vault_name}.vault.azure.net",
+        description="Managed by Ingenii Data Platform",
+        type="AzureKeyVault",
+    ),
+    resource_group_name=resource_groups.infra.name,
+)  # type: ignore
 
 # DATABRICKS ENGINEERING - DELTA LAKE
 databricks_engineering_delta_linked_service = azure_native.datafactory.LinkedService(
