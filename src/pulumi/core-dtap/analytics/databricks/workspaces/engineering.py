@@ -1,31 +1,50 @@
 import os
+import pulumi
 import pulumi_azure_native as azure_native
 import pulumi_azuread as azuread
-from pulumi import ResourceOptions
+
 from pulumi_databricks import Provider as DatabricksProvider
 from pulumi_databricks import ProviderArgs as DatabricksProviderArgs
 from pulumi_databricks import databricks
-from config import platform as p
-from config import azure_client
-from management import resource_groups, user_groups
-from network import vnet
+
+from ingenii_azure_data_platform.iam import (
+    GroupRoleAssignment,
+    ServicePrincipalRoleAssignment,
+)
+from ingenii_azure_data_platform.utils import generate_hash, generate_resource_name
+
+from config import platform_config, azure_client
+from management import resource_groups
+from management.user_groups import user_groups
 from security import credentials_store
+from network import vnet
 from storage.datalake import datalake
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE
 # ----------------------------------------------------------------------------------------------------------------------
-workspace_config = p.config_object["analytics_services"]["databricks"]["workspaces"][
-    "engineering"
-]
+workspace_config = platform_config.yml_config["analytics_services"]["databricks"][
+    "workspaces"
+]["engineering"]
 workspace_short_name = "engineering"
-workspace_name = p.generate_name("databricks_workspace", workspace_short_name)
-workspace_managed_resource_group_name = f"/subscriptions/{azure_client.subscription_id}/resourceGroups/{p.generate_name('resource_group', f'dbw-{workspace_short_name}')}"
+workspace_name = generate_resource_name(
+    resource_type="databricks_workspace",
+    resource_name=workspace_short_name,
+    platform_config=platform_config,
+)
+
+workspace_managed_resource_group_short_name = generate_resource_name(
+    resource_type="resource_group",
+    resource_name=f"dbw-{workspace_short_name}",
+    platform_config=platform_config,
+)
+
+workspace_managed_resource_group_name = f"/subscriptions/{azure_client.subscription_id}/resourceGroups/{workspace_managed_resource_group_short_name}"
 
 workspace = azure_native.databricks.Workspace(
     resource_name=workspace_name,
     workspace_name=workspace_name,
-    location=p.region_long_name,
+    location=platform_config.region.long_name,
     managed_resource_group_id=workspace_managed_resource_group_name,
     parameters=azure_native.databricks.WorkspaceCustomParametersArgs(
         custom_private_subnet_name=azure_native.databricks.WorkspaceCustomStringParameterArgs(
@@ -59,20 +78,10 @@ for assignment in iam_role_assignments:
     # User Group Assignment
     user_group_ref_key = assignment.get("user_group_ref_key")
     if user_group_ref_key is not None:
-        azure_native.authorization.RoleAssignment(
-            # Hash the resource_name to guarantee uniqueness
-            resource_name=p.generate_hash(
-                assignment["user_group_ref_key"],
-                assignment["role_definition_name"],
-                workspace_name,
-            ),
-            principal_id=user_groups[assignment["user_group_ref_key"]].get("object_id"),
-            principal_type="Group",
-            role_definition_id=p.azure_iam_role_definitions[
-                assignment["role_definition_name"]
-            ],
+        GroupRoleAssignment(
+            role_name=assignment["role_definition_name"],
+            group_object_id=user_groups[user_group_ref_key]["object_id"],
             scope=workspace.id,
-            opts=ResourceOptions(delete_before_replace=True),
         )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -101,7 +110,7 @@ databricks.WorkspaceConf(
         "enableIpAccessLists": workspace_config["config"].get("enable_ip_access_lists")
         or "false",
     },
-    opts=ResourceOptions(provider=databricks_provider),
+    opts=pulumi.ResourceOptions(provider=databricks_provider),
 )
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> SECRETS & TOKENS
@@ -112,7 +121,7 @@ secret_scope_name = "main"
 secret_scope = databricks.SecretScope(
     resource_name=f"{workspace_name}-secret-scope-main",
     name=secret_scope_name,
-    opts=ResourceOptions(provider=databricks_provider),
+    opts=pulumi.ResourceOptions(provider=databricks_provider),
 )
 
 # DBT TOKEN
@@ -122,7 +131,7 @@ dbt_token_resource_name = f"{workspace_name}-token-for-dbt"
 dbt_token = databricks.Token(
     resource_name=dbt_token_resource_name,
     comment="Data Build Tool Token - Used for DBT automation",
-    opts=ResourceOptions(provider=databricks_provider),
+    opts=pulumi.ResourceOptions(provider=databricks_provider),
 )
 
 dbt_token_as_scope_secret = databricks.Secret(
@@ -130,7 +139,7 @@ dbt_token_as_scope_secret = databricks.Secret(
     scope=secret_scope.id,
     string_value=dbt_token.token_value,
     key=dbt_token_name,
-    opts=ResourceOptions(provider=databricks_provider),
+    opts=pulumi.ResourceOptions(provider=databricks_provider),
 )
 
 dbt_token_as_key_vault_secret = azure_native.keyvault.Secret(
@@ -147,7 +156,7 @@ dbt_token_as_key_vault_secret = azure_native.keyvault.Secret(
 datafactory_token = databricks.Token(
     resource_name=f"{workspace_name}-token-for-datafactory",
     comment="Data Factory Token - Used for Data Factory integration",
-    opts=ResourceOptions(provider=databricks_provider),
+    opts=pulumi.ResourceOptions(provider=databricks_provider),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -162,8 +171,10 @@ except:
 
 clusters = {}
 for ref_key, cluster_config in cluster_definitions.items():
-    cluster_resource_name = p.generate_name(
-        "databricks_cluster", f"{workspace_short_name}-{ref_key}"
+    cluster_resource_name = generate_resource_name(
+        resource_type="databricks_cluster",
+        resource_name=f"{workspace_short_name}-{ref_key}",
+        platform_config=platform_config,
     )
 
     # Cluster Libraries
@@ -196,7 +207,7 @@ for ref_key, cluster_config in cluster_definitions.items():
             "DBT_LOGS_FOLDER": "/dbfs/mnt/dbt-logs",
             **cluster_config.get("spark_env_vars", {}),
         },
-        "opts": ResourceOptions(provider=databricks_provider),
+        "opts": pulumi.ResourceOptions(provider=databricks_provider),
     }
     if cluster_config.get("docker_image_url"):
         base_cluster_configuration["docker_image"] = databricks.ClusterDockerImageArgs(
@@ -213,7 +224,7 @@ for ref_key, cluster_config in cluster_definitions.items():
                 "spark.databricks.delta.preview.enabled": "true",
                 **cluster_config.get("spark_conf", {}),
             },
-            custom_tags={"ResourceClass": "SingleNode", **p.tags},
+            custom_tags={"ResourceClass": "SingleNode", **platform_config.tags},
         )
     # High Concurrency Cluster Type
     elif cluster_config["type"] == "high_concurrency":
@@ -236,7 +247,7 @@ for ref_key, cluster_config in cluster_definitions.items():
                 "spark.databricks.delta.preview.enabled": "true",
                 **cluster_config.get("spark_conf", {}),
             },
-            custom_tags={"ResourceClass": "Serverless", **p.tags},
+            custom_tags={"ResourceClass": "Serverless", **platform_config.tags},
         )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -246,14 +257,14 @@ for ref_key, cluster_config in cluster_definitions.items():
 # Allow all users to be able to attach to the clusters
 for ref_key, cluster_config in clusters.items():
     databricks.Permissions(
-        resource_name=p.generate_hash(workspace_short_name, ref_key, "users"),
+        resource_name=generate_hash(workspace_short_name, ref_key, "users"),
         cluster_id=clusters[ref_key].cluster_id,
         access_controls=[
             databricks.PermissionsAccessControlArgs(
                 permission_level="CAN_ATTACH_TO", group_name="users"
             )
         ],
-        opts=ResourceOptions(provider=databricks_provider),
+        opts=pulumi.ResourceOptions(provider=databricks_provider),
     )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -261,7 +272,11 @@ for ref_key, cluster_config in clusters.items():
 # ----------------------------------------------------------------------------------------------------------------------
 
 # AZURE AD SERVICE PRINCIPAL USED FOR STORAGE MOUNTING
-storage_mounts_sp_name = p.generate_name("service_principal", "dbw-eng-mounts")
+storage_mounts_sp_name = generate_resource_name(
+    resource_type="service_principal",
+    resource_name="dbw-eng-mounts",
+    platform_config=platform_config,
+)
 storage_mounts_sp_app = azuread.Application(
     resource_name=storage_mounts_sp_name,
     display_name=storage_mounts_sp_name,
@@ -285,7 +300,7 @@ storage_mounts_dbw_password = databricks.Secret(
     scope=secret_scope.id,
     string_value=storage_mounts_sp_password.value,
     key=storage_mounts_sp_name,
-    opts=ResourceOptions(provider=databricks_provider),
+    opts=pulumi.ResourceOptions(provider=databricks_provider),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -294,11 +309,9 @@ storage_mounts_dbw_password = databricks.Secret(
 
 # IAM ROLE ASSIGNMENT
 # Allow the Storage Mounts service principal to access the Datalake.
-storage_mounts_datalake_role_assignment = azure_native.authorization.RoleAssignment(
-    resource_name=p.generate_hash(storage_mounts_sp_name),
-    principal_id=storage_mounts_sp.object_id,
-    principal_type="ServicePrincipal",
-    role_definition_id=p.azure_iam_role_definitions["Storage Blob Data Contributor"],
+storage_mounts_datalake_role_assignment = ServicePrincipalRoleAssignment(
+    role_name="Storage Blob Data Contributor",
+    service_principal_object_id=storage_mounts_sp.object_id,
     scope=datalake.id,
 )
 
@@ -321,8 +334,8 @@ for definition in storage_mount_definitions:
         container_name=definition["container_name"],
         mount_name=definition["mount_name"],
         cluster_id=clusters["default"].id,
-        opts=ResourceOptions(
+        opts=pulumi.ResourceOptions(
             provider=databricks_provider,
             delete_before_replace=True,
-            ),
+        ),
     )

@@ -1,18 +1,19 @@
-import pulumi
-from pulumi.resource import ResourceOptions
 import pulumi_azure_native as azure_native
 
-from config import platform as p
-from config import helpers as h
+from ingenii_azure_data_platform.utils import generate_resource_name
+from ingenii_azure_data_platform.defaults import STORAGE_ACCOUNT_DEFAULT_FIREWALL
+from ingenii_azure_data_platform.iam import GroupRoleAssignment
 
-from management import resource_groups, user_groups
+from config import platform_config
+from management import resource_groups
+from management.user_groups import user_groups
 from network import vnet, dns
 
 # ----------------------------------------------------------------------------------------------------------------------
 # FIREWALL IP ACCESS LIST
 # This is the global firewall access list and applies to all resources such as key vaults, storage accounts etc.
 # ----------------------------------------------------------------------------------------------------------------------
-firewall = p.config_object["network"]["firewall"]
+firewall = platform_config.yml_config["network"]["firewall"]
 firewall_ip_access_list = []
 if firewall.get("ip_access_list") is not None:
     for ip_address in firewall.get("ip_access_list"):
@@ -21,8 +22,12 @@ if firewall.get("ip_access_list") is not None:
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA LAKE
 # ----------------------------------------------------------------------------------------------------------------------
-datalake_config = p.config_object["storage"]["datalake"]
-datalake_name = p.generate_name("storage_account", "datalake")
+datalake_config = platform_config.yml_config["storage"]["datalake"]
+datalake_name = generate_resource_name(
+    resource_type="storage_account",
+    resource_name="datalake",
+    platform_config=platform_config,
+)
 
 datalake = azure_native.storage.StorageAccount(
     resource_name=datalake_name,
@@ -33,8 +38,7 @@ datalake = azure_native.storage.StorageAccount(
             bypass="AzureServices",
             default_action="Deny",
             ip_rules=(
-                firewall_ip_access_list if len(
-                    firewall_ip_access_list) > 0 else None
+                firewall_ip_access_list if len(firewall_ip_access_list) > 0 else None
             ),
             virtual_network_rules=[
                 azure_native.keyvault.VirtualNetworkRuleArgs(
@@ -51,18 +55,18 @@ datalake = azure_native.storage.StorageAccount(
                 ),
             ],
         )
-        if False
-        else h.storage_default_network_acl
+        if datalake_config["network"]["firewall"]["enabled"] == True
+        else STORAGE_ACCOUNT_DEFAULT_FIREWALL
     ),
     is_hns_enabled=True,
     kind="StorageV2",
-    location=p.region_long_name,
+    location=platform_config.region.long_name,
     minimum_tls_version="TLS1_2",
     resource_group_name=resource_groups.data.name,
     sku=azure_native.storage.SkuArgs(
         name="Standard_GRS",
     ),
-    tags=p.tags
+    tags=platform_config.tags,
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -70,11 +74,14 @@ datalake = azure_native.storage.StorageAccount(
 # ----------------------------------------------------------------------------------------------------------------------
 
 # BLOB PRIVATE ENDPOINT
-blob_private_endpoint_name = p.generate_name(
-    "private_endpoint", "for-datalake-blob")
+blob_private_endpoint_name = generate_resource_name(
+    resource_type="private_endpoint",
+    resource_name="for-datalake-blob",
+    platform_config=platform_config,
+)
 blob_private_endpoint = azure_native.network.PrivateEndpoint(
     resource_name=blob_private_endpoint_name,
-    location=p.region_long_name,
+    location=platform_config.region.long_name,
     private_endpoint_name=blob_private_endpoint_name,
     private_link_service_connections=[
         azure_native.network.PrivateLinkServiceConnectionArgs(
@@ -104,12 +111,15 @@ blob_private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
 )
 
 # DFS PRIVATE ENDPOINT
-dfs_private_endpoint_name = p.generate_name(
-    "private_endpoint", "for-datalake-dfs")
+dfs_private_endpoint_name = generate_resource_name(
+    resource_type="private_endpoint",
+    resource_name="for-datalake-dfs",
+    platform_config=platform_config,
+)
 
 dfs_private_endpoint = azure_native.network.PrivateEndpoint(
     resource_name=dfs_private_endpoint_name,
-    location=p.region_long_name,
+    location=platform_config.region.long_name,
     private_endpoint_name=dfs_private_endpoint_name,
     private_link_service_connections=[
         azure_native.network.PrivateLinkServiceConnectionArgs(
@@ -152,18 +162,10 @@ for assignment in iam_role_assignments:
     # User Group Assignment
     user_group_ref_key = assignment.get("user_group_ref_key")
     if user_group_ref_key is not None:
-        azure_native.authorization.RoleAssignment(
-            # Hash the resource_name to guarantee uniqueness
-            resource_name=p.generate_hash(
-                assignment["user_group_ref_key"], assignment["role_definition_name"], datalake_name),
-            principal_id=user_groups[assignment["user_group_ref_key"]].get(
-                "object_id"),
-            principal_type="Group",
-            role_definition_id=p.azure_iam_role_definitions[
-                assignment["role_definition_name"]
-            ],
+        GroupRoleAssignment(
+            role_name=assignment["role_definition_name"],
+            group_object_id=user_groups[user_group_ref_key]["object_id"],
             scope=datalake.id,
-            opts=ResourceOptions(delete_before_replace=True)
         )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -179,15 +181,17 @@ except:
 # This dict will keep all container resources.
 datalake_containers = {}
 
-for ref_key in datalake_container_definitions:
-    container_config = datalake_container_definitions[ref_key]
-    datalake_container_name = p.generate_name(
-        "storage_blob_container", ref_key)
+for ref_key, container_config in datalake_container_definitions.items():
+    datalake_container_name = generate_resource_name(
+        resource_type="storage_blob_container",
+        resource_name=ref_key,
+        platform_config=platform_config,
+    )
     datalake_containers[ref_key] = azure_native.storage.BlobContainer(
         resource_name=datalake_container_name,
         account_name=datalake.name,
         container_name=container_config["display_name"],
-        resource_group_name=resource_groups.data.name
+        resource_group_name=resource_groups.data.name,
     )
     # Container Role Assignments
     try:
@@ -196,17 +200,11 @@ for ref_key in datalake_container_definitions:
             # User Group Role Assignment
             if assignment.get("user_group_ref_key") is not None:
                 user_group_ref_key = assignment.get("user_group_ref_key")
-                role_definition_name = assignment.get("role_definition_name")
-                principal_id = user_groups[user_group_ref_key].get("object_id")
-                role_definition_id = p.azure_iam_role_definitions[role_definition_name]
-            azure_native.authorization.RoleAssignment(
-                resource_name=p.generate_hash(
-                    user_group_ref_key, role_definition_name, ref_key),
-                principal_id=principal_id,
-                principal_type="Group",
-                role_definition_id=role_definition_id,
-                scope=datalake_containers[ref_key].id
-            )
-    except:
+                GroupRoleAssignment(
+                    role_name=assignment["role_definition_name"],
+                    group_object_id=user_groups[user_group_ref_key]["object_id"],
+                    scope=datalake_containers[ref_key].id,
+                )
+    except KeyError:
         # No role assignments are found. Evaluate the next container.
         continue

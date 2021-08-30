@@ -1,0 +1,51 @@
+name: Publish Docker IaC Runtime Image
+on:
+  push:
+  release:
+    types: [published]
+env:
+  IMAGE_DIR: src/docker-images/iac-runtime
+  IMAGE_NAME: ingeniisolutions/azure-data-platform-iac-runtime
+jobs:
+  push_to_registry:
+    name: Push to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      # ----------------------------------------
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      # ----------------------------------------
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.INGENII_DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.INGENII_DOCKER_HUB_PASSWORD }}
+      # ----------------------------------------
+      - name: Build the image
+        working-directory: ${{ env.IMAGE_DIR }}
+        run: |
+          make build IMAGE_NAME=${{ env.IMAGE_NAME }}
+      # ----------------------------------------
+      - name: Publish 'latest-dev' tag
+        if: github.ref != 'refs/heads/main' && github.event_name != 'release'
+        working-directory: ${{ env.IMAGE_DIR }}
+        run: |
+          make publish IMAGE_NAME=${{ env.IMAGE_NAME }} TAG_NAME=latest-dev
+      # ----------------------------------------
+      - name: Publish 'latest' tag
+        if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+        working-directory: ${{ env.IMAGE_DIR }}
+        run: |
+          make publish IMAGE_NAME=${{ env.IMAGE_NAME }} TAG_NAME=latest
+      # ----------------------------------------
+      - name: Get a release version
+        if: github.event_name == 'release'
+        id: tag_name
+        run: |
+          echo ::set-output name=SOURCE_TAG::${GITHUB_REF#refs/tags/}
+      # ------------------------------------------
+      - name: Publish specific version
+        if: github.event_name == 'release'
+        working-directory: ${{ env.IMAGE_DIR }}
+        run: |
+          make publish IMAGE_NAME=${{ env.IMAGE_NAME }} TAG_NAME=${{ steps.tag_name.outputs.SOURCE_TAG }}

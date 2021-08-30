@@ -1,5 +1,0 @@
-ingenii-azure-data-platform==0.0.3
-pulumi>=3.9,<4.0
-pulumi-azure-native>=1.19,<2.0
-pulumi-databricks>=0.0.2
-pulumi-azuread>=4.3,<5.0

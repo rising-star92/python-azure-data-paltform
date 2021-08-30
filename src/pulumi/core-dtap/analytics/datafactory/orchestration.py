@@ -1,23 +1,36 @@
+import pulumi
 import pulumi_azure_native as azure_native
-from config import platform as p
+
+from ingenii_azure_data_platform.iam import ServicePrincipalRoleAssignment
+from ingenii_azure_data_platform.utils import generate_resource_name, generate_hash
+
+from config import platform_config
 from management import resource_groups
-from analytics.databricks.workspaces import engineering as databricks_engineering
+from management.user_groups import user_groups
 from storage.datalake import datalake, datalake_name
+from analytics.databricks.workspaces import engineering as databricks_engineering
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ORCHESTRATION DATA FACTORY
 # ----------------------------------------------------------------------------------------------------------------------
-datafactory_config = p.config_object["analytics_services"]["datafactory"]["factories"]["orchestration"]
-datafactory_name = p.generate_name(
-    "datafactory", datafactory_config["display_name"])
+datafactory_config = platform_config.yml_config["analytics_services"]["datafactory"][
+    "factories"
+]["orchestration"]
+
+datafactory_name = generate_resource_name(
+    resource_type="datafactory",
+    resource_name=datafactory_config["display_name"],
+    platform_config=platform_config,
+)
 
 datafactory = azure_native.datafactory.Factory(
     resource_name=datafactory_name,
     factory_name=datafactory_name,
-    location=p.region_long_name,
+    location=platform_config.region.long_name,
     resource_group_name=resource_groups.infra.name,
     identity=azure_native.datafactory.FactoryIdentityArgs(
-        type=azure_native.datafactory.FactoryIdentityType.SYSTEM_ASSIGNED)
+        type=azure_native.datafactory.FactoryIdentityType.SYSTEM_ASSIGNED
+    ),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -25,13 +38,11 @@ datafactory = azure_native.datafactory.Factory(
 # ----------------------------------------------------------------------------------------------------------------------
 
 # DATALAKE
-datafactory_access_to_datalake = azure_native.authorization.RoleAssignment(
-    resource_name=p.generate_hash(
-        datafactory_name, datalake_name, p.azure_iam_role_definitions["Storage Blob Data Contributor"]),
-    principal_id=datafactory.identity.principal_id,
-    principal_type="ServicePrincipal",
-    role_definition_id=p.azure_iam_role_definitions["Storage Blob Data Contributor"],
-    scope=datalake.id
+# Datafactory Access to Data Lake
+datafactory_acccess_to_datalake = ServicePrincipalRoleAssignment(
+    role_name="Storage Blob Data Contributor",
+    service_principal_object_id=datafactory.identity.principal_id,
+    scope=datalake.id,
 )
 
 datalake_linked_service = azure_native.datafactory.LinkedService(
@@ -41,9 +52,9 @@ datalake_linked_service = azure_native.datafactory.LinkedService(
     properties=azure_native.datafactory.AzureBlobFSLinkedServiceArgs(
         url=datalake.primary_endpoints.dfs,
         description="Managed by Ingenii Data Platform",
-        type="AzureBlobFS"
+        type="AzureBlobFS",
     ),
-    resource_group_name=resource_groups.infra.name
+    resource_group_name=resource_groups.infra.name,
 )
 
 # DATABRICKS ENGINEERING - DELTA LAKE
@@ -56,10 +67,10 @@ databricks_engineering_delta_linked_service = azure_native.datafactory.LinkedSer
         access_token=databricks_engineering.datafactory_token.token_value,
         cluster_id=databricks_engineering.clusters["default"].id,
         description="Managed by Ingenii Data Platform",
-        type="AzureDatabricksDeltaLake"
+        type="AzureDatabricksDeltaLake",
     ),
-    resource_group_name=resource_groups.infra.name
-)
+    resource_group_name=resource_groups.infra.name,
+)  # type: ignore
 
 
 # DATABRICKS ENGINEERING - COMPUTE
@@ -73,7 +84,7 @@ databricks_engineering_compute_linked_service = azure_native.datafactory.LinkedS
         existing_cluster_id=databricks_engineering.clusters["default"].id,
         workspace_resource_id=databricks_engineering.workspace.id,
         description="Managed by Ingenii Data Platform",
-        type="AzureDatabricks"
+        type="AzureDatabricks",
     ),
-    resource_group_name=resource_groups.infra.name
-)
+    resource_group_name=resource_groups.infra.name,
+)  # type: ignore

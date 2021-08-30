@@ -55,6 +55,9 @@ storage:
   datalake:
     display_name: str(max=9)
     containers: map(include('storage_datalake_container'),key=str())
+    network:
+      firewall:
+        enabled: bool()
     iam: include('_iam', required=False)
 
 # storage.datalake.containers

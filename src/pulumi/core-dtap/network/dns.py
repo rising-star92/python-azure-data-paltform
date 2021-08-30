@@ -1,7 +1,6 @@
 import pulumi_azure_native as azure_native
 
-from config import platform as p
-
+from config import platform_config
 from management import resource_groups
 
 from . import vnet
@@ -14,7 +13,7 @@ storage_blob_private_dns_zone = azure_native.network.PrivateZone(
     location="Global",
     private_zone_name="privatelink.blob.core.windows.net",
     resource_group_name=resource_groups.infra.name,
-    tags=p.tags,
+    tags=platform_config.tags,
 )
 
 storage_blob_private_dns_zone_link = azure_native.network.VirtualNetworkLink(
@@ -24,7 +23,7 @@ storage_blob_private_dns_zone_link = azure_native.network.VirtualNetworkLink(
     private_zone_name=storage_blob_private_dns_zone.name,
     registration_enabled=False,
     resource_group_name=resource_groups.infra.name,
-    tags=p.tags,
+    tags=platform_config.tags,
     virtual_network=azure_native.network.SubResourceArgs(
         id=vnet.vnet.id,
     ),
@@ -38,7 +37,7 @@ storage_dfs_private_dns_zone = azure_native.network.PrivateZone(
     location="Global",
     private_zone_name="privatelink.dfs.core.windows.net",
     resource_group_name=resource_groups.infra.name,
-    tags=p.tags,
+    tags=platform_config.tags,
 )
 
 storage_dfs_private_dns_zone_link = azure_native.network.VirtualNetworkLink(
@@ -51,7 +50,7 @@ storage_dfs_private_dns_zone_link = azure_native.network.VirtualNetworkLink(
     virtual_network=azure_native.network.SubResourceArgs(
         id=vnet.vnet.id,
     ),
-    tags=p.tags,
+    tags=platform_config.tags,
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -62,7 +61,7 @@ key_vault_private_dns_zone = azure_native.network.PrivateZone(
     location="Global",
     private_zone_name="privatelink.vaultcore.azure.net",
     resource_group_name=resource_groups.infra.name,
-    tags=p.tags,
+    tags=platform_config.tags,
 )
 
 key_vault_private_dns_zone_link = azure_native.network.VirtualNetworkLink(
@@ -72,8 +71,8 @@ key_vault_private_dns_zone_link = azure_native.network.VirtualNetworkLink(
     private_zone_name=key_vault_private_dns_zone.name,
     registration_enabled=False,
     resource_group_name=resource_groups.infra.name,
-    tags=p.tags,
+    tags=platform_config.tags,
     virtual_network=azure_native.network.SubResourceArgs(
         id=vnet.vnet.id,
-    )
+    ),
 )

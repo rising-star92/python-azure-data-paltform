@@ -5,28 +5,23 @@ FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT}
 # User vscode needs sudoers access to all users without password.
 RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode
 
-# PIP REQUIREMENTS
+# Python Packages
 # Make sure pip operations are done in venv with correct file permissions so vscode can use it later, then
 # update pip, install both app and pulumi requirements.
-COPY ./src/pulumi/core-dtap/requirements.txt /tmp/pip-tmp/
+COPY ./src/requirements*.txt /tmp/pip-tmp/
 # Doing this as vscode to load as many libraries in the base Docker image. Default pip install dir for vscode
 # will be under /home/vscode/.local/
 RUN pip install --upgrade pip \
     && sudo -u vscode pip --disable-pip-version-check --no-cache-dir install \
-    -r /tmp/pip-tmp/requirements.txt \
+    -r /tmp/pip-tmp/requirements-common.txt \
     && rm -rf /tmp/pip-tmp
 
-# PULUMI
+# Pulumi
 # Install pulumi as vscode to allow read/write to .pulumi.
 ARG PULUMI_VERSION="3.9.1"
 RUN cd /tmp && su vscode -c "curl -fsSL https://get.pulumi.com | sh -s -- --silent" \
     && echo "export PULUMI_SKIP_UPDATE_CHECK=false" >> /home/vscode/.bashrc \
     && echo "export PULUMI_SKIP_UPDATE_CHECK=false" >> /home/vscode/.zshrc
 
-# AZURE CLI
-RUN apt-get install ca-certificates curl apt-transport-https lsb-release gnupg \
-    && curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | \
-    tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null \
-    && echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | \
-    tee /etc/apt/sources.list.d/azure-cli.list \
-    && apt-get update && apt-get install azure-cli
+# Azure CLI
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash

@@ -1,6 +1,4 @@
 name: ingenii-adp-core-dtap
 runtime:
   name: python
-  options:
-    virtualenv: venv
 description: Ingenii Azure Data Platform - Core DTAP Module.

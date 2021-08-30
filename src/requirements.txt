@@ -1,0 +1,2 @@
+-r requirements-common.txt
+./python/ingenii_azure_data_platform

@@ -1,30 +1,41 @@
+import pulumi
 import pulumi_azure_native as azure_native
-from pulumi.resource import ResourceOptions
-from config import platform as p
+from ingenii_azure_data_platform.utils import generate_resource_name
+from config import platform_config
 from management import resource_groups
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATABRICKS NSG for ENGINEERING SUBNETS
 # ----------------------------------------------------------------------------------------------------------------------
-databricks_engineering_resource_name = p.generate_name(
-    "network_security_group", "databricks-eng")
+databricks_engineering_resource_name = generate_resource_name(
+    resource_type="network_security_group",
+    resource_name="databricks-eng",
+    platform_config=platform_config,
+)
 databricks_engineering = azure_native.network.NetworkSecurityGroup(
     resource_name=databricks_engineering_resource_name,
     network_security_group_name=databricks_engineering_resource_name,
     resource_group_name=resource_groups.infra.name,
-    tags=p.tags,
-    opts=ResourceOptions(ignore_changes=["security_rules"])
+    tags=platform_config.tags,
+    # Tags are added in the ignore_changes list because of:
+    # https://github.com/ingenii-solutions/azure-data-platform/issues/71
+    opts=pulumi.ResourceOptions(ignore_changes=["security_rules", "tags"]),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATABRICKS NSG for ANALYTICS SUBNETS
 # ----------------------------------------------------------------------------------------------------------------------
-databricks_analytics_resource_name = p.generate_name(
-    "network_security_group", "databricks-atc")
+databricks_analytics_resource_name = generate_resource_name(
+    resource_type="network_security_group",
+    resource_name="databricks-atc",
+    platform_config=platform_config,
+)
 databricks_analytics = azure_native.network.NetworkSecurityGroup(
     resource_name=databricks_analytics_resource_name,
     network_security_group_name=databricks_analytics_resource_name,
     resource_group_name=resource_groups.infra.name,
-    tags=p.tags,
-    opts=ResourceOptions(ignore_changes=["security_rules"])
+    tags=platform_config.tags,
+    # Tags are added in the ignore_changes list because of:
+    # https://github.com/ingenii-solutions/azure-data-platform/issues/71
+    opts=pulumi.ResourceOptions(ignore_changes=["security_rules", "tags"]),
 )

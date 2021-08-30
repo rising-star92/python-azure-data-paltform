@@ -1,0 +1,7 @@
+-r requirements-common.txt
+-e ./python/ingenii_azure_data_platform
+pre-commit>=1.21.0
+flake8>=3.7.9
+flake8-junit-report>=2.1.0
+pytest>=5.3.2
+twine>=3.4.2

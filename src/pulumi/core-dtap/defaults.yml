@@ -4,10 +4,9 @@
 general:
   prefix: ii
   region: EastUS
-  unique_id: i13
+  unique_id: i2k
   tags:
     IngeniiApplication: Azure Data Platform
-    IngeniiApplicationVersion: 0.1.0
     IngeniiNotice: "This resource is managed using infrastructure as code approach. Please do not make any manual changes as they will be overwritten on the next infrastructure update."
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -57,6 +56,9 @@ network:
 storage:
   datalake:
     display_name: datalake
+    network:
+      firewall:
+        enabled: false
     iam:
       role_assignments:
         - user_group_ref_key: admins
