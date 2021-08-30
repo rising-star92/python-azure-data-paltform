@@ -73,12 +73,16 @@ clean-runtime:
 #--------------------------------------------------------------------------------------------------------------------
 # GENERAL API
 #--------------------------------------------------------------------------------------------------------------------
-init: init-core-dtap
-
 preview-dtap: preview-core-dtap
 
 apply-dtap: apply-core-dtap
 
 destroy-dtap: destroy-core-dtap
+
+init: init-core-dtap
+
+preview: preview-dtap
+
+apply: apply-dtap
 
 clean: clean-source clean-runtime

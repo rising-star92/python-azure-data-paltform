@@ -8,7 +8,7 @@
 # ---------------------------------------------------------------------------------------------------------------------
 FROM python:3.9
 
-ARG PULUMI_VERSION="3.9.1"
+ARG PULUMI_VERSION="3.11.0"
 
 # Install Pulumi
 RUN cd /tmp && curl -fsSL https://get.pulumi.com | sh -s -- --silent --version ${PULUMI_VERSION}
