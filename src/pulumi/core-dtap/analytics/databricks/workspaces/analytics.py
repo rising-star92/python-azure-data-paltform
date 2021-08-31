@@ -46,10 +46,10 @@ workspace = azure_native.databricks.Workspace(
     managed_resource_group_id=workspace_managed_resource_group_name,
     parameters=azure_native.databricks.WorkspaceCustomParametersArgs(
         custom_private_subnet_name=azure_native.databricks.WorkspaceCustomStringParameterArgs(
-            value=vnet.dbw_analytics_containers_subnet.name,  # type: ignore
+            value=vnet.dbw_analytics_containers_subnet.name,
         ),
         custom_public_subnet_name=azure_native.databricks.WorkspaceCustomStringParameterArgs(
-            value=vnet.dbw_analytics_hosts_subnet.name,  # type: ignore
+            value=vnet.dbw_analytics_hosts_subnet.name,
         ),
         custom_virtual_network_id=azure_native.databricks.WorkspaceCustomStringParameterArgs(
             value=vnet.vnet.id,
