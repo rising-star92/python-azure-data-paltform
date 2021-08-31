@@ -65,6 +65,31 @@ privatelink_subnet = azure_native.network.Subnet(
     opts=pulumi.ResourceOptions(depends_on=[gateway_subnet]),
 )
 
+# HOSTED SERVICES SUBNET
+hosted_services_subnet_name = generate_resource_name(
+    resource_type="subnet",
+    resource_name="hosted-services",
+    platform_config=platform_config,
+)
+hosted_services_subnet = azure_native.network.Subnet(
+    resource_name=hosted_services_subnet_name,
+    subnet_name=hosted_services_subnet_name,
+    resource_group_name=resource_groups.infra.name,
+    virtual_network_name=vnet.name,
+    address_prefix=generate_cidr(vnet_address_space, 24, 2),
+    route_table=azure_native.network.RouteTableArgs(id=routing.main_route_table.id),
+    nat_gateway=nat.gateway_id,
+    service_endpoints=[
+        azure_native.network.ServiceEndpointPropertiesFormatArgs(
+            service="Microsoft.Storage",
+        ),
+        azure_native.network.ServiceEndpointPropertiesFormatArgs(
+            service="Microsoft.KeyVault",
+        ),
+    ],
+    opts=pulumi.ResourceOptions(depends_on=[privatelink_subnet]),
+)
+
 # DATABRICKS ENGINEERING HOSTS SUBNET
 dbw_engineering_hosts_subnet_name = generate_resource_name(
     resource_type="subnet",
@@ -95,7 +120,7 @@ dbw_engineering_hosts_subnet = azure_native.network.Subnet(
             name="databricks", service_name="Microsoft.Databricks/workspaces"
         )
     ],
-    opts=pulumi.ResourceOptions(depends_on=[privatelink_subnet]),
+    opts=pulumi.ResourceOptions(depends_on=[hosted_services_subnet]),
 )
 
 # DATABRICKS ENGINEERING CONTAINERS SUBNET
