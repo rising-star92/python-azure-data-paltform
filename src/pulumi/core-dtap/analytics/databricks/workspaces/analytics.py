@@ -195,7 +195,7 @@ for ref_key, cluster_config in cluster_definitions.items():
                 max_workers=cluster_config["auto_scale_max_workers"],
             ),
             azure_attributes=databricks.ClusterAzureAttributesArgs(
-                availability="SPOT_WITH_FALLBACK_AZURE",
+                availability="SPOT_WITH_FALLBACK_AZURE" if cluster_config.get("use_spot_instances") else "ON_DEMAND_AZURE",
                 first_on_demand=1,
                 spot_bid_max_price=100,
             ),
