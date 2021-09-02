@@ -23,11 +23,16 @@ general:
 #----------------------------------------------------------------------------------------------------------------------
 management: 
   user_groups: map(include('user_group'),key=str())
+  resource_groups: map(include('resource_group'),key=str())
 
 # management.user_groups
 user_group:
   display_name: str()
   object_id: str(required=False)
+
+# management.resource_groups
+resource_group:
+  iam: include('_iam', required=False)
 
 #----------------------------------------------------------------------------------------------------------------------
 # NETWORK

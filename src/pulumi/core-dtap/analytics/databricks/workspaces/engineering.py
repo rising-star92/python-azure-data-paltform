@@ -48,10 +48,10 @@ workspace = azure_native.databricks.Workspace(
     managed_resource_group_id=workspace_managed_resource_group_name,
     parameters=azure_native.databricks.WorkspaceCustomParametersArgs(
         custom_private_subnet_name=azure_native.databricks.WorkspaceCustomStringParameterArgs(
-            value=vnet.dbw_engineering_containers_subnet.name,
+            value=vnet.dbw_engineering_containers_subnet.name, # type: ignore
         ),
         custom_public_subnet_name=azure_native.databricks.WorkspaceCustomStringParameterArgs(
-            value=vnet.dbw_engineering_hosts_subnet.name,
+            value=vnet.dbw_engineering_hosts_subnet.name, # type: ignore
         ),
         custom_virtual_network_id=azure_native.databricks.WorkspaceCustomStringParameterArgs(
             value=vnet.vnet.id,
@@ -235,7 +235,9 @@ for ref_key, cluster_config in cluster_definitions.items():
                 max_workers=cluster_config["auto_scale_max_workers"],
             ),
             azure_attributes=databricks.ClusterAzureAttributesArgs(
-                availability="SPOT_WITH_FALLBACK_AZURE",
+                availability="SPOT_WITH_FALLBACK_AZURE"
+                if cluster_config.get("use_spot_instances")
+                else "ON_DEMAND_AZURE",
                 first_on_demand=1,
                 spot_bid_max_price=100,
             ),

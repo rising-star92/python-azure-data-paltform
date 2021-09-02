@@ -14,6 +14,11 @@ ARG PULUMI_VERSION="3.11.0"
 RUN cd /tmp && curl -fsSL https://get.pulumi.com | sh -s -- --silent --version ${PULUMI_VERSION}
 ENV PATH="/root/.pulumi/bin:${PATH}"
 
+# Install Zsh
+RUN apt update \
+    && apt install zsh -y \
+    && wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true
+
 # Install Python Dependencies
 COPY tmp /tmp/build
 

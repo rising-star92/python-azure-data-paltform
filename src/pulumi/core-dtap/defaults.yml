@@ -20,6 +20,34 @@ management:
       display_name: engineers
     analysts:
       display_name: analysts
+  resource_groups:
+    infra:
+      iam:
+        role_assignments:
+          - user_group_ref_key: admins
+            role_definition_name: Owner
+          - user_group_ref_key: engineers
+            role_definition_name: Reader
+          - user_group_ref_key: analysts
+            role_definition_name: Reader
+    data:
+      iam:
+        role_assignments:
+          - user_group_ref_key: admins
+            role_definition_name: Owner
+          - user_group_ref_key: engineers
+            role_definition_name: Reader
+          - user_group_ref_key: analysts
+            role_definition_name: Reader
+    security:
+      iam:
+        role_assignments:
+          - user_group_ref_key: admins
+            role_definition_name: Owner
+          - user_group_ref_key: engineers
+            role_definition_name: Reader
+          - user_group_ref_key: analysts
+            role_definition_name: Reader
 
 # ----------------------------------------------------------------------------------------------------------------------
 # SECURITY
