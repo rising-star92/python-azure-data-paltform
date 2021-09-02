@@ -126,6 +126,7 @@ class PlatformConfiguration:
             hco.load(
                 [default_config_file_path, custom_config_file_path],
                 method=hco.METHOD_MERGE,
+                mergelists=False,
             )
         )  # type: ignore
 
