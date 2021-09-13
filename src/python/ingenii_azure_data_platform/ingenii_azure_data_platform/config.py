@@ -133,11 +133,31 @@ class PlatformConfiguration:
         # Validate the schema
         self._validate_schema(config_schema_file_path, self._yml_config)
 
+        self._use_legacy_naming = self._yml_config["general"]["use_legacy_naming"]
+
         self._stack = stack
 
     @property
+    def use_legacy_naming(self):
+        return self._use_legacy_naming
+
+    @property
     def stack(self):
-        return self._stack
+        stack = self._stack.lower()
+
+        # If we use the legacy naming conventions, we pass the stack name directly.
+        if self._use_legacy_naming:
+            return stack
+
+        # In the new naming convention, we have shortened the stack names if they are either test, prod or shared.
+        if stack == "test":
+            return "tst"
+        elif stack == "prod":
+            return "prd"
+        elif stack == "shared":
+            return "shr"
+        else:
+            return stack
 
     @property
     def prefix(self):

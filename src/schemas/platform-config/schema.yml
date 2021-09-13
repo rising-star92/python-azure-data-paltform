@@ -13,8 +13,9 @@ analytics_services: include('analytics_services', required=False)
 # GENERAL
 #----------------------------------------------------------------------------------------------------------------------
 general:
-  prefix: str(max=4)
-  unique_id: str(max=3)
+  prefix: str(max=3)
+  unique_id: str(max=4)
+  use_legacy_naming: bool()
   region: str()
   tags: map()
 

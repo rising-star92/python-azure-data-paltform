@@ -44,20 +44,46 @@ def generate_resource_name(
         "storage_blob_container": "sbc",
         "dns_zone": "dz",
         "private_dns_zone": "prdz",
-        "datafactory": "adf",
     }
 
     resource_type = resource_type.lower()
+    prefix = platform_config.prefix
+    stack = platform_config.stack
+    region_short_name = platform_config.region.short_name
+    unique_id = platform_config.unique_id
+    use_legacy_naming = platform_config.use_legacy_naming
+
+    # User Groups (Azure AD Groups)
     if resource_type == "user_group":
-        return f"{platform_config.prefix.upper()}-{platform_config.stack.title()}-{resource_name.title()}"
+        # Example
+        # ADP-Dev-Engineers
+        return f"{prefix.upper()}-{stack.title()}-{resource_name.title()}"
+
+    # Gateway Subnet
     elif resource_type == "gateway_subnet":
         return "Gateway"
+
+    # Key Vault
     elif resource_type == "key_vault":
-        return f"{platform_config.prefix}-{platform_config.stack}-{platform_config.region.short_name}-kv-{resource_name}-{platform_config.unique_id}"
+        # Example:
+        # adp-tst-eus-kv-cred-ixk1
+        return f"{prefix}-{stack}-{region_short_name}-kv-{resource_name}-{unique_id}"
+
+    # Data Factory
+    elif resource_type == "datafactory":
+        if use_legacy_naming:
+            return f"{prefix}-{stack}-{region_short_name}-adf-{resource_name.lower()}"
+
+        return f"{prefix}-{stack}-{region_short_name}-adf-{resource_name}-{unique_id}"
+
+    # Storage Account
     elif resource_type == "storage_account":
-        return f"{platform_config.prefix}{platform_config.stack}{resource_name}{platform_config.unique_id}"
+        return f"{prefix}{stack}{resource_name}{unique_id}"
+
+    # Other Resources
     elif resource_type in resource_names:
-        return f"{platform_config.prefix}-{platform_config.stack}-{platform_config.region.short_name}-{resource_names[resource_type]}-{resource_name.lower()}"
+        return f"{prefix}-{stack}-{region_short_name}-{resource_names[resource_type]}-{resource_name.lower()}"
+
     else:
         raise Exception(f"Resource type {resource_type} not recognised.")
 
