@@ -1,3 +1,8 @@
+## 0.1.11 (Unreleased)
+
+IMPROVEMENTS:
+    - **General:** - Improving naming convetions.
+    
 ## 0.1.6
 
 IMPROVEMENTS:  
