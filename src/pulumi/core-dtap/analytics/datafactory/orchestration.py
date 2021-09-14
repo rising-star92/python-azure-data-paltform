@@ -1,4 +1,4 @@
-import pulumi_azure_native as azure_native
+from pulumi_azure_native import datafactory as adf
 
 from ingenii_azure_data_platform.iam import ServicePrincipalRoleAssignment
 from ingenii_azure_data_platform.utils import generate_resource_name
@@ -22,14 +22,17 @@ datafactory_name = generate_resource_name(
     platform_config=platform_config,
 )
 
-datafactory = azure_native.datafactory.Factory(
+datafactory = adf.Factory(
     resource_name=datafactory_name,
     factory_name=datafactory_name,
     location=platform_config.region.long_name,
     resource_group_name=resource_groups.infra.name,
-    identity=azure_native.datafactory.FactoryIdentityArgs(
-        type=azure_native.datafactory.FactoryIdentityType.SYSTEM_ASSIGNED
-    ),
+    identity=adf.FactoryIdentityArgs(type=adf.FactoryIdentityType.SYSTEM_ASSIGNED),
+    global_parameters={
+        "DataLakeName": adf.GlobalParameterSpecificationArgs(
+            type="String", value=datalake.name
+        )
+    },
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -44,11 +47,11 @@ datafactory_acccess_to_datalake = ServicePrincipalRoleAssignment(
     scope=datalake.id,
 )
 
-datalake_linked_service = azure_native.datafactory.LinkedService(
+datalake_linked_service = adf.LinkedService(
     resource_name=f"{datafactory_name}-link-to-datalake",
     factory_name=datafactory.name,
     linked_service_name="DataLake",
-    properties=azure_native.datafactory.AzureBlobFSLinkedServiceArgs(
+    properties=adf.AzureBlobFSLinkedServiceArgs(
         url=datalake.primary_endpoints.dfs,
         description="Managed by Ingenii Data Platform",
         type="AzureBlobFS",
@@ -64,11 +67,11 @@ datafactory_acccess_to_credentials_store = ServicePrincipalRoleAssignment(
     scope=credentials_store.key_vault.id,
 )
 
-credentials_store_linked_service = azure_native.datafactory.LinkedService(
+credentials_store_linked_service = adf.LinkedService(
     resource_name=f"{datafactory_name}-link-to-credentials-store",
     factory_name=datafactory.name,
     linked_service_name="Credentials Store",
-    properties=azure_native.datafactory.AzureKeyVaultLinkedServiceArgs(
+    properties=adf.AzureKeyVaultLinkedServiceArgs(
         base_url=f"https://{credentials_store.key_vault_name}.vault.azure.net",
         description="Managed by Ingenii Data Platform",
         type="AzureKeyVault",
@@ -77,12 +80,14 @@ credentials_store_linked_service = azure_native.datafactory.LinkedService(
 )  # type: ignore
 
 # DATABRICKS ENGINEERING - DELTA LAKE
-databricks_engineering_delta_linked_service = azure_native.datafactory.LinkedService(
+databricks_engineering_delta_linked_service = adf.LinkedService(
     resource_name=f"{datafactory_name}-link-to-databricks-engineering-delta",
     factory_name=datafactory.name,
     linked_service_name="Databricks Engineering Delta",
-    properties=azure_native.datafactory.AzureDatabricksDeltaLakeLinkedServiceArgs(
-        domain=databricks_engineering.workspace.workspace_url,
+    properties=adf.AzureDatabricksDeltaLakeLinkedServiceArgs(
+        domain=databricks_engineering.workspace.workspace_url.apply(
+            lambda url: f"https://{url}"
+        ),
         access_token=databricks_engineering.datafactory_token.token_value,  # type: ignore
         cluster_id=databricks_engineering.clusters["default"].id,
         description="Managed by Ingenii Data Platform",
@@ -93,12 +98,14 @@ databricks_engineering_delta_linked_service = azure_native.datafactory.LinkedSer
 
 
 # DATABRICKS ENGINEERING - COMPUTE
-databricks_engineering_compute_linked_service = azure_native.datafactory.LinkedService(
+databricks_engineering_compute_linked_service = adf.LinkedService(
     resource_name=f"{datafactory_name}-link-to-databricks-engineering-compute",
     factory_name=datafactory.name,
     linked_service_name="Databricks Engineering Compute",
-    properties=azure_native.datafactory.AzureDatabricksLinkedServiceArgs(
-        domain=databricks_engineering.workspace.workspace_url,
+    properties=adf.AzureDatabricksLinkedServiceArgs(
+        domain=databricks_engineering.workspace.workspace_url.apply(
+            lambda url: f"https://{url}"
+        ),
         access_token=databricks_engineering.datafactory_token.token_value,  # type: ignore
         existing_cluster_id=databricks_engineering.clusters["default"].id,
         workspace_resource_id=databricks_engineering.workspace.id,
@@ -107,3 +114,74 @@ databricks_engineering_compute_linked_service = azure_native.datafactory.LinkedS
     ),
     resource_group_name=resource_groups.infra.name,
 )  # type: ignore
+
+# ----------------------------------------------------------------------------------------------------------------------
+# INGESTION PIPELINE AND TRIGGER
+# ----------------------------------------------------------------------------------------------------------------------
+databricks_file_ingestion_pipeline = adf.Pipeline(
+    resource_name=f"{datafactory_name}-raw-databricks-file-ingestion",
+    factory_name=datafactory.name,
+    pipeline_name="Trigger ingest file notebook",
+    description="Managed by Ingenii Data Platform",
+    concurrency=1,
+    parameters={
+        "fileName": adf.ParameterSpecificationArgs(type="String"),
+        "filePath": adf.ParameterSpecificationArgs(type="String"),
+    },
+    activities=[
+        adf.DatabricksNotebookActivityArgs(
+            name="Trigger ingest file notebook",
+            notebook_path="/Shared/Ingenii Engineering/data_pipeline",
+            type="DatabricksNotebook",
+            linked_service_name=adf.LinkedServiceReferenceArgs(
+                reference_name=databricks_engineering_compute_linked_service.name,
+                type="LinkedServiceReference",
+            ),
+            base_parameters={
+                "file_path": {
+                    "value": "@pipeline().parameters.filePath",
+                    "type": "Expression",
+                },
+                "file_name": {
+                    "value": "@pipeline().parameters.fileName",
+                    "type": "Expression",
+                },
+                "increment": 0,
+            },
+            policy=adf.ActivityPolicyArgs(
+                timeout="0.00:10:00",
+                retry=0,
+                retry_interval_in_seconds=30,
+                secure_output=False,
+                secure_input=False,
+            ),
+        )
+    ],
+    resource_group_name=resource_groups.infra.name,
+)
+
+databricks_file_ingestion_trigger = adf.Trigger(
+    resource_name=f"{datafactory_name}-raw-databricks-file-ingestion",
+    factory_name=datafactory.name,
+    trigger_name="Raw file created",
+    properties=adf.BlobEventsTriggerArgs(
+        type="BlobEventsTrigger",
+        scope=datalake.id,
+        events=[adf.BlobEventTypes.MICROSOFT_STORAGE_BLOB_CREATED],
+        blob_path_begins_with="/raw/blobs/",
+        ignore_empty_blobs=True,
+        pipelines=[
+            adf.TriggerPipelineReferenceArgs(
+                pipeline_reference=adf.PipelineReferenceArgs(
+                    reference_name=databricks_file_ingestion_pipeline.name,
+                    type="PipelineReference",
+                ),
+                parameters={
+                    "fileName": "@trigger().outputs.body.fileName",
+                    "filePath": "@trigger().outputs.body.folderPath",
+                },
+            )
+        ],
+    ),
+    resource_group_name=resource_groups.infra.name,
+)

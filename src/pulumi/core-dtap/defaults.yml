@@ -4,7 +4,7 @@
 general:
   prefix: ii
   region: EastUS
-  unique_id: i2k
+  unique_id: i3r1
   use_legacy_naming: false
   tags:
     IngeniiApplication: Azure Data Platform
@@ -119,6 +119,15 @@ storage:
         display_name: dbt
       dbt_logs: # Mount in DBW Engineering(RW)
         display_name: dbt-logs
+    tables:
+      sftp_known_files:
+        display_name: "SFTPKnownFiles"
+      select1:
+        display_name: "Select1"
+        entities:
+          empty:
+            row_key: "1"
+            partition_key: "1"
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS SERVICES

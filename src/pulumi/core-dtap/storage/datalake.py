@@ -1,4 +1,5 @@
 import pulumi_azure_native as azure_native
+import pulumi_azure as azure_classic
 
 from ingenii_azure_data_platform.utils import generate_resource_name
 from ingenii_azure_data_platform.defaults import STORAGE_ACCOUNT_DEFAULT_FIREWALL
@@ -8,6 +9,7 @@ from config import platform_config
 from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet, dns
+from security import credentials_store
 
 # ----------------------------------------------------------------------------------------------------------------------
 # FIREWALL IP ACCESS LIST
@@ -151,12 +153,8 @@ dfs_private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA LAKE -> IAM -> ROLE ASSIGNMENTS
 # ----------------------------------------------------------------------------------------------------------------------
-try:
-    iam_role_assignments = datalake_config["iam"]["role_assignments"]
-except:
-    iam_role_assignments = {}
+iam_role_assignments = datalake_config["iam"].get("role_assignments", {})
 
-# TODO: Create a function that takes care of the role assignments. Replace all role assignments using the function.
 # Create role assignments defined in the YAML files
 for assignment in iam_role_assignments:
     # User Group Assignment
@@ -173,10 +171,7 @@ for assignment in iam_role_assignments:
 # ----------------------------------------------------------------------------------------------------------------------
 
 # If no containers are defined in the YAML files, we'll not attempt to create any.
-try:
-    datalake_container_definitions = datalake_config["containers"]
-except:
-    datalake_container_definitions = {}
+datalake_container_definitions = datalake_config.get("containers", {})
 
 # This dict will keep all container resources.
 datalake_containers = {}
@@ -208,3 +203,73 @@ for ref_key, container_config in datalake_container_definitions.items():
     except KeyError:
         # No role assignments are found. Evaluate the next container.
         continue
+
+# ----------------------------------------------------------------------------------------------------------------------
+# DATA LAKE -> TABLES
+# ----------------------------------------------------------------------------------------------------------------------
+# If no containers are defined in the YAML files, we'll not attempt to create any.
+datalake_table_definitions = datalake_config.get("tables", {})
+
+# This dict will keep all table resources.
+datalake_tables = {}
+
+for ref_key, table_config in datalake_table_definitions.items():
+
+    table_name = table_config["display_name"]
+
+    datalake_tables[ref_key] = azure_native.storage.Table(
+        resource_name=f"{datalake_name}-{table_config['display_name']}".lower(),
+        resource_group_name=resource_groups.data.name,
+        account_name=datalake.name,
+        table_name=table_name,
+    )
+
+    entities = table_config.get("entities", {})
+
+    for entity_ref_key, entity_config in entities.items():
+        azure_classic.storage.TableEntity(
+            resource_name=f"{datalake_name}-{table_name}-{entity_ref_key}".lower(),
+            storage_account_name=datalake.name,
+            table_name=table_name,
+            partition_key=entity_config.get("partition_key"),
+            row_key=entity_config.get("row_key"),
+            entity=entity_config.get("entity", {}),
+        )
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# DATA LAKE -> TABLES -> SAS
+# ----------------------------------------------------------------------------------------------------------------------
+
+table_storage_sas = datalake.name.apply(
+    lambda account_name: azure_native.storage.list_storage_account_sas(
+        account_name=account_name,
+        protocols=azure_native.storage.HttpProtocol.HTTPS,
+        resource_types=azure_native.storage.SignedResourceTypes.O,
+        services=azure_native.storage.Services.T,
+        shared_access_start_time="2021-08-31T00:00:00Z",
+        shared_access_expiry_time="2041-08-31T00:00:00Z",
+        permissions="".join(
+            [
+                azure_native.storage.Permissions.R,
+                azure_native.storage.Permissions.W,
+                azure_native.storage.Permissions.D,
+                azure_native.storage.Permissions.L,
+                azure_native.storage.Permissions.A,
+                azure_native.storage.Permissions.C,
+            ]
+        ),
+        resource_group_name=resource_groups.data.name,
+    )
+)
+
+# Save to Key Vault
+azure_native.keyvault.Secret(
+    resource_name="datalake-table-storage-sas-uri-secret",
+    properties=azure_native.keyvault.SecretPropertiesArgs(
+        value=table_storage_sas.apply(lambda sas: sas.account_sas_token),
+    ),
+    resource_group_name=resource_groups.security.name,
+    secret_name="datalake-table-storage-sas-uri-secret",
+    vault_name=credentials_store.key_vault.name,
+)
