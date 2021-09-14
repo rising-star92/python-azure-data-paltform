@@ -1,7 +1,12 @@
-## 0.1.11 (Unreleased)
+## 0.1.11
 
-IMPROVEMENTS:
-    - **General:** - Improving naming convetions.
+IMPROVEMENTS:  
+    - **General:** - Improving naming convetions.  
+    - **General:** - Add the ability to register Azure Resource Providers.  
+    - **Orchestration:** - Add table storage to keep track of sftp file ingestion.  
+
+BUG FIXES:  
+    - Fix Databricks linked services for Data Factory.  
     
 ## 0.1.6
 
