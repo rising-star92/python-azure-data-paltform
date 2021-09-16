@@ -4,7 +4,7 @@
 general:
   prefix: ii
   region: EastUS
-  unique_id: i3r1
+  unique_id: i1r1
   use_legacy_naming: false
   tags:
     IngeniiApplication: Azure Data Platform
@@ -202,3 +202,7 @@ analytics_services:
     factories:
       orchestration:
         display_name: orchestration
+        iam:
+          role_assignments:
+            - user_group_ref_key: engineers
+              role_definition_name: Data Factory Contributor

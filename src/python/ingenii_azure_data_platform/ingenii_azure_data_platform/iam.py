@@ -23,6 +23,8 @@ class RoleAssignment(azure_native.authorization.RoleAssignment):
         "Storage Blob Data Contributor": "/providers/Microsoft.Authorization/roleDefinitions/ba92f5b4-2d11-453d-a403-e96b0029c9fe",
         "Storage Blob Data Reader": "/providers/Microsoft.Authorization/roleDefinitions/2a2b9908-6ea1-4ae2-8e65-a410df84e7d1",
         "Storage Blob Delegator": "/providers/Microsoft.Authorization/roleDefinitions/db58b8e5-c6ad-4a2a-8342-4190687cbf4a",
+        # Data Factory
+        "Data Factory Contributor": "/providers/Microsoft.Authorization/roleDefinitions/673868aa-7521-48a0-acc6-0f60742d39f5"
     }
 
     def __init__(

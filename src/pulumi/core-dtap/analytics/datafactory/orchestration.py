@@ -1,16 +1,17 @@
 from pulumi_azure_native import datafactory as adf
 
-from ingenii_azure_data_platform.iam import ServicePrincipalRoleAssignment
+from ingenii_azure_data_platform.iam import ServicePrincipalRoleAssignment, GroupRoleAssignment
 from ingenii_azure_data_platform.utils import generate_resource_name
 
 from config import platform_config
 from management import resource_groups
+from management.user_groups import user_groups
 from storage.datalake import datalake
 from security import credentials_store
 from analytics.databricks.workspaces import engineering as databricks_engineering
 
 # ----------------------------------------------------------------------------------------------------------------------
-# ORCHESTRATION DATA FACTORY
+# DATA FACTORY
 # ----------------------------------------------------------------------------------------------------------------------
 datafactory_config = platform_config.yml_config["analytics_services"]["datafactory"][
     "factories"
@@ -36,7 +37,24 @@ datafactory = adf.Factory(
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
-# LINKED SERVICES
+# DATA FACTORY -> IAM -> ROLE ASSIGNMENTS
+# ----------------------------------------------------------------------------------------------------------------------
+iam_role_assignments = datafactory_config["iam"].get("role_assignments", {})
+
+# Create role assignments defined in the YAML files
+for assignment in iam_role_assignments:
+    # User Group Assignment
+    user_group_ref_key = assignment.get("user_group_ref_key")
+    if user_group_ref_key is not None:
+        GroupRoleAssignment(
+            role_name=assignment["role_definition_name"],
+            group_object_id=user_groups[user_group_ref_key]["object_id"],
+            scope=datafactory.id,
+        )
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# DATA FACTORY -> LINKED SERVICES
 # ----------------------------------------------------------------------------------------------------------------------
 
 # DATALAKE
@@ -116,7 +134,7 @@ databricks_engineering_compute_linked_service = adf.LinkedService(
 )  # type: ignore
 
 # ----------------------------------------------------------------------------------------------------------------------
-# INGESTION PIPELINE AND TRIGGER
+# DATA FACTORY -> INGESTION PIPELINE AND TRIGGER
 # ----------------------------------------------------------------------------------------------------------------------
 databricks_file_ingestion_pipeline = adf.Pipeline(
     resource_name=f"{datafactory_name}-raw-databricks-file-ingestion",

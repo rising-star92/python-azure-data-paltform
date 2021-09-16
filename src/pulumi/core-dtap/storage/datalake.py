@@ -230,7 +230,7 @@ for ref_key, table_config in datalake_table_definitions.items():
         azure_classic.storage.TableEntity(
             resource_name=f"{datalake_name}-{table_name}-{entity_ref_key}".lower(),
             storage_account_name=datalake.name,
-            table_name=table_name,
+            table_name=datalake_tables[ref_key].name,
             partition_key=entity_config.get("partition_key"),
             row_key=entity_config.get("row_key"),
             entity=entity_config.get("entity", {}),

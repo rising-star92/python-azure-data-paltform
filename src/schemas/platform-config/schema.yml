@@ -155,6 +155,7 @@ _datafactory:
 
 _datafactory_factory:
   display_name: str()
+  iam: include('_iam', required=False)
 
 #----------------------------------------------------------------------------------------------------------------------
 # COMMON
