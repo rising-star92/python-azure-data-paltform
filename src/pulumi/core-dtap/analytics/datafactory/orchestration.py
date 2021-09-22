@@ -1,7 +1,13 @@
+from pulumi import resource
 from pulumi_azure_native import datafactory as adf
 
-from ingenii_azure_data_platform.iam import ServicePrincipalRoleAssignment, GroupRoleAssignment
+from ingenii_azure_data_platform.iam import (
+    ServicePrincipalRoleAssignment,
+    GroupRoleAssignment,
+)
+
 from ingenii_azure_data_platform.utils import generate_resource_name
+from ingenii_azure_data_platform.orchestration import AdfSelfHostedIntegrationRuntime
 
 from config import platform_config
 from management import resource_groups
@@ -52,6 +58,23 @@ for assignment in iam_role_assignments:
             scope=datafactory.id,
         )
 
+# ----------------------------------------------------------------------------------------------------------------------
+# DATA FACTORY -> INTEGRATION RUNTIMES
+# ----------------------------------------------------------------------------------------------------------------------
+integration_runtimes_config = datafactory_config.get("integration_runtimes", [])
+
+for config in integration_runtimes_config:
+    if config["type"] == "self-hosted":
+        runtime = AdfSelfHostedIntegrationRuntime(
+            name=config["name"],
+            description=config.get(
+                "description",
+                "Managed by the Ingenii's deployment process. Manual changes are discouraged as they will be overridden.",
+            ),
+            factory_name=datafactory.name,
+            resource_group_name=resource_groups.infra.name,
+            platform_config=platform_config,
+        )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY -> LINKED SERVICES

@@ -76,6 +76,10 @@ def generate_resource_name(
 
         return f"{prefix}-{stack}-{region_short_name}-adf-{resource_name}-{unique_id}"
 
+    # Data Factory: Self Hosted Integration Runtime
+    elif resource_type == "adf_integration_runtime":
+        return f"{prefix}-{stack}-{resource_name}-{unique_id}"
+
     # Storage Account
     elif resource_type == "storage_account":
         return f"{prefix}{stack}{resource_name}{unique_id}"

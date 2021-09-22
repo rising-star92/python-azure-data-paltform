@@ -161,8 +161,8 @@ analytics_services:
             container_name: dbt
             mount_name: dbt
           - type: datalake
-            container_name: dbt-logs  
-            mount_name: dbt-logs   
+            container_name: dbt-logs
+            mount_name: dbt-logs
           - type: datalake
             container_name: raw
             mount_name: raw

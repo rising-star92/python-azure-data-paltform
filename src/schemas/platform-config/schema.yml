@@ -1,3 +1,4 @@
+---
 #----------------------------------------------------------------------------------------------------------------------
 # ROOT
 # Below are the root keys of the expected YAML config file.
@@ -22,7 +23,7 @@ general:
 #----------------------------------------------------------------------------------------------------------------------
 # MANAGEMENT
 #----------------------------------------------------------------------------------------------------------------------
-management: 
+management:
   user_groups: map(include('user_group'),key=str())
   resource_groups: map(include('resource_group'),key=str())
   resource_providers: list(str(),null(), required=False)
@@ -58,7 +59,7 @@ _network_virtual_network:
 #----------------------------------------------------------------------------------------------------------------------
 # STORAGE
 #----------------------------------------------------------------------------------------------------------------------
-storage: 
+storage:
   datalake:
     display_name: str(max=9)
     containers: map(include('storage_datalake_container'),key=str())
@@ -156,6 +157,12 @@ _datafactory:
 _datafactory_factory:
   display_name: str()
   iam: include('_iam', required=False)
+  integration_runtimes: list(include('_datafactory_integration_runtime'), required=False)
+
+_datafactory_integration_runtime:
+  type: enum("self-hosted","self-hosted-azure-vnet-integrated")
+  name: str()
+  description: str(required=False)
 
 #----------------------------------------------------------------------------------------------------------------------
 # COMMON

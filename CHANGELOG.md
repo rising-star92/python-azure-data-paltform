@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.1.13 (2021-09-22)
+
+### New Features
+
+- [datafactory] - Create self-hosted integration runtimes using the YAML config.
+
 ## 0.1.12 (2021-09-16)
 
 ### Improvements
@@ -14,11 +20,19 @@
 ## 0.1.11 (2021-09-14)
 
 ### Improvements
+
+- [general] - Improving naming conventions.  
+- [general] - Add the ability to register Azure Resource Providers.  
+- [data engineering] - Add table storage to keep track of sftp file ingestion.  
+
+### Bug Fixes
+
 - [general] - Improving naming convetions.  
 - [general] - Add the ability to register Azure Resource Providers.  
 - [data engineering] - Add table storage to keep track of sftp file ingestion.  
 
 ### Bug Fixes 
+
 - [general] - Fix Databricks linked services for Data Factory.
 
 ## 0.1.6
