@@ -1,6 +1,8 @@
 import pulumi_azure_native as azure_native
 import pulumi_azure as azure_classic
 
+from pulumi import Output
+
 from ingenii_azure_data_platform.utils import generate_resource_name
 from ingenii_azure_data_platform.defaults import STORAGE_ACCOUNT_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import GroupRoleAssignment
@@ -267,9 +269,9 @@ table_storage_sas = datalake.name.apply(
 azure_native.keyvault.Secret(
     resource_name="datalake-table-storage-sas-uri-secret",
     properties=azure_native.keyvault.SecretPropertiesArgs(
-        value=table_storage_sas.apply(lambda sas: sas.account_sas_token),
+        value=Output.concat(datalake.primary_endpoints.table, "?", table_storage_sas.account_sas_token),
     ),
     resource_group_name=resource_groups.security.name,
-    secret_name="datalake-table-storage-sas-uri-secret",
+    secret_name="datalake-table-storage-sas-uri",
     vault_name=credentials_store.key_vault.name,
 )

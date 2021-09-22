@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 0.1.14 (2021-09-22)
+
+### Improvements
+
+- [datalake] - Update the name of the Table storage SAS token when stored in Azure Key Vault.
+- [datalake] - Append the Data Lake Table storage endpoint to the SAS token when stored in the Azure Key Vault.
+
 ## 0.1.13 (2021-09-22)
 
 ### New Features
