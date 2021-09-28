@@ -259,6 +259,7 @@ table_storage_sas = datalake.name.apply(
                 azure_native.storage.Permissions.L,
                 azure_native.storage.Permissions.A,
                 azure_native.storage.Permissions.C,
+                azure_native.storage.Permissions.U,
             ]
         ),
         resource_group_name=resource_groups.data.name,

@@ -187,7 +187,7 @@ databricks_file_ingestion_pipeline = adf.Pipeline(
                     "value": "@pipeline().parameters.fileName",
                     "type": "Expression",
                 },
-                "increment": 0,
+                "increment": "0",
             },
             policy=adf.ActivityPolicyArgs(
                 timeout="0.00:10:00",

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.1.15 (TBD)
+
+- [datalake] - Update Table storage permissions
+- [datafactory] - Fix ingestion pipeline parameters
+
 ## 0.1.14 (2021-09-22)
 
 ### Improvements
