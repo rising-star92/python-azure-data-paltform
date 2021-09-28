@@ -2,6 +2,12 @@
 
 ## 0.1.15 (TBD)
 
+## Improvements
+
+- [github-workflows] - Adding a check to make sure the Changelog has been updated.
+
+### Bug Fixes
+
 - [datalake] - Update Table storage permissions
 - [datafactory] - Fix ingestion pipeline parameters
 
@@ -33,17 +39,17 @@
 
 ### Improvements
 
-- [general] - Improving naming conventions.  
-- [general] - Add the ability to register Azure Resource Providers.  
-- [data engineering] - Add table storage to keep track of sftp file ingestion.  
+- [general] - Improving naming conventions.
+- [general] - Add the ability to register Azure Resource Providers.
+- [data engineering] - Add table storage to keep track of sftp file ingestion.
 
 ### Bug Fixes
 
-- [general] - Improving naming convetions.  
-- [general] - Add the ability to register Azure Resource Providers.  
-- [data engineering] - Add table storage to keep track of sftp file ingestion.  
+- [general] - Improving naming convetions.
+- [general] - Add the ability to register Azure Resource Providers.
+- [data engineering] - Add table storage to keep track of sftp file ingestion.
 
-### Bug Fixes 
+### Bug Fixes
 
 - [general] - Fix Databricks linked services for Data Factory.
 
@@ -57,7 +63,7 @@
 
 ### Improvements
 
-- [databricks] - Mounting the 'utilities' container in the Analytics workspace.  
+- [databricks] - Mounting the 'utilities' container in the Analytics workspace.
 - [development] - Improving the .devcontainer experience
 
 ## 0.1.4
@@ -67,7 +73,7 @@
 - [databricks] - Provide additional environment variables to the Engineering and Analytics cluster.
 - [databricks] - Add default cluster docker image for the Engineering cluster.
 - [databricks] - Make sure the "users" group has "CAN_ATTACH_TO" access to the Databricks clusters.
-  
+
 ## 0.1.3
 
 ### Improvements
