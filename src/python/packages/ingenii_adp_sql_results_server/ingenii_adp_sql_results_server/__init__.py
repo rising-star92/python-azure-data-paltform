@@ -22,7 +22,7 @@ def init(args: PackageInputArgs) -> None:
     _resource_group_name = args.package_config.get("resource_group_name", "data")
     _minimal_tls_version = args.package_config.get("minimal_tls_version", "1.2")
 
-    server_name = f"{PREFIX}-{STACK}-{REGION.short_name}-{_server_name}-{UNIQUE_ID}"
+    server_name = f"{PREFIX}-{STACK}-{REGION.short_name}-sql-{_server_name}-{UNIQUE_ID}"
 
     resource_group_name = args.dtap_outputs.apply(
         lambda outputs: outputs["management"]["resource_groups"][_resource_group_name][

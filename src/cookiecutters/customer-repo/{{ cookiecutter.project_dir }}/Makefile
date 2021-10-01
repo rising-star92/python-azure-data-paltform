@@ -47,18 +47,21 @@ init-core-shared:
 preview-core-shared:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.shared.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi preview -C ${CORE_SHARED_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --diff ${EXTRA_ARGS}
 
 apply-core-shared:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.shared.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi up -C ${CORE_SHARED_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} -p 3 --color always --diff ${EXTRA_ARGS} 
 
 destroy-core-shared:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.shared.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi destroy -C ${CORE_SHARED_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always ${EXTRA_ARGS}
 
@@ -72,18 +75,21 @@ init-core-dtap:
 preview-core-dtap:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi preview -C ${CORE_DTAP_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --diff ${EXTRA_ARGS}
 
 apply-core-dtap:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi up -C ${CORE_DTAP_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} -p 3 --color always --diff ${EXTRA_ARGS} 
 
 destroy-core-dtap:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi destroy -C ${CORE_DTAP_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always ${EXTRA_ARGS}
 
@@ -97,18 +103,21 @@ init-core-packages:
 preview-core-packages:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi preview -C ${CORE_PACKAGES_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --diff ${EXTRA_ARGS}
 
 apply-core-packages:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi up -C ${CORE_PACKAGES_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} -p 3 --color always --diff ${EXTRA_ARGS} 
 
 destroy-core-packages:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi destroy -C ${CORE_PACKAGES_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always ${EXTRA_ARGS}
 #--------------------------------------------------------------------------------------------------------------------

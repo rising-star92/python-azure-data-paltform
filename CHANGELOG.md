@@ -1,4 +1,11 @@
 # CHANGELOG
+
+## 0.1.17 (2021-10-02)
+
+### Bug Fixes
+
+- [general] - Bugfixes around the make file and the first package to deploy.
+
 ## 0.1.16 (2021-10-02)
 
 ### Improvements
@@ -7,7 +14,7 @@
 
 ## 0.1.15 (2021-10-02)
 
-## Improvements
+### Improvements
 
 - [github-workflows] - Adding a check to make sure the Changelog has been updated.
 - [general] - Exporting outputs from the platform
