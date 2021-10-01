@@ -35,6 +35,7 @@ user_group:
 
 # management.resource_groups
 resource_group:
+  display_name: str()
   iam: include('_iam', required=False)
 
 #----------------------------------------------------------------------------------------------------------------------

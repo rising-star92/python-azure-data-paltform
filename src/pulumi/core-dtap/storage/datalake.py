@@ -7,26 +7,30 @@ from ingenii_azure_data_platform.utils import generate_resource_name
 from ingenii_azure_data_platform.defaults import STORAGE_ACCOUNT_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import GroupRoleAssignment
 
-from config import platform_config
+from project_config import platform_config, platform_outputs
 from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet, dns
 from security import credentials_store
 
+outputs = platform_outputs["storage"]["datalake"] = {}
+
 # ----------------------------------------------------------------------------------------------------------------------
 # FIREWALL IP ACCESS LIST
 # This is the global firewall access list and applies to all resources such as key vaults, storage accounts etc.
 # ----------------------------------------------------------------------------------------------------------------------
-firewall = platform_config.yml_config["network"]["firewall"]
+firewall = platform_config.from_yml["network"]["firewall"]
 firewall_ip_access_list = []
 if firewall.get("ip_access_list") is not None:
     for ip_address in firewall.get("ip_access_list"):
-        azure_native.storage.IPRuleArgs(i_p_address_or_range=ip_address)
+        firewall_ip_access_list.append(
+            azure_native.storage.IPRuleArgs(i_p_address_or_range=ip_address)
+        )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA LAKE
 # ----------------------------------------------------------------------------------------------------------------------
-datalake_config = platform_config.yml_config["storage"]["datalake"]
+datalake_config = platform_config.from_yml["storage"]["datalake"]
 datalake_name = generate_resource_name(
     resource_type="storage_account",
     resource_name="datalake",
@@ -66,12 +70,15 @@ datalake = azure_native.storage.StorageAccount(
     kind="StorageV2",
     location=platform_config.region.long_name,
     minimum_tls_version="TLS1_2",
-    resource_group_name=resource_groups.data.name,
+    resource_group_name=resource_groups["data"].name,
     sku=azure_native.storage.SkuArgs(
         name="Standard_GRS",
     ),
     tags=platform_config.tags,
 )
+
+outputs["id"] = datalake.id
+outputs["name"] = datalake.name
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA LAKE -> PRIVATE ENDPOINTS
@@ -96,7 +103,7 @@ blob_private_endpoint = azure_native.network.PrivateEndpoint(
         )
     ],
     custom_dns_configs=[],
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
     subnet=azure_native.network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
 
@@ -111,7 +118,7 @@ blob_private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
     ],
     private_dns_zone_group_name="privatelink",
     private_endpoint_name=blob_private_endpoint.name,
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
 )
 
 # DFS PRIVATE ENDPOINT
@@ -133,7 +140,7 @@ dfs_private_endpoint = azure_native.network.PrivateEndpoint(
             request_message="none",
         )
     ],
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
     custom_dns_configs=[],
     subnet=azure_native.network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
@@ -149,7 +156,7 @@ dfs_private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
     ],
     private_dns_zone_group_name="privatelink",
     private_endpoint_name=dfs_private_endpoint.name,
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -188,7 +195,7 @@ for ref_key, container_config in datalake_container_definitions.items():
         resource_name=datalake_container_name,
         account_name=datalake.name,
         container_name=container_config["display_name"],
-        resource_group_name=resource_groups.data.name,
+        resource_group_name=resource_groups["data"].name,
     )
     # Container Role Assignments
     try:
@@ -221,7 +228,7 @@ for ref_key, table_config in datalake_table_definitions.items():
 
     datalake_tables[ref_key] = azure_native.storage.Table(
         resource_name=f"{datalake_name}-{table_config['display_name']}".lower(),
-        resource_group_name=resource_groups.data.name,
+        resource_group_name=resource_groups["data"].name,
         account_name=datalake.name,
         table_name=table_name,
     )
@@ -262,7 +269,7 @@ table_storage_sas = datalake.name.apply(
                 azure_native.storage.Permissions.U,
             ]
         ),
-        resource_group_name=resource_groups.data.name,
+        resource_group_name=resource_groups["data"].name,
     )
 )
 
@@ -270,9 +277,11 @@ table_storage_sas = datalake.name.apply(
 azure_native.keyvault.Secret(
     resource_name="datalake-table-storage-sas-uri-secret",
     properties=azure_native.keyvault.SecretPropertiesArgs(
-        value=Output.concat(datalake.primary_endpoints.table, "?", table_storage_sas.account_sas_token),
+        value=Output.concat(
+            datalake.primary_endpoints.table, "?", table_storage_sas.account_sas_token
+        ),
     ),
-    resource_group_name=resource_groups.security.name,
+    resource_group_name=resource_groups["security"].name,
     secret_name="datalake-table-storage-sas-uri",
     vault_name=credentials_store.key_vault.name,
 )

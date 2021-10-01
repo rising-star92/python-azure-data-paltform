@@ -2,13 +2,13 @@ from pulumi.resource import ResourceOptions
 from pulumi_azure.core import ResourceProviderRegistration
 from pulumi_azure.provider import Provider
 
-from config import platform_config
+from project_config import platform_config
 
 azure_classic_provider = Provider(
     resource_name="azure_classic", skip_provider_registration=True
 )
 
-resource_providers_config = platform_config.yml_config["management"].get(
+resource_providers_config = platform_config.from_yml["management"].get(
     "resource_providers", {}
 )
 

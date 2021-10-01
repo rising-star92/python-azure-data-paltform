@@ -1,59 +1,36 @@
-from config import platform_config
-from management.user_groups import user_groups
+from project_config import platform_config, platform_outputs
 from ingenii_azure_data_platform.management import ResourceGroup
 from ingenii_azure_data_platform.iam import GroupRoleAssignment
 
-resource_groups_config = platform_config.yml_config["management"]["resource_groups"]
+from .user_groups import user_groups
 
-# ----------------------------------------------------------------------------------------------------------------------
-# INFRA RESOURCE GROUP
-# ----------------------------------------------------------------------------------------------------------------------
-infra = ResourceGroup("infra", platform_config)
+resource_groups_config = platform_config.from_yml["management"]["resource_groups"]
 
-infra_iam_role_assignments = resource_groups_config["infra"]["iam"]["role_assignments"]
+outputs = platform_outputs["management"]["resource_groups"] = {}
 
-for assignment in infra_iam_role_assignments:
-    # User Group Assignment
-    user_group_ref_key = assignment.get("user_group_ref_key")
-    if user_group_ref_key is not None:
-        GroupRoleAssignment(
-            role_name=assignment["role_definition_name"],
-            group_object_id=user_groups[user_group_ref_key]["object_id"],
-            scope=infra.id,
-        )
+resource_groups = {}
 
-# ----------------------------------------------------------------------------------------------------------------------
-# DATA RESOURCE GROUP
-# ----------------------------------------------------------------------------------------------------------------------
-data = ResourceGroup("data", platform_config)
+for ref_key, config in resource_groups_config.items():
+    resource = ResourceGroup(config["display_name"], platform_config)
+    resource_groups[ref_key] = resource
 
-data_iam_role_assignments = resource_groups_config["data"]["iam"]["role_assignments"]
+    # Export resource group metadata
+    outputs[ref_key] = {
+        "name": resource.name,
+        "location": resource.location,
+        "id": resource.id,
+    }
 
-for assignment in data_iam_role_assignments:
-    # User Group Assignment
-    user_group_ref_key = assignment.get("user_group_ref_key")
-    if user_group_ref_key is not None:
-        GroupRoleAssignment(
-            role_name=assignment["role_definition_name"],
-            group_object_id=user_groups[user_group_ref_key]["object_id"],
-            scope=data.id,
-        )
+    # IAM role assignments
+    role_assignments = config.get("iam", {}).get("role_assignments", {})
 
-# ----------------------------------------------------------------------------------------------------------------------
-# SECURITY RESOURCE GROUP
-# ----------------------------------------------------------------------------------------------------------------------
-security = ResourceGroup("security", platform_config)
+    for assignment in role_assignments:
+        # User group role assignment
+        user_group_ref_key = assignment.get("user_group_ref_key")
 
-security_iam_role_assignments = resource_groups_config["security"]["iam"][
-    "role_assignments"
-]
-
-for assignment in security_iam_role_assignments:
-    # User Group Assignment
-    user_group_ref_key = assignment.get("user_group_ref_key")
-    if user_group_ref_key is not None:
-        GroupRoleAssignment(
-            role_name=assignment["role_definition_name"],
-            group_object_id=user_groups[user_group_ref_key]["object_id"],
-            scope=security.id,
-        )
+        if user_group_ref_key is not None:
+            GroupRoleAssignment(
+                role_name=assignment["role_definition_name"],
+                group_object_id=user_groups[user_group_ref_key]["object_id"],
+                scope=resource_groups[ref_key].id,
+            )

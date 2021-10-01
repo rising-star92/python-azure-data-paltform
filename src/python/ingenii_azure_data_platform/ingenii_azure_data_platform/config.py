@@ -122,7 +122,7 @@ class PlatformConfiguration:
             custom_config_file_path = default_config_file_path
 
         # Merge the default + custom configs. The custom configs will override any defaults.
-        self._yml_config = dict(
+        self._from_yml = dict(
             hco.load(
                 [default_config_file_path, custom_config_file_path],
                 method=hco.METHOD_MERGE,
@@ -131,9 +131,9 @@ class PlatformConfiguration:
         )  # type: ignore
 
         # Validate the schema
-        self._validate_schema(config_schema_file_path, self._yml_config)
+        self._validate_schema(config_schema_file_path, self._from_yml)
 
-        self._use_legacy_naming = self._yml_config["general"]["use_legacy_naming"]
+        self._use_legacy_naming = self._from_yml["general"]["use_legacy_naming"]
 
         self._stack = stack
 
@@ -161,20 +161,25 @@ class PlatformConfiguration:
 
     @property
     def prefix(self):
-        return self._yml_config["general"]["prefix"]
+        return self._from_yml["general"]["prefix"]
 
     @property
     def region(self):
-        return CloudRegion(self._yml_config["general"]["region"])
+        return CloudRegion(self._from_yml["general"]["region"])
 
     @property
     def tags(self):
-        return self._yml_config["general"]["tags"]
+        return self._from_yml["general"]["tags"]
 
     @property
     def unique_id(self):
-        return self._yml_config["general"]["unique_id"]
+        return self._from_yml["general"]["unique_id"]
 
+    # TODO: Left for backward compatibility. To be deleted in future releases.
     @property
     def yml_config(self):
-        return self._yml_config
+        return self._from_yml
+
+    @property
+    def from_yml(self):
+        return self._from_yml

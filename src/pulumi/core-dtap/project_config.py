@@ -15,3 +15,8 @@ platform_config = PlatformConfiguration(
 
 # Load the current Azure auth session metadata
 azure_client = get_client_config()
+
+# Outputs
+platform_outputs = {}
+
+pulumi.export("root", platform_outputs)

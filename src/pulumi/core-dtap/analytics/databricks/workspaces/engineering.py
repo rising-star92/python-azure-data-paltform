@@ -13,7 +13,7 @@ from ingenii_azure_data_platform.iam import (
 )
 from ingenii_azure_data_platform.utils import generate_hash, generate_resource_name
 
-from config import platform_config, azure_client
+from project_config import platform_config, azure_client
 from management import resource_groups
 from management.user_groups import user_groups
 from security import credentials_store
@@ -23,7 +23,7 @@ from storage.datalake import datalake
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE
 # ----------------------------------------------------------------------------------------------------------------------
-workspace_config = platform_config.yml_config["analytics_services"]["databricks"][
+workspace_config = platform_config.from_yml["analytics_services"]["databricks"][
     "workspaces"
 ]["engineering"]
 workspace_short_name = "engineering"
@@ -48,10 +48,10 @@ workspace = azure_native.databricks.Workspace(
     managed_resource_group_id=workspace_managed_resource_group_name,
     parameters=azure_native.databricks.WorkspaceCustomParametersArgs(
         custom_private_subnet_name=azure_native.databricks.WorkspaceCustomStringParameterArgs(
-            value=vnet.dbw_engineering_containers_subnet.name, # type: ignore
+            value=vnet.dbw_engineering_containers_subnet.name,  # type: ignore
         ),
         custom_public_subnet_name=azure_native.databricks.WorkspaceCustomStringParameterArgs(
-            value=vnet.dbw_engineering_hosts_subnet.name, # type: ignore
+            value=vnet.dbw_engineering_hosts_subnet.name,  # type: ignore
         ),
         custom_virtual_network_id=azure_native.databricks.WorkspaceCustomStringParameterArgs(
             value=vnet.vnet.id,
@@ -61,7 +61,7 @@ workspace = azure_native.databricks.Workspace(
         ),
     ),
     sku=azure_native.databricks.SkuArgs(name="Premium"),
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -147,7 +147,7 @@ dbt_token_as_key_vault_secret = azure_native.keyvault.Secret(
     properties=azure_native.keyvault.SecretPropertiesArgs(
         value=dbt_token.token_value,
     ),
-    resource_group_name=resource_groups.security.name,
+    resource_group_name=resource_groups["security"].name,
     secret_name=dbt_token_name,
     vault_name=credentials_store.key_vault.name,
 )

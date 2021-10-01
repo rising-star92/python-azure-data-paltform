@@ -23,6 +23,7 @@ management:
       display_name: analysts
   resource_groups:
     infra:
+      display_name: infra
       iam:
         role_assignments:
           - user_group_ref_key: admins
@@ -32,6 +33,7 @@ management:
           - user_group_ref_key: analysts
             role_definition_name: Reader
     data:
+      display_name: data
       iam:
         role_assignments:
           - user_group_ref_key: admins
@@ -41,6 +43,7 @@ management:
           - user_group_ref_key: analysts
             role_definition_name: Reader
     security:
+      display_name: security
       iam:
         role_assignments:
           - user_group_ref_key: admins

@@ -5,27 +5,33 @@ from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
 )
+from pulumi_azure_native import keyvault
+from pulumi_azure_native.keyvault import key
 
-from config import platform_config, azure_client
+from project_config import platform_config, azure_client, platform_outputs
 from management import resource_groups
 from management.user_groups import user_groups
 
 from network import vnet, dns
 
+outputs = platform_outputs["security"]["credentials_store"] = {}
+
 # ----------------------------------------------------------------------------------------------------------------------
 # FIREWALL IP ACCESS LIST
 # This is the global firewall access list and applies to all resources such as key vaults, storage accounts etc.
 # ----------------------------------------------------------------------------------------------------------------------
-firewall = platform_config.yml_config["network"]["firewall"]
+firewall = platform_config.from_yml["network"]["firewall"]
 firewall_ip_access_list = []
 if firewall.get("ip_access_list") is not None:
     for ip_address in firewall.get("ip_access_list"):
-        azure_native.keyvault.IPRuleArgs(value=ip_address)
+        firewall_ip_access_list.append(
+            azure_native.keyvault.IPRuleArgs(value=ip_address)
+        )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT
 # ----------------------------------------------------------------------------------------------------------------------
-key_vault_config = platform_config.yml_config["security"]["credentials_store"]
+key_vault_config = platform_config.from_yml["security"]["credentials_store"]
 key_vault_name = generate_resource_name(
     resource_type="key_vault", resource_name="cred", platform_config=platform_config
 )
@@ -33,7 +39,7 @@ key_vault_name = generate_resource_name(
 key_vault = azure_native.keyvault.Vault(
     resource_name=key_vault_name,
     vault_name=key_vault_name,
-    resource_group_name=resource_groups.security.name,
+    resource_group_name=resource_groups["security"].name,
     location=platform_config.region.long_name,
     properties=azure_native.keyvault.VaultPropertiesArgs(
         enable_rbac_authorization=True,
@@ -72,6 +78,10 @@ key_vault = azure_native.keyvault.Vault(
     tags=platform_config.tags,
 )
 
+outputs["key_vault_id"] = key_vault.id
+outputs["key_vault_name"] = key_vault.name
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> PRIVATE ENDPOINT
 # ----------------------------------------------------------------------------------------------------------------------
@@ -94,7 +104,7 @@ private_endpoint = azure_native.network.PrivateEndpoint(
             request_message="none",
         )
     ],
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
     custom_dns_configs=[],
     subnet=azure_native.network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
@@ -115,7 +125,7 @@ private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
     ],
     private_dns_zone_group_name="privatelink",
     private_endpoint_name=private_endpoint.name,
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
 )
 
 # ----------------------------------------------------------------------------------------------------------------------

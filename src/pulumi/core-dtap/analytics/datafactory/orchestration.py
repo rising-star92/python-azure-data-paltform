@@ -1,4 +1,3 @@
-from pulumi import resource
 from pulumi_azure_native import datafactory as adf
 
 from ingenii_azure_data_platform.iam import (
@@ -9,17 +8,22 @@ from ingenii_azure_data_platform.iam import (
 from ingenii_azure_data_platform.utils import generate_resource_name
 from ingenii_azure_data_platform.orchestration import AdfSelfHostedIntegrationRuntime
 
-from config import platform_config
+from project_config import platform_config, platform_outputs
 from management import resource_groups
 from management.user_groups import user_groups
 from storage.datalake import datalake
 from security import credentials_store
 from analytics.databricks.workspaces import engineering as databricks_engineering
 
+
+outputs = platform_outputs["analytics"]["datafactory"]["factories"][
+    "orchestration"
+] = {}
+
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY
 # ----------------------------------------------------------------------------------------------------------------------
-datafactory_config = platform_config.yml_config["analytics_services"]["datafactory"][
+datafactory_config = platform_config.from_yml["analytics_services"]["datafactory"][
     "factories"
 ]["orchestration"]
 
@@ -33,7 +37,7 @@ datafactory = adf.Factory(
     resource_name=datafactory_name,
     factory_name=datafactory_name,
     location=platform_config.region.long_name,
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
     identity=adf.FactoryIdentityArgs(type=adf.FactoryIdentityType.SYSTEM_ASSIGNED),
     global_parameters={
         "DataLakeName": adf.GlobalParameterSpecificationArgs(
@@ -41,6 +45,9 @@ datafactory = adf.Factory(
         )
     },
 )
+
+outputs["id"] = datafactory.id
+outputs["name"] = datafactory.name
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY -> IAM -> ROLE ASSIGNMENTS
@@ -72,7 +79,7 @@ for config in integration_runtimes_config:
                 "Managed by the Ingenii's deployment process. Manual changes are discouraged as they will be overridden.",
             ),
             factory_name=datafactory.name,
-            resource_group_name=resource_groups.infra.name,
+            resource_group_name=resource_groups["infra"].name,
             platform_config=platform_config,
         )
 
@@ -97,7 +104,7 @@ datalake_linked_service = adf.LinkedService(
         description="Managed by Ingenii Data Platform",
         type="AzureBlobFS",
     ),
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
 )
 
 # CREDENTIALS STORE
@@ -117,7 +124,7 @@ credentials_store_linked_service = adf.LinkedService(
         description="Managed by Ingenii Data Platform",
         type="AzureKeyVault",
     ),
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
 )  # type: ignore
 
 # DATABRICKS ENGINEERING - DELTA LAKE
@@ -134,7 +141,7 @@ databricks_engineering_delta_linked_service = adf.LinkedService(
         description="Managed by Ingenii Data Platform",
         type="AzureDatabricksDeltaLake",
     ),
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
 )  # type: ignore
 
 
@@ -153,7 +160,7 @@ databricks_engineering_compute_linked_service = adf.LinkedService(
         description="Managed by Ingenii Data Platform",
         type="AzureDatabricks",
     ),
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
 )  # type: ignore
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -198,7 +205,7 @@ databricks_file_ingestion_pipeline = adf.Pipeline(
             ),
         )
     ],
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
 )
 
 databricks_file_ingestion_trigger = adf.Trigger(
@@ -224,5 +231,5 @@ databricks_file_ingestion_trigger = adf.Trigger(
             )
         ],
     ),
-    resource_group_name=resource_groups.infra.name,
+    resource_group_name=resource_groups["infra"].name,
 )
