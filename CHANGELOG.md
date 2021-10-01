@@ -5,6 +5,7 @@
 ## Improvements
 
 - [github-workflows] - Adding a check to make sure the Changelog has been updated.
+- [general] - Exporting outputs from the platform
 
 ### Bug Fixes
 
