@@ -1,5 +1,5 @@
 # import re
-from setuptools import setup, find_packages
+from setuptools import setup
 
 # with open("README.md", "r") as fh:
 #     readme = fh.read()
@@ -16,4 +16,8 @@ from setuptools import setup, find_packages
 #     requirements = [p for p in r.read().split("\n") if p]
 #     dependencies = [p.split("=")[0] for p in requirements]
 
-setup(packages=find_packages())
+setup(
+    # version=current_version
+    # install_requires=requirements,
+    # dependency_links=dependencies,
+)

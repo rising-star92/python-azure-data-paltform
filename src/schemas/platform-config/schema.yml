@@ -3,12 +3,13 @@
 # ROOT
 # Below are the root keys of the expected YAML config file.
 #----------------------------------------------------------------------------------------------------------------------
-general: include('general')
+general: include('general', required=False)
 management: include('management', required=False)
 network: include('network', required=False)
 storage: include('storage', required=False)
 security: include('security', required=False)
 analytics_services: include('analytics_services', required=False)
+packages: include('packages', required=False)
 ---
 #----------------------------------------------------------------------------------------------------------------------
 # GENERAL
@@ -164,6 +165,18 @@ _datafactory_integration_runtime:
   type: enum("self-hosted","self-hosted-azure-vnet-integrated")
   name: str()
   description: str(required=False)
+
+#----------------------------------------------------------------------------------------------------------------------
+# PACKAGES
+#----------------------------------------------------------------------------------------------------------------------
+packages: list(include('_package'), required=False)
+
+_package:
+  name: str()
+  git: str(required=False)
+  pypi: str(required=False)
+  local: str(required=False)
+  config: map(required=False)
 
 #----------------------------------------------------------------------------------------------------------------------
 # COMMON

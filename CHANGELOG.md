@@ -6,6 +6,9 @@
 
 - [github-workflows] - Adding a check to make sure the Changelog has been updated.
 - [general] - Exporting outputs from the platform
+- [packages] - Getting a very rough packaging system in place.
+- [packages] - Preview of ADP SQL Results Server package.
+- [cookiecutters] - Updating the cookiecutter templates.
 
 ### Bug Fixes
 

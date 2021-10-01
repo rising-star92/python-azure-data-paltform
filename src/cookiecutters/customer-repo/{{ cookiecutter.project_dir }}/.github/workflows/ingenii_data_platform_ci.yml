@@ -90,9 +90,9 @@ jobs:
       #---------------------------------
       - name: Run Pulumi Preview
         run: |
-          make preview-dtap STACK={%- raw %}${{ matrix.stack }}{%- endraw %}
+          make preview STACK={%- raw %}${{ matrix.stack }}{%- endraw %}
       #---------------------------------
       - name: Run Pulumi Up
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
-          make apply-dtap STACK={%- raw %}${{ matrix.stack }}{%- endraw %} EXTRA_ARGS="-f"
+          make apply STACK={%- raw %}${{ matrix.stack }}{%- endraw %} EXTRA_ARGS="-f"
