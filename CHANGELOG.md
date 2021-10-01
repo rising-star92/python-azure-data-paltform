@@ -1,4 +1,9 @@
 # CHANGELOG
+## 0.1.16 (2021-10-02)
+
+### Improvements
+
+- [general] - Migrating the defaults into a centralized location.
 
 ## 0.1.15 (2021-10-02)
 
