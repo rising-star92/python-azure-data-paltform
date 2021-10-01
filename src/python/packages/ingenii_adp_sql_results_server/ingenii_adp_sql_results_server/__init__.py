@@ -5,8 +5,7 @@ from ingenii_azure_data_platform.contracts.packages import PackageInputArgs
 
 
 def init(args: PackageInputArgs) -> None:
-    PROJECT = args.pulumi_project
-    STACK = args.pulumi_stack
+    STACK = args.platform_config.stack
     REGION = args.platform_config.region
     PREFIX = args.platform_config.prefix
     UNIQUE_ID = args.platform_config.unique_id

@@ -37,8 +37,6 @@ for package in packages:
     module = import_module(package_name)
     module.init(
         PackageInputArgs(
-            pulumi_project=CURRENT_PROJECT_NAME,
-            pulumi_stack=CURRENT_STACK_NAME,
             package_config=package_config,
             namespace=namespace,
             platform_config=platform_config,

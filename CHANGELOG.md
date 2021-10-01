@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.1.18 (2021-10-03)
+
+### Bug Fixes
+
+- [general] - Fix naming conventions for the SQL package.
+
 ## 0.1.17 (2021-10-02)
 
 ### Bug Fixes
