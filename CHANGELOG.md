@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 0.1.15 (TBD)
+## 0.1.15 (2021-10-02)
 
 ## Improvements
 
