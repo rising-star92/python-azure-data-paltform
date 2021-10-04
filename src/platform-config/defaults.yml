@@ -154,6 +154,7 @@ analytics_services:
             display_name: engineering
             spark_version: "8.4.x-scala2.12"
             node_type_id: "Standard_F4s"
+            is_pinned: true
             autotermination_minutes: 15
             docker_image_url: "ingeniisolutions/databricks-runtime:0.3.1"
         storage_mounts:
@@ -194,6 +195,7 @@ analytics_services:
             display_name: analytics
             spark_version: "8.4.x-scala2.12"
             node_type_id: "Standard_F4s"
+            is_pinned: true
             auto_scale_min_workers: 1
             auto_scale_max_workers: 4
             autotermination_minutes: 15

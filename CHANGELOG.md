@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.1.19 (2021-10-04)
+
+- [databricks] - Make sure the default clusters are pinned by default. This would prevent Databricks from automatically removing them.
+
 ## 0.1.18 (2021-10-03)
 
 ### Bug Fixes

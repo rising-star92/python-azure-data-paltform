@@ -159,6 +159,7 @@ for ref_key, cluster_config in cluster_definitions.items():
         "cluster_name": cluster_config["display_name"],
         "spark_version": cluster_config["spark_version"],
         "node_type_id": cluster_config["node_type_id"],
+        "is_pinned": cluster_config["is_pinned"],
         "autotermination_minutes": cluster_config["autotermination_minutes"],
         "libraries": cluster_libraries or None,
         "spark_env_vars": {
