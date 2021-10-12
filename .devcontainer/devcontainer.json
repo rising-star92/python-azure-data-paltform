@@ -49,7 +49,8 @@
 	"mhutchie.git-graph",
 	"redvanworkshop.explorer-exclude-vscode-extension",
 	"streetsidesoftware.code-spell-checker",
-	"yzhang.markdown-all-in-one"
+	"yzhang.markdown-all-in-one",
+	"hitode909.zentabs"
 ],
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.

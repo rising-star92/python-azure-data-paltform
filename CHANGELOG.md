@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.1.20 (TBD)
+
+- [core/python] - Adding config registry client using Key Vault as a storage engine.
+
 ## 0.1.19 (2021-10-04)
 
 - [databricks] - Make sure the default clusters are pinned by default. This would prevent Databricks from automatically removing them.
