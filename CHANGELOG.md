@@ -8,14 +8,14 @@
 ## 0.1.19 (2021-10-13)
 
 ### New Features
-[core/python] - Adding config registry client using Key Vault as a storage engine.
-[shared_services] - Add the management resources
-[shared_services] - Add the network resources
-[shared_services] - Add the config registry
-[shared_services] - Add the Azure DevOps project and repos.
+- [core/python] - Adding config registry client using Key Vault as a storage engine.
+- [shared_services] - Add the management resources
+- [shared_services] - Add the network resources
+- [shared_services] - Add the config registry
+- [shared_services] - Add the Azure DevOps project and repos.
 
 ### Improvements
-[databricks] - Make sure the default clusters are pinned by default. This would prevent Databricks from automatically removing them.
+- [databricks] - Make sure the default clusters are pinned by default. This would prevent Databricks from automatically removing them.
 
 ## 0.1.18 (2021-10-03)
 
