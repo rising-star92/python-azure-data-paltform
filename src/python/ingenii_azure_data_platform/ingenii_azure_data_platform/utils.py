@@ -44,6 +44,9 @@ def generate_resource_name(
         "storage_blob_container": "sbc",
         "dns_zone": "dz",
         "private_dns_zone": "prdz",
+        "devops_project": "adoproj",
+        "devops_repo": "adorepo",
+        "devops_pipeline": "adopipe",
     }
 
     resource_type = resource_type.lower()

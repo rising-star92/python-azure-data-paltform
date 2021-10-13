@@ -147,9 +147,8 @@ preview-packages: preview-core-packages
 apply-packages: apply-core-packages
 destroy-packages: destroy-core-packages
 
-# TODO: Add shared stack as soon as the shared services resources are set up.
-init: init-dtap init-packages
-preview: preview-dtap preview-packages
-apply: apply-dtap apply-packages
+init: init-shared init-dtap init-packages
+preview: preview-shared preview-dtap preview-packages
+apply: apply-shared apply-dtap apply-packages
 
 clean: clean-source clean-runtime

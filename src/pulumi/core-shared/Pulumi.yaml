@@ -1,0 +1,4 @@
+name: ingenii-adp-core-shared
+runtime:
+  name: python
+description: Ingenii Azure Data Platform - Core Shared Services Module.

@@ -1,8 +1,18 @@
 # CHANGELOG
 
-## 0.1.20 (TBD)
+## 0.1.21 (TBD)
+
+- [shared_services] - (TODO) - Export outputs
+- [shared_services] - (TODO) - Self-Hosted Runtime for Azure DevOps
+
+## 0.1.20 (2021-10-13)
 
 - [core/python] - Adding config registry client using Key Vault as a storage engine.
+- [shared_services] - Add the management resources
+- [shared_services] - Add the network resources
+- [shared_services] - Add the config registry
+- [shared_services] - Add the Azure DevOps project and repos.
+
 
 ## 0.1.19 (2021-10-04)
 

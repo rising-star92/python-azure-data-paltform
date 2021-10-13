@@ -10,6 +10,7 @@ storage: include('storage', required=False)
 security: include('security', required=False)
 analytics_services: include('analytics_services', required=False)
 packages: include('packages', required=False)
+automation: include('automation', required=False)
 ---
 #----------------------------------------------------------------------------------------------------------------------
 # GENERAL
@@ -91,11 +92,20 @@ storage_datalake_table_entity:
 # SECURITY
 #----------------------------------------------------------------------------------------------------------------------
 security:
-  credentials_store:
-    network:
-      firewall:
-        enabled: bool()
-    iam: include('_iam', required=False)
+  config_registry: include('_config_registry', required=False)
+  credentials_store: include('_credentials_store', required=False)
+
+_config_registry:
+  network:
+    firewall:
+      enabled: bool()
+  iam: include('_iam', required=False)
+
+_credentials_store:
+  network:
+    firewall:
+      enabled: bool()
+  iam: include('_iam', required=False)
 
 #----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS SERVICES
@@ -179,6 +189,12 @@ _package:
   pypi: str(required=False)
   local: str(required=False)
   config: map(required=False)
+
+#----------------------------------------------------------------------------------------------------------------------
+# AUTOMATION
+#----------------------------------------------------------------------------------------------------------------------
+# TODO: Populate the automation schema
+automation: any()
 
 #----------------------------------------------------------------------------------------------------------------------
 # COMMON
