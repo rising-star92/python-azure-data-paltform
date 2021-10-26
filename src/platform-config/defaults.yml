@@ -96,7 +96,7 @@ storage:
         - user_group_ref_key: admins
           role_definition_name: "Storage Blob Data Contributor"
     containers:
-      utilities: # Mount in DBW Engineering(RW), Analytics
+      utilities: # Mount in DBW Engineering(RW), Analytics(RW)
         display_name: utilities
         iam:
           role_assignments:
@@ -116,8 +116,14 @@ storage:
               role_definition_name: "Storage Blob Data Contributor"
             - user_group_ref_key: analysts
               role_definition_name: "Storage Blob Data Reader"
-      orchestration: # Mount in DBW Engineering(RW)
+      orchestration: # Mount in DBW Engineering(RW), Analytics
         display_name: orchestration
+        iam:
+          role_assignments:
+            - user_group_ref_key: engineers
+              role_definition_name: "Storage Blob Data Contributor"
+            - user_group_ref_key: analysts
+              role_definition_name: "Storage Blob Data Reader"
       dbt: # Mount in DBW Engineering(RW)
         display_name: dbt
       dbt_logs: # Mount in DBW Engineering(RW)

@@ -12,7 +12,7 @@ platform_config = PlatformConfiguration(
     default_config_file_path=getenv(
         "ADP_DEFAULT_CONFIG_FILE_PATH", "../../platform-config/defaults.yml"
     ),
-    custom_config_file_path=getenv("ADP_CUSTOM_CONFIGS_FILE_PATH"),
+    custom_config_file_path=getenv("ADP_CUSTOM_CONFIGS_FILE_PATH")
 )
 
 # Load the current Azure auth session metadata

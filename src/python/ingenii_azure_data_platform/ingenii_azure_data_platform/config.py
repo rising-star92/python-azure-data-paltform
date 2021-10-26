@@ -80,6 +80,10 @@ class CloudRegion:
                 return k
 
 
+class PlatformConfigurationException(Exception):
+    ...
+
+
 class PlatformConfiguration:
     """
     Platform configuration class that handles config reading and schema validation.
@@ -118,8 +122,7 @@ class PlatformConfiguration:
     ) -> None:
 
         # If no custom config file path is provided, we'll use the default config.
-        if custom_config_file_path is None:
-            custom_config_file_path = default_config_file_path
+        custom_config_file_path = custom_config_file_path or default_config_file_path
 
         # Merge the default + custom configs. The custom configs will override any defaults.
         self._from_yml = dict(

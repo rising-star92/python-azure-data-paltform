@@ -1,9 +1,13 @@
 # CHANGELOG
 
-## 0.1.20 (TBD)
+## 0.1.21 (TBD)
 
 - [shared_services] - (TODO) - Export outputs
 - [shared_services] - (TODO) - Self-Hosted Runtime for Azure DevOps
+
+## 0.1.20 (2021-10-22)
+
+- [databricks] - Add Ingenii Engineering notebooks
 
 ## 0.1.19 (2021-10-13)
 

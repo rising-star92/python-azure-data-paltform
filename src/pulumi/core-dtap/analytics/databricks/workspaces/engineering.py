@@ -13,12 +13,14 @@ from ingenii_azure_data_platform.iam import (
 )
 from ingenii_azure_data_platform.utils import generate_hash, generate_resource_name
 
-from project_config import platform_config, azure_client
+from project_config import azure_client, platform_config, platform_outputs
 from management import resource_groups
 from management.user_groups import user_groups
 from security import credentials_store
 from network import vnet
 from storage.datalake import datalake
+
+outputs = platform_outputs["analytics"]["databricks"]["workspaces"]["engineering"] = {}
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE
@@ -63,6 +65,10 @@ workspace = azure_native.databricks.Workspace(
     sku=azure_native.databricks.SkuArgs(name="Premium"),
     resource_group_name=resource_groups["infra"].name,
 )
+
+outputs["name"] = workspace.name
+outputs["id"] = workspace.workspace_id
+outputs["url"] = workspace.workspace_url
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> IAM ROLE ASSIGNMENTS
@@ -320,12 +326,7 @@ storage_mounts_datalake_role_assignment = ServicePrincipalRoleAssignment(
 
 # CONTAINER MOUNTS
 # If no storage mounts are defined in the YAML files, we'll not attempt to create any.
-try:
-    storage_mount_definitions = workspace_config["storage_mounts"]
-except:
-    storage_mount_definitions = []
-
-for definition in storage_mount_definitions:
+for definition in workspace_config.get("storage_mounts", []):
     resource = databricks.AzureAdlsGen2Mount(
         resource_name=f'{workspace_name}-{definition["mount_name"]}',
         client_id=storage_mounts_sp.application_id,

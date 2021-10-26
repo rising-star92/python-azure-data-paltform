@@ -93,6 +93,21 @@ destroy-core-dtap:
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi destroy -C ${CORE_DTAP_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always ${EXTRA_ARGS}
 
+upload-notebooks:
+	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
+	@az login --service-principal -t ${ARM_TENANT_ID} -u ${ARM_CLIENT_ID} -p ${ARM_CLIENT_SECRET} > /dev/null
+	@$(eval DATABRICKS_AAD_TOKEN=$(shell az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d | jq '.accessToken' --raw-output))
+
+	@$(eval ANALYTICS_HOST=$(shell pulumi stack output -C ${CORE_DTAP_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --json | jq '.root.analytics.databricks.workspaces.analytics.url' | sed 's/"//g'))
+	@DATABRICKS_AAD_TOKEN=${DATABRICKS_AAD_TOKEN} databricks configure --aad-token --host https://${ANALYTICS_HOST}
+	@databricks workspace mkdirs '/Shared/Ingenii Engineering'
+	@ls ${SOURCE_DIR}/src/notebooks/analytics | awk -F '.' '{ print $$1 }' | xargs -I {} databricks workspace import -l PYTHON ${SOURCE_DIR}/src/notebooks/analytics/{}.py '/Shared/Ingenii Engineering/{}' --overwrite
+
+	@$(eval ENGINEERING_HOST=$(shell pulumi stack output -C ${CORE_DTAP_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --json | jq '.root.analytics.databricks.workspaces.engineering.url' | sed 's/"//g'))
+	@DATABRICKS_AAD_TOKEN=${DATABRICKS_AAD_TOKEN} databricks configure --aad-token --host https://${ENGINEERING_HOST}
+	@databricks workspace mkdirs '/Shared/Ingenii Engineering'
+	@ls ${SOURCE_DIR}/src/notebooks/engineering | awk -F '.' '{ print $$1 }' | xargs -I {} databricks workspace import -l PYTHON ${SOURCE_DIR}/src/notebooks/engineering/{}.py '/Shared/Ingenii Engineering/{}' --overwrite
+
 # PACKAGES (Additional Packages)
 CORE_PACKAGES_DIR := ${RUNTIME_DIR}/core-packages
 init-core-packages:
