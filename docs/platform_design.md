@@ -51,7 +51,7 @@ TODO
 
 ### Code Structure
 
-TODO
+REDO
 
 ```shell
 ├── Makefile                  # Helper functions
@@ -65,23 +65,11 @@ TODO
 ├── docs                      # Platform documentation
 │   └── assets                # Documentation assets such as images, files etc
 └── src                       # Platform source code
-    ├── env                   # All environment configs
-    │   ├── dtap              # DTAP environment configs
-    │   │   ├── defaults.yml  # Default values for the DTAP environments
-    │   │   ├── env.hcl       # Environment (DTAP) specific Terragrunt configs
-    │   ├── root.hcl          # Global Terragrunt configs. (DTAP/Shared)
-    │   └── shared            # Shared environment configs
-    │       ├── defaults.yml  # Default values for the Shared environment
-    │       └── env.hcl       # Environment (Shared) specific Terragrunt configs
-    ├── modules               # Pure Terraform code
-    ├── utils                 # Utilities, scripts, CI workflows
-    └── terragrunt.hcl        # Base Terragrunt file
 ```
 
 ### IaC Design
 
-- Terraform `outputs` and their structure act as a contract. Changing the output structure will lead to breaking changes.
-- **Local value** names starting with `__` are considered internal to the `local` scope they are defined to.
+TODO
 
 ## Costs
 

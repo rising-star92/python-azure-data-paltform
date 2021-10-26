@@ -4,6 +4,7 @@
 
 - [shared_services] - (TODO) - Export outputs
 - [shared_services] - (TODO) - Self-Hosted Runtime for Azure DevOps
+- [docs] - Update documentation and migrate to the user section
 
 ## 0.1.20 (2021-10-22)
 
