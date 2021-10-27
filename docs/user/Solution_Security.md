@@ -1,6 +1,8 @@
 # Solution Security
 
 - [Solution Security](#solution-security)
+  - [Overview](#overview)
+    - [Control Plane vs Data Plane Access](#control-plane-vs-data-plane-access)
   - [Exposed Services](#exposed-services)
   - [Role Based Access Control](#role-based-access-control)
   - [Service Accounts](#service-accounts)
@@ -9,6 +11,12 @@
   - [Data Movement](#data-movement)
     - [Data Movement Within The Platform](#data-movement-within-the-platform)
     - [On-Premise To Cloud Using Azure Data Factory Self-Hosted Runtime](#on-premise-to-cloud-using-azure-data-factory-self-hosted-runtime)
+
+## Overview
+
+### Control Plane vs Data Plane Access
+
+![](./assets/adp_control_vs_data_plane.png)
 
 ## Exposed Services
 
