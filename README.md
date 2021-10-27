@@ -1,6 +1,6 @@
 # Ingenii Azure Data Platform
 
-![Ingenii Azure Data Platform](./docs/assets/adp-design-overview.png)
+![Ingenii Azure Data Platform](./docs/user/assets/adp_design_overview.png)
 
 ## Introduction
 

@@ -1,4 +1,4 @@
-# Ingenii Azure Data Platform Requirements <!-- omit in toc -->
+# Data Platform Deployment Requirements <!-- omit in toc -->
 
 **Table of Contents**
 
@@ -40,7 +40,7 @@ The consumer of this platform will have to complete specific pre-requisite steps
 
 ## 2. Azure Subscriptions
 
-![Azure Subscriptions](assets/adp-design-subscriptions.png)
+![Azure Subscriptions](./assets/adp_design_subscriptions.png)
 
 The platform requires four Azure Subscriptions to match the resource environments. Segregating environment resources in different Subscriptions provides better access and billing control.
 
@@ -80,7 +80,7 @@ Step 2
 
 Locate the `Usage + quotas` pane and click on it
 
-![subscriptions-quota](assets/adp-reqs-subscription-quota-1.png)
+![subscriptions-quota](./assets/adp_reqs_subscription_quota_1.png)
 
 
 Step 3
@@ -107,7 +107,7 @@ Step 5
 
 Populate the the new limit fields and submit the form.
 
-![subscriptions-quota-2](assets/adp-reqs-subscription-quota-2.png)
+![subscriptions-quota-2](./assets/adp_reqs_subscription_quota_2.png)
 
 It will take around 30 minutes or more for Microsoft to approve the quota increase.
 
@@ -117,7 +117,7 @@ We need to enable the **Microsoft.DelegatedNetwork** provider for each subscript
 
 Click on **Subscriptions** -> **subscription name** -> **Resource providers** -> Search for **Microsoft.DelegatedNetwork** -> **Select** and click **Register**.
 
-![resource-providers](assets/adp-reqs-subscription-res-provider.png)
+![resource-providers](./assets/adp_reqs_subscription_res_provider.png)
 
 ---
 

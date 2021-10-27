@@ -1,12 +1,8 @@
 {
-    "customer_code"     : "A short string that represents a customer code. (e.g. kirkoswald -> kirk)",
-    "platform_version"  : "The release version of the Azure Data Platform. (e.g. 0.1.4)",
-    "resource_prefix"   : "Up to 4 characters string prexix that will be used for all resource names. (e.g. kirk)",
-    "region"            : "The Azure region where the resources will be deployed. (e.g. EastUS)",
-    "unique_id"         : "Up to 3 characters string that will be used as a unique id for resource names that require global uniqueness.",
-    "project_dir"       : "adp-{{ cookiecutter.customer_code.lower() }}",
-    "enable_dev_environment"    : true,
-    "enable_test_environment"   : true,
-    "enable_prod_environment"   : true,
-    "enable_shared_environment" : true
+  "customer_code": "A short string that represents a customer code. (e.g. kirkoswald -> kirk)",
+  "platform_version": "The release version of the Azure Data Platform. (e.g. 0.1.4)",
+  "resource_prefix": "Up to 4 characters string prexix that will be used for all resource names. (e.g. kirk)",
+  "region": "The Azure region where the resources will be deployed. (e.g. EastUS)",
+  "unique_id": "Up to 3 characters string that will be used as a unique id for resource names that require global uniqueness.",
+  "project_dir": "adp-{{ cookiecutter.customer_code.lower() }}"
 }

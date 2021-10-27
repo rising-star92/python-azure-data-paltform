@@ -1,4 +1,4 @@
-# Ingenii Azure Data Platform Design <!-- omit in toc -->
+P# Ingenii Azure Data Platform Design <!-- omit in toc -->
 
 **Table of Contents**
 
@@ -21,15 +21,15 @@
 
 ## Overview
 
-![Platform Overview](./assets/adp-design-overview.png)
+![Platform Overview](./assets/adp_design_overview.png)
 
 ## Architectural Design
 
-![Platform High Level Architecture](./assets/adp-design-architecture.png)
+![Platform High Level Architecture](./assets/adp_design_architecture.png)
 
 ### Azure Subscriptions
 
-![Azure Subscriptions](assets/adp-design-subscriptions.png)
+![Azure Subscriptions](./assets/adp_design_subscriptions.png)
 
 ### Azure Resource Groups
 
@@ -37,7 +37,7 @@ TODO
 
 ### Network Flow
 
-![](assets/adp-design-network-flow.png)
+![](./assets/adp_design_network_flow.png)
 
 ### Data Flow
 
@@ -45,7 +45,7 @@ TODO
 
 ### Infrastructure Environments
 
-![](assets/adp-design-deployment-environments.png)
+![](./assets/adp_design_deployment_environments.png)
 
 ## Infrastructure As Code
 
