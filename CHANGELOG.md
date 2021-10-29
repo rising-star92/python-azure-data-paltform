@@ -1,17 +1,14 @@
 # CHANGELOG
 
-## 0.1.22 (TBD)
+## 0.1.21 (TBD)
 
 - [shared_services] - Export outputs
 
-## 0.1.21 (2021-10-29)
-
-- [shared_services] - Adding default AAD group permissions to ADO project
-- [docs] - Update documentation and migrate to the user section
-
-## 0.1.20 (2021-10-22)
+## 0.1.20 (2021-10-29)
 
 - [databricks] - Add Ingenii Engineering notebooks
+- [shared_services] - Adding default AAD group permissions to ADO project
+- [docs] - Update documentation and migrate to the user section
 
 ## 0.1.19 (2021-10-13)
 
