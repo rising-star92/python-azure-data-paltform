@@ -94,6 +94,14 @@ automation:
       version_control: "Git"
       visibility: "private"
       work_item_template: "Agile"
+      iam:
+        role_assignments:
+          - user_group_ref_key: admins
+            azure_devops_project_group_name: "Project Administrators"
+          - user_group_ref_key: engineers
+            azure_devops_project_group_name: "Contributors"
+          - user_group_ref_key: analysts
+            azure_devops_project_group_name: "Contributors"
     repositories:
       - name: "data-engineering"
         import_url: "https://github.com/ingenii-solutions/azure-data-platform-data-engineering-example"

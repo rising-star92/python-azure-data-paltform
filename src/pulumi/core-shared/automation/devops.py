@@ -1,7 +1,8 @@
 import pulumi_azuredevops as ado
 
-from ingenii_azure_data_platform.utils import generate_resource_name
+from ingenii_azure_data_platform.utils import generate_resource_name, generate_hash
 from project_config import platform_config
+from management import user_groups
 
 ado_configs = platform_config.from_yml["automation"]["devops"]
 
@@ -25,6 +26,20 @@ ado_project = ado.Project(
     visibility=ado_configs["project"]["visibility"],
     work_item_template=ado_configs["project"]["work_item_template"],
 )
+
+# Azure DevOps Project Permissions
+ado_project_iam_role_assignments = ado_configs["project"].get("iam", {}).get("role_assignments", [])
+
+def apply_iam_role_assignments(project_id: str, role_assignments: list):
+    for assignment in role_assignments:
+        resource_name = generate_hash(assignment["azure_devops_project_group_name"], assignment["user_group_ref_key"])
+        aad_group = ado.Group(resource_name=resource_name, origin_id=user_groups[assignment["user_group_ref_key"]]["object_id"])
+        ado_group = ado.get_group(project_id=project_id, name=assignment["azure_devops_project_group_name"])
+        membership=ado.GroupMembership(resource_name=resource_name,group=ado_group.descriptor,members=[aad_group.descriptor]
+)
+
+ado_project.id.apply(lambda id: apply_iam_role_assignments(project_id=id, role_assignments=ado_project_iam_role_assignments))
+
 
 # Azure DevOps Repositories
 ado_repo_configs = ado_configs.get("repositories", [])

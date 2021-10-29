@@ -1,9 +1,12 @@
 # CHANGELOG
 
-## 0.1.21 (TBD)
+## 0.1.22 (TBD)
 
-- [shared_services] - (TODO) - Export outputs
-- [shared_services] - (TODO) - Self-Hosted Runtime for Azure DevOps
+- [shared_services] - Export outputs
+
+## 0.1.21 (2021-10-29)
+
+- [shared_services] - Adding default AAD group permissions to ADO project
 - [docs] - Update documentation and migrate to the user section
 
 ## 0.1.20 (2021-10-22)

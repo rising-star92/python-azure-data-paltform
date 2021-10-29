@@ -1,5 +1,9 @@
 # Ingenii Azure Data Platform
 
+## Development Guide
+
+_Customer facing documentation can be found [here](./docs/user)_
+
 ![Ingenii Azure Data Platform](./docs/user/assets/adp_design_overview.png)
 
 ## Introduction

@@ -207,3 +207,4 @@ _iam_role_assignment:
   role_definition_name: str()
   object_id: str(required=False)
   user_group_ref_key: str(required=False)
+  azure_devops_project_group_name: str(required=False)
