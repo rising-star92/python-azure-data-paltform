@@ -5,3 +5,4 @@ platform_outputs["automation"] = {}
 
 # Load sub-modules
 from . import devops
+from . import devops_deployment

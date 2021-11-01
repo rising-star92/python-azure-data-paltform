@@ -18,6 +18,16 @@ platform_config = PlatformConfiguration(
 # Load the current Azure auth session metadata
 azure_client = get_client_config()
 
+PULUMI_ORG_NAME = "ingenii"
+CURRENT_STACK_NAME = pulumi.get_stack()
+CURRENT_PROJECT_NAME = pulumi.get_project()
+
+SHARED_OUTPUTS = pulumi.StackReference("/".join([
+    PULUMI_ORG_NAME, 
+    CURRENT_PROJECT_NAME.replace("dtap", "shared"), 
+    "shared"
+])).get_output("root")
+
 # Outputs
 platform_outputs = {}
 

@@ -64,9 +64,9 @@ security:
     iam:
       role_assignments:
         - user_group_ref_key: admins
-          role_definition_name: "Key Vault Secrets Reader"
+          role_definition_name: "Key Vault Secrets User"
         - user_group_ref_key: engineers
-          role_definition_name: "Key Vault Secrets Reader"
+          role_definition_name: "Key Vault Secrets User"
 
 # ----------------------------------------------------------------------------------------------------------------------
 # NETWORK
@@ -162,7 +162,7 @@ analytics_services:
             node_type_id: "Standard_F4s"
             is_pinned: true
             autotermination_minutes: 15
-            docker_image_url: "ingeniisolutions/databricks-runtime:0.3.1"
+            docker_image_url: "ingeniisolutions/databricks-runtime:0.4.2"
         storage_mounts:
           - type: datalake
             container_name: utilities

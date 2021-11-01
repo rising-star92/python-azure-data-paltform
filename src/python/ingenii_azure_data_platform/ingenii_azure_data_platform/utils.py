@@ -47,6 +47,10 @@ def generate_resource_name(
         "devops_project": "adoproj",
         "devops_repo": "adorepo",
         "devops_pipeline": "adopipe",
+        "devops_variable_group": "adovg",
+        "random_password": "rp",
+        "user_assigned_managed_identity": "uami",
+        "virtual_machine_scale_set": "vmss",
     }
 
     resource_type = resource_type.lower()

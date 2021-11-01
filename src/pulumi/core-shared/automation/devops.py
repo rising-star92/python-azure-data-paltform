@@ -63,22 +63,21 @@ for repo in ado_repo_configs:
         else ado.GitInitializationArgs(init_type="Clean"),
     )
 
-    if repo.get("pipeline") is not None:
+    for pipeline in repo.get("pipelines", []):
         ado.BuildDefinition(
             resource_name=generate_resource_name(
                 resource_type="devops_pipeline",
-                resource_name=repo["name"],
+                resource_name=pipeline["name"].replace(" ", "_").lower(),
                 platform_config=platform_config,
             ),
-            name=repo["name"],
+            name=pipeline["name"],
             project_id=ado_project.id,
             ci_trigger=ado.BuildDefinitionCiTriggerArgs(
-                use_yaml=repo["pipeline"].get("use_yml", True),
+                use_yaml=pipeline.get("use_yml", True),
             ),
             repository=ado.BuildDefinitionRepositoryArgs(
                 repo_type="TfsGit",
                 repo_id=ado_repos[repo["name"]].id,
-                branch_name=repo["pipeline"].get("branch_name", "main"),
-                yml_path=repo["pipeline"].get("yml_path", "azure-pipelines.yml"),
+                yml_path=pipeline.get("yml_path", "azure-pipelines.yml"),
             ),
         )

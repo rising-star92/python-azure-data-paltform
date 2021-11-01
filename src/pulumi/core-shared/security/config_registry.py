@@ -120,13 +120,9 @@ private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> IAM -> ROLE ASSIGNMENTS
 # ----------------------------------------------------------------------------------------------------------------------
-try:
-    iam_role_assignments = key_vault_config["iam"]["role_assignments"]
-except KeyError:
-    iam_role_assignments = {}
 
 # Create role assignments defined in the YAML files
-for assignment in iam_role_assignments:
+for assignment in key_vault_config.get("iam", {}).get("role_assignments", []):
     # User Group Assignment
     user_group_ref_key = assignment.get("user_group_ref_key")
     if user_group_ref_key is not None:

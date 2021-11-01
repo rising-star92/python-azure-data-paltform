@@ -11,20 +11,25 @@ class RoleAssignment(azure_native.authorization.RoleAssignment):
     """
 
     _role_definitions = {
-        # General
-        "Owner": "/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
-        "Contributor": "/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c",
-        "Reader": "/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7",
-        # Key Vault
-        "Key Vault Administrator": "/providers/Microsoft.Authorization/roleDefinitions/00482a5a-887f-4fb3-b363-3b7fe8e74483",
-        "Key Vault Secrets Reader": "/providers/Microsoft.Authorization/roleDefinitions/4633458b-17de-408a-b874-0445c86b69e6",
-        # Storage
-        "Storage Blob Data Owner": "/providers/Microsoft.Authorization/roleDefinitions/b7e6dc6d-f1e8-4753-8033-0f276bb0955b",
-        "Storage Blob Data Contributor": "/providers/Microsoft.Authorization/roleDefinitions/ba92f5b4-2d11-453d-a403-e96b0029c9fe",
-        "Storage Blob Data Reader": "/providers/Microsoft.Authorization/roleDefinitions/2a2b9908-6ea1-4ae2-8e65-a410df84e7d1",
-        "Storage Blob Delegator": "/providers/Microsoft.Authorization/roleDefinitions/db58b8e5-c6ad-4a2a-8342-4190687cbf4a",
-        # Data Factory
-        "Data Factory Contributor": "/providers/Microsoft.Authorization/roleDefinitions/673868aa-7521-48a0-acc6-0f60742d39f5"
+        k: f"/providers/Microsoft.Authorization/roleDefinitions/{v}"
+        for k, v in {
+            # General
+            "Owner": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
+            "Contributor": "b24988ac-6180-42a0-ab88-20f7382dd24c",
+            "Reader": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
+            # Key Vault
+            "Key Vault Administrator": "00482a5a-887f-4fb3-b363-3b7fe8e74483",
+            "Key Vault Secrets User": "4633458b-17de-408a-b874-0445c86b69e6",
+            # Storage
+            "Reader and Data Access": "c12c1c16-33a1-487b-954d-41c89c60f349",
+            "Storage Account Key Operator Service Role": "81a9662b-bebf-436f-a333-f67b29880f12",
+            "Storage Blob Data Owner": "b7e6dc6d-f1e8-4753-8033-0f276bb0955b",
+            "Storage Blob Data Contributor": "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
+            "Storage Blob Data Reader": "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1",
+            "Storage Blob Delegator": "db58b8e5-c6ad-4a2a-8342-4190687cbf4a",
+            # Data Factory
+            "Data Factory Contributor": "673868aa-7521-48a0-acc6-0f60742d39f5"
+        }.items()
     }
 
     def __init__(
@@ -106,6 +111,24 @@ class ServicePrincipalRoleAssignment(RoleAssignment):
         super().__init__(
             role_name=role_name,
             principal_id=service_principal_object_id,
+            scope=scope,
+            principal_type="ServicePrincipal",
+        )
+
+class UserAssignedIdentityRoleAssignment(RoleAssignment):
+    """
+    #TODO
+    """
+
+    def __init__(
+        self,
+        role_name: str,
+        principal_id: Union[str, Output[str]],
+        scope: Union[str, Output[str]],
+    ) -> None:
+        super().__init__(
+            role_name=role_name,
+            principal_id=principal_id,
             scope=scope,
             principal_type="ServicePrincipal",
         )

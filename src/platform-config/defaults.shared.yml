@@ -63,7 +63,7 @@ security:
     iam:
       role_assignments:
         - user_group_ref_key: admins
-          role_definition_name: "Key Vault Secrets Reader"
+          role_definition_name: "Key Vault Secrets User"
 
 # ----------------------------------------------------------------------------------------------------------------------
 # NETWORK
@@ -103,9 +103,18 @@ automation:
           - user_group_ref_key: analysts
             azure_devops_project_group_name: "Contributors"
     repositories:
-      - name: "data-engineering"
+      - name: "Data Engineering"
         import_url: "https://github.com/ingenii-solutions/azure-data-platform-data-engineering-example"
-        pipeline:
-          use_yml: True
-          branch_name: "main"
-          yml_path: "azure-pipelines.yml"
+        pipelines:
+          - name: Data Engineering - dbt
+            use_yml: True
+            yml_path: "CICD/dbt.yml"
+          - name: Data Engineering - dbt - Production
+            use_yml: True
+            yml_path: "CICD/dbt_production.yml"
+          - name: Data Engineering - pre-processing
+            use_yml: True
+            yml_path: "CICD/pre-processing.yml"
+          - name: Data Engineering - pre-processing - Production
+            use_yml: True
+            yml_path: "CICD/pre-processing_production.yml"

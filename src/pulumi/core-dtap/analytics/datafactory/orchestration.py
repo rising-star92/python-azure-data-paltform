@@ -1,19 +1,18 @@
-from pulumi_azure_native import datafactory as adf
+from pulumi_azure_native import datafactory as adf, keyvault
 
-from ingenii_azure_data_platform.iam import (
-    ServicePrincipalRoleAssignment,
-    GroupRoleAssignment,
-)
-
-from ingenii_azure_data_platform.utils import generate_resource_name
+from ingenii_azure_data_platform.iam import GroupRoleAssignment, \
+    ServicePrincipalRoleAssignment, UserAssignedIdentityRoleAssignment
 from ingenii_azure_data_platform.orchestration import AdfSelfHostedIntegrationRuntime
+from ingenii_azure_data_platform.utils import generate_resource_name
 
+from analytics.databricks.workspaces import engineering as databricks_engineering
+from platform_shared import get_devops_principal_id, get_devops_config_registry, \
+    get_devops_config_registry_resource_group
 from project_config import platform_config, platform_outputs
 from management import resource_groups
 from management.user_groups import user_groups
 from storage.datalake import datalake
 from security import credentials_store
-from analytics.databricks.workspaces import engineering as databricks_engineering
 
 
 outputs = platform_outputs["analytics"]["datafactory"]["factories"][
@@ -110,7 +109,7 @@ datalake_linked_service = adf.LinkedService(
 # CREDENTIALS STORE
 # Datafactory Access to Credentials Store (Key Vault)
 datafactory_acccess_to_credentials_store = ServicePrincipalRoleAssignment(
-    role_name="Key Vault Secrets Reader",
+    role_name="Key Vault Secrets User",
     service_principal_object_id=datafactory.identity.principal_id,
     scope=credentials_store.key_vault.id,
 )
@@ -232,4 +231,24 @@ databricks_file_ingestion_trigger = adf.Trigger(
         ],
     ),
     resource_group_name=resource_groups["infra"].name,
+)
+
+# ----------------------------------------------------------------------------------------------------------------------
+# DEVOPS ASSIGNMENT
+# ----------------------------------------------------------------------------------------------------------------------
+
+UserAssignedIdentityRoleAssignment(
+    role_name="Data Factory Contributor",
+    principal_id=get_devops_principal_id(),
+    scope=datafactory.id
+)
+
+keyvault.Secret(
+    resource_name="devops-data-factory-name",
+    resource_group_name=get_devops_config_registry_resource_group(),
+    vault_name=get_devops_config_registry()["key_vault_name"],
+    secret_name=f"data-factory-name-{platform_config.stack}",
+    properties=keyvault.SecretPropertiesArgs(
+        value=datafactory.name
+    ),
 )

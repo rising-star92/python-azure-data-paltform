@@ -5,9 +5,11 @@ from pulumi import Output
 
 from ingenii_azure_data_platform.utils import generate_resource_name
 from ingenii_azure_data_platform.defaults import STORAGE_ACCOUNT_DEFAULT_FIREWALL
-from ingenii_azure_data_platform.iam import GroupRoleAssignment
+from ingenii_azure_data_platform.iam import GroupRoleAssignment, UserAssignedIdentityRoleAssignment
 
-from project_config import platform_config, platform_outputs
+from project_config import azure_client, platform_config, platform_outputs
+from platform_shared import get_devops_principal_id, get_devops_config_registry, \
+    get_devops_config_registry_resource_group
 from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet, dns
@@ -20,12 +22,11 @@ outputs = platform_outputs["storage"]["datalake"] = {}
 # This is the global firewall access list and applies to all resources such as key vaults, storage accounts etc.
 # ----------------------------------------------------------------------------------------------------------------------
 firewall = platform_config.from_yml["network"]["firewall"]
-firewall_ip_access_list = []
-if firewall.get("ip_access_list") is not None:
-    for ip_address in firewall.get("ip_access_list"):
-        firewall_ip_access_list.append(
-            azure_native.storage.IPRuleArgs(i_p_address_or_range=ip_address)
-        )
+firewall_ip_access_list = [
+    azure_native.storage.IPRuleArgs(i_p_address_or_range=ip_address)
+    for ip_address in firewall.get("ip_access_list", [])
+
+]
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA LAKE
@@ -162,10 +163,9 @@ dfs_private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA LAKE -> IAM -> ROLE ASSIGNMENTS
 # ----------------------------------------------------------------------------------------------------------------------
-iam_role_assignments = datalake_config["iam"].get("role_assignments", {})
 
 # Create role assignments defined in the YAML files
-for assignment in iam_role_assignments:
+for assignment in datalake_config["iam"].get("role_assignments", {}):
     # User Group Assignment
     user_group_ref_key = assignment.get("user_group_ref_key")
     if user_group_ref_key is not None:
@@ -179,13 +179,11 @@ for assignment in iam_role_assignments:
 # DATA LAKE -> CONTAINERS
 # ----------------------------------------------------------------------------------------------------------------------
 
-# If no containers are defined in the YAML files, we'll not attempt to create any.
-datalake_container_definitions = datalake_config.get("containers", {})
-
 # This dict will keep all container resources.
 datalake_containers = {}
 
-for ref_key, container_config in datalake_container_definitions.items():
+# If no containers are defined in the YAML files, we'll not attempt to create any.
+for ref_key, container_config in datalake_config.get("containers", {}).items():
     datalake_container_name = generate_resource_name(
         resource_type="storage_blob_container",
         resource_name=ref_key,
@@ -216,13 +214,12 @@ for ref_key, container_config in datalake_container_definitions.items():
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA LAKE -> TABLES
 # ----------------------------------------------------------------------------------------------------------------------
-# If no containers are defined in the YAML files, we'll not attempt to create any.
-datalake_table_definitions = datalake_config.get("tables", {})
 
 # This dict will keep all table resources.
 datalake_tables = {}
 
-for ref_key, table_config in datalake_table_definitions.items():
+# If no containers are defined in the YAML files, we'll not attempt to create any.
+for ref_key, table_config in datalake_config.get("tables", {}).items():
 
     table_name = table_config["display_name"]
 
@@ -276,12 +273,42 @@ table_storage_sas = datalake.name.apply(
 # Save to Key Vault
 azure_native.keyvault.Secret(
     resource_name="datalake-table-storage-sas-uri-secret",
+    resource_group_name=resource_groups["security"].name,
+    vault_name=credentials_store.key_vault.name,
+    secret_name="datalake-table-storage-sas-uri",
     properties=azure_native.keyvault.SecretPropertiesArgs(
         value=Output.concat(
             datalake.primary_endpoints.table, "?", table_storage_sas.account_sas_token
         ),
     ),
-    resource_group_name=resource_groups["security"].name,
-    secret_name="datalake-table-storage-sas-uri",
-    vault_name=credentials_store.key_vault.name,
+)
+
+# ----------------------------------------------------------------------------------------------------------------------
+# DEVOPS ASSIGNMENT
+# ----------------------------------------------------------------------------------------------------------------------
+
+devops_principal_id = get_devops_principal_id()
+for container in ["dbt", "utilities"]:
+    UserAssignedIdentityRoleAssignment(
+        role_name="Storage Blob Data Contributor",
+        principal_id=devops_principal_id,
+        scope=datalake_containers[container].id
+    )
+
+azure_native.keyvault.Secret(
+    resource_name="devops-datalake-name",
+    resource_group_name=get_devops_config_registry_resource_group(),
+    vault_name=get_devops_config_registry()["key_vault_name"],
+    secret_name=f"data-lake-name-{platform_config.stack}",
+    properties=azure_native.keyvault.SecretPropertiesArgs(
+        value=datalake.name
+    ),
+)
+
+# Required while the Azure CLI command 'sync' does not support MSI authentication
+# https://docs.microsoft.com/en-us/cli/azure/storage/blob?view=azure-cli-latest#az_storage_blob_sync
+UserAssignedIdentityRoleAssignment(
+    role_name="Reader and Data Access",
+    principal_id=devops_principal_id,
+    scope=datalake.id
 )

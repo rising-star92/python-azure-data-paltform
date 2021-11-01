@@ -21,12 +21,10 @@ outputs = platform_outputs["security"]["credentials_store"] = {}
 # This is the global firewall access list and applies to all resources such as key vaults, storage accounts etc.
 # ----------------------------------------------------------------------------------------------------------------------
 firewall = platform_config.from_yml["network"]["firewall"]
-firewall_ip_access_list = []
-if firewall.get("ip_access_list") is not None:
-    for ip_address in firewall.get("ip_access_list"):
-        firewall_ip_access_list.append(
-            azure_native.keyvault.IPRuleArgs(value=ip_address)
-        )
+firewall_ip_access_list = [
+    azure_native.keyvault.IPRuleArgs(value=ip_address)
+    for ip_address in firewall.get("ip_access_list", [])
+]
 
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT
@@ -53,18 +51,13 @@ key_vault = azure_native.keyvault.Vault(
                     else None
                 ),
                 virtual_network_rules=[
-                    azure_native.keyvault.VirtualNetworkRuleArgs(
-                        id=vnet.dbw_engineering_hosts_subnet.id,
-                    ),
-                    azure_native.keyvault.VirtualNetworkRuleArgs(
-                        id=vnet.dbw_engineering_containers_subnet.id,
-                    ),
-                    azure_native.keyvault.VirtualNetworkRuleArgs(
-                        id=vnet.dbw_analytics_hosts_subnet.id,
-                    ),
-                    azure_native.keyvault.VirtualNetworkRuleArgs(
-                        id=vnet.dbw_analytics_containers_subnet.id,
-                    ),
+                    azure_native.keyvault.VirtualNetworkRuleArgs(id=subnet.id)
+                    for subnet in (
+                        vnet.dbw_engineering_hosts_subnet,
+                        vnet.dbw_engineering_containers_subnet,
+                        vnet.dbw_analytics_hosts_subnet,
+                        vnet.dbw_analytics_containers_subnet
+                    )
                 ],
             )
             if key_vault_config["network"]["firewall"]["enabled"] == True
@@ -131,13 +124,9 @@ private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> IAM -> ROLE ASSIGNMENTS
 # ----------------------------------------------------------------------------------------------------------------------
-try:
-    iam_role_assignments = key_vault_config["iam"]["role_assignments"]
-except:
-    iam_role_assignments = {}
 
 # Create role assignments defined in the YAML files
-for assignment in iam_role_assignments:
+for assignment in key_vault_config["iam"].get("role_assignments", []):
     # User Group Assignment
     user_group_ref_key = assignment.get("user_group_ref_key")
     if user_group_ref_key is not None:

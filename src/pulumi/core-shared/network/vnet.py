@@ -126,3 +126,37 @@ subnet_outputs["hosted_services"] = {
     "id": hosted_services_subnet.id,
     "address_prefix": hosted_services_subnet.address_prefix,
 }
+
+# DEVOPS DEPLOYMENT SUBNET
+devops_deployment_subnet_name = generate_resource_name(
+    resource_type="subnet",
+    resource_name="devops-deployment",
+    platform_config=platform_config,
+)
+devops_deployment_subnet = azure_native.network.Subnet(
+    resource_name=devops_deployment_subnet_name,
+    subnet_name=devops_deployment_subnet_name,
+    resource_group_name=resource_groups["infra"].name,
+    virtual_network_name=vnet.name,
+    address_prefix=generate_cidr(vnet_address_space, 24, 3),
+    route_table=azure_native.network.RouteTableArgs(id=routing.main_route_table.id),
+    service_endpoints=[
+        azure_native.network.ServiceEndpointPropertiesFormatArgs(
+            service="Microsoft.Storage",
+        ),
+        azure_native.network.ServiceEndpointPropertiesFormatArgs(
+            service="Microsoft.KeyVault",
+        ),
+        azure_native.network.ServiceEndpointPropertiesFormatArgs(
+            service="Microsoft.SQL",
+        ),
+    ],
+    opts=pulumi.ResourceOptions(depends_on=[privatelink_subnet]),
+)
+
+# Export subnet metadata
+subnet_outputs["devops-deployment"] = {
+    "name": devops_deployment_subnet.name,
+    "id": devops_deployment_subnet.id,
+    "address_prefix": devops_deployment_subnet.address_prefix,
+}
