@@ -1,4 +1,6 @@
-# Frequently Asked Questions <!-- omit in toc -->
+# Platform FAQ <!-- omit in toc -->
+
+**Table of Contents**
 
 - [Cost](#cost)
   - [Do you make use of Azure Reservations?](#do-you-make-use-of-azure-reservations)

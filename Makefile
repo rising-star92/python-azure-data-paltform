@@ -59,4 +59,4 @@ clean-source:
 clean-runtime:
 	@rm -rf runtime
 
-clean: clean-source clean-runtime
+clean: clean-source clean-runtimee

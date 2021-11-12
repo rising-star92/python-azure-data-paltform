@@ -1,4 +1,4 @@
-# Ingenii Azure Data Platform: Naming Conventions <!-- omit in toc -->
+# Platform Naming Conventions <!-- omit in toc -->
 
 - [Overview](#overview)
 - [Abbreviations](#abbreviations)

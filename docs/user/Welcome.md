@@ -1,1 +1,0 @@
-# Ingenii Azure Data Platform Documentation

@@ -1,4 +1,4 @@
-# Data Platform Deployment Requirements <!-- omit in toc -->
+# Platform Requirements <!-- omit in toc -->
 
 **Table of Contents**
 

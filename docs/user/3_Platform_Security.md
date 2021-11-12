@@ -1,12 +1,13 @@
-# Solution Security
+# Platform Security
 
-- [Solution Security](#solution-security)
+- [Platform Security](#platform-security)
   - [Overview](#overview)
     - [Control Plane vs Data Plane Access](#control-plane-vs-data-plane-access)
   - [Exposed Services](#exposed-services)
   - [Role Based Access Control](#role-based-access-control)
   - [Service Accounts](#service-accounts)
     - [Subscription Access](#subscription-access)
+  - [Network Firewalls and Authentication](#network-firewalls-and-authentication)
   - [Network Flow](#network-flow)
   - [Data Movement](#data-movement)
     - [Data Movement Within The Platform](#data-movement-within-the-platform)
@@ -48,6 +49,10 @@ You can assign any Azure AD user to one or more of these roles.
 ### Subscription Access
 
 ![](./assets/adp_design_subscriptions.png)
+
+## Network Firewalls and Authentication
+
+![](./assets/adp_design_network_firewalls.png)
 
 ## Network Flow
 

@@ -1,17 +1,16 @@
-P# Ingenii Azure Data Platform Design <!-- omit in toc -->
+# Platform Design <!-- omit in toc -->
 
 **Table of Contents**
 
 - [Overview](#overview)
 - [Architectural Design](#architectural-design)
-  - [Azure Subscriptions](#azure-subscriptions)
-  - [Azure Resource Groups](#azure-resource-groups)
+  - [Subscriptions Structure](#subscriptions-structure)
+  - [Resource Group Structure](#resource-group-structure)
   - [Network Flow](#network-flow)
-  - [Data Flow](#data-flow)
+  - [Network Firewalls and Service Authentication](#network-firewalls-and-service-authentication)
   - [Infrastructure Environments](#infrastructure-environments)
 - [Infrastructure As Code](#infrastructure-as-code)
   - [Code Structure](#code-structure)
-  - [IaC Design](#iac-design)
 - [Costs](#costs)
   - [Small to Medium Sized Infrastructure Example](#small-to-medium-sized-infrastructure-example)
     - [Compute Resources](#compute-resources)
@@ -27,21 +26,21 @@ P# Ingenii Azure Data Platform Design <!-- omit in toc -->
 
 ![Platform High Level Architecture](./assets/adp_design_architecture.png)
 
-### Azure Subscriptions
+### Subscriptions Structure
 
 ![Azure Subscriptions](./assets/adp_design_subscriptions.png)
 
-### Azure Resource Groups
+### Resource Group Structure
 
-TODO
+![Resource Group Structure](./assets/adp_design_resource_groups.png)
 
 ### Network Flow
 
 ![](./assets/adp_design_network_flow.png)
 
-### Data Flow
+### Network Firewalls and Service Authentication
 
-TODO
+![](./assets/adp_design_network_firewalls.png)
 
 ### Infrastructure Environments
 
@@ -66,10 +65,6 @@ REDO
 │   └── assets                # Documentation assets such as images, files etc
 └── src                       # Platform source code
 ```
-
-### IaC Design
-
-TODO
 
 ## Costs
 

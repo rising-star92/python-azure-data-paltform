@@ -3,6 +3,7 @@
 ## 0.1.21 (TBD)
 
 - [shared_services] - Export outputs
+- [docs] - Update documentation
 
 ## 0.1.20 (2021-10-29)
 
