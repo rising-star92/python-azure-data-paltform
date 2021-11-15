@@ -5,6 +5,7 @@
 - [shared_services] - Export outputs
 - [docs] - Update documentation
 - [core/makefile] - Updating makefile
+- [datafactory] - Increase timeout, add base annotation, defaults for better Pulumi comparison
 
 ## 0.1.20 (2021-10-29)
 

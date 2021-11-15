@@ -184,6 +184,7 @@ databricks_file_ingestion_pipeline = adf.Pipeline(
                 reference_name=databricks_engineering_compute_linked_service.name,
                 type="LinkedServiceReference",
             ),
+            depends_on=[],
             base_parameters={
                 "file_path": {
                     "value": "@pipeline().parameters.filePath",
@@ -196,14 +197,18 @@ databricks_file_ingestion_pipeline = adf.Pipeline(
                 "increment": "0",
             },
             policy=adf.ActivityPolicyArgs(
-                timeout="0.00:10:00",
+                timeout="0.00:20:00",
                 retry=0,
                 retry_interval_in_seconds=30,
                 secure_output=False,
                 secure_input=False,
             ),
+            user_properties=[],
         )
     ],
+    policy=adf.PipelinePolicyArgs(),
+    annotations=["Created by Ingenii"],
+    opts=ResourceOptions(ignore_changes=["annotations"]),
     resource_group_name=resource_groups["infra"].name,
 )
 
@@ -229,7 +234,9 @@ databricks_file_ingestion_trigger = adf.Trigger(
                 },
             )
         ],
+        annotations=["Created by Ingenii"],
     ),
+    opts=ResourceOptions(ignore_changes=["properties.annotations"]),
     resource_group_name=resource_groups["infra"].name,
 )
 
