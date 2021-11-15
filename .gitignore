@@ -145,3 +145,5 @@ docs/_build/
 dummy.yml
 *.ignore
 tempdir
+venv
+dev

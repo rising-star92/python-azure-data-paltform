@@ -4,6 +4,7 @@
 
 - [shared_services] - Export outputs
 - [docs] - Update documentation
+- [core/makefile] - Updating makefile
 
 ## 0.1.20 (2021-10-29)
 

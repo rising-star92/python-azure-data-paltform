@@ -28,7 +28,14 @@ class RoleAssignment(azure_native.authorization.RoleAssignment):
             "Storage Blob Data Reader": "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1",
             "Storage Blob Delegator": "db58b8e5-c6ad-4a2a-8342-4190687cbf4a",
             # Data Factory
-            "Data Factory Contributor": "673868aa-7521-48a0-acc6-0f60742d39f5"
+            "Data Factory Contributor": "673868aa-7521-48a0-acc6-0f60742d39f5",
+            # Container Registry
+            "Container Registry Delete": "c2f4ef07-c644-48eb-af81-4b1b4947fb11",
+            "Container Registry Image Signer": "6cef56e8-d556-48e5-a04f-b8e64114680f",
+            "Container Registry Pull": "7f951dda-4ed3-4680-a7ca-43fe172d538d",
+            "Container Registry Push": "8311e382-0749-4cb8-b61a-304f252e45ec",
+            "Container Registry Quarantine Reader": "cdda3590-29a3-44f6-95f2-9f980659eb04",
+            "Container Registry Quarantine Writer": "c8d4ff99-41c3-41a8-9f60-21dfdad59608",
         }.items()
     }
 
@@ -114,6 +121,7 @@ class ServicePrincipalRoleAssignment(RoleAssignment):
             scope=scope,
             principal_type="ServicePrincipal",
         )
+
 
 class UserAssignedIdentityRoleAssignment(RoleAssignment):
     """
