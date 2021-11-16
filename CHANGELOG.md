@@ -2,6 +2,9 @@
 
 ## 0.1.22 (TBD)
 
+### Improvements
+- [core/runtime] - Update Pulumi to v3.17.1 and Python to 3.10
+
 ## 0.1.21 (2021-11-16)
 
 ### Improvements
