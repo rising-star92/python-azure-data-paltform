@@ -1,7 +1,10 @@
 # CHANGELOG
 
-## 0.1.21 (TBD)
+## 0.1.22 (TBD)
 
+## 0.1.21 (2021-11-16)
+
+### Improvements
 - [shared_services] - Export outputs
 - [docs] - Update documentation
 - [core/makefile] - Updating makefile
