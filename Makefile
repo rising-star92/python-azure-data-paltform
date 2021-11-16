@@ -81,17 +81,17 @@ init-core-shared:
 preview-core-shared:
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_SHARED_PLATFORM_CONF} \
-	pulumi -C ${CORE_SHARED_SOURCE_DIR} preview --config-file ${CORE_SHARED_PULUMI_CONF} --color always --non-interactive ${EXTRA_ARGS}
+	pulumi -C ${CORE_SHARED_SOURCE_DIR} preview --config-file ${CORE_SHARED_PULUMI_CONF} --color always --diff --non-interactive ${EXTRA_ARGS}
 
 refresh-core-shared:
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_SHARED_PLATFORM_CONF} \
-	pulumi -C ${CORE_SHARED_SOURCE_DIR} refresh --config-file ${CORE_SHARED_PULUMI_CONF} --color always --non-interactive --yes --skip-preview ${EXTRA_ARGS}
+	pulumi -C ${CORE_SHARED_SOURCE_DIR} refresh --config-file ${CORE_SHARED_PULUMI_CONF} --color always --non-interactive --yes --diff --skip-preview ${EXTRA_ARGS}
 
 apply-core-shared:
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_SHARED_PLATFORM_CONF} \
-	pulumi -C ${CORE_SHARED_SOURCE_DIR} up --config-file ${CORE_SHARED_PULUMI_CONF} --parallel ${PULUMI_PARALLELISM} --color always --non-interactive --yes --skip-preview ${EXTRA_ARGS}
+	pulumi -C ${CORE_SHARED_SOURCE_DIR} up --config-file ${CORE_SHARED_PULUMI_CONF} --parallel ${PULUMI_PARALLELISM} --color always --non-interactive --yes --diff --skip-preview ${EXTRA_ARGS}
 
 destroy-core-shared:
 	@pulumi destroy -C ${CORE_SHARED_SOURCE_DIR} --config-file ${CORE_SHARED_PULUMI_CONF} --parallel ${PULUMI_PARALLELISM} --color always ${EXTRA_ARGS}
@@ -120,18 +120,18 @@ preview-core-dtap:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_DTAP_SOURCE_DIR} preview --config-file ${CORE_DTAP_PULUMI_CONF} --color always --non-interactive ${EXTRA_ARGS}
+	pulumi -C ${CORE_DTAP_SOURCE_DIR} preview --config-file ${CORE_DTAP_PULUMI_CONF} --color always --diff --non-interactive ${EXTRA_ARGS}
 
 refresh-core-dtap:
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_DTAP_SOURCE_DIR} refresh --config-file ${CORE_DTAP_PULUMI_CONF} --color always --non-interactive --yes --skip-preview ${EXTRA_ARGS}
+	pulumi -C ${CORE_DTAP_SOURCE_DIR} refresh --config-file ${CORE_DTAP_PULUMI_CONF} --color always --diff --non-interactive --yes --skip-preview ${EXTRA_ARGS}
 
 apply-core-dtap:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_DTAP_SOURCE_DIR} up --config-file ${CORE_DTAP_PULUMI_CONF} --parallel ${PULUMI_PARALLELISM}  --color always --non-interactive --yes --skip-preview ${EXTRA_ARGS}
+	pulumi -C ${CORE_DTAP_SOURCE_DIR} up --config-file ${CORE_DTAP_PULUMI_CONF} --parallel ${PULUMI_PARALLELISM}  --color always --diff --non-interactive --yes --skip-preview ${EXTRA_ARGS}
 
 destroy-core-dtap:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
@@ -161,18 +161,18 @@ preview-core-extensions:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_EXTENSIONS_SOURCE_DIR} preview --config-file ${CORE_EXTENSIONS_PULUMI_CONF} --color always --non-interactive ${EXTRA_ARGS}
+	pulumi -C ${CORE_EXTENSIONS_SOURCE_DIR} preview --config-file ${CORE_EXTENSIONS_PULUMI_CONF} --color always --diff --non-interactive ${EXTRA_ARGS}
 
 refresh-core-extensions:
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_EXTENSIONS_SOURCE_DIR} refresh --config-file ${CORE_EXTENSIONS_PULUMI_CONF} --color always --non-interactive --yes --skip-preview ${EXTRA_ARGS}
+	pulumi -C ${CORE_EXTENSIONS_SOURCE_DIR} refresh --config-file ${CORE_EXTENSIONS_PULUMI_CONF} --color always --diff --non-interactive --yes --skip-preview ${EXTRA_ARGS}
 
 apply-core-extensions:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_EXTENSIONS_SOURCE_DIR} up --config-file ${CORE_EXTENSIONS_PULUMI_CONF} --parallel ${PULUMI_PARALLELISM}  --color always --non-interactive --yes --skip-preview ${EXTRA_ARGS}
+	pulumi -C ${CORE_EXTENSIONS_SOURCE_DIR} up --config-file ${CORE_EXTENSIONS_PULUMI_CONF} --parallel ${PULUMI_PARALLELISM}  --color always --diff --non-interactive --yes --skip-preview ${EXTRA_ARGS}
 
 destroy-core-extensions:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi

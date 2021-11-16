@@ -6,6 +6,7 @@
 - [docs] - Update documentation
 - [core/makefile] - Updating makefile
 - [datafactory] - Increase timeout, add base annotation, defaults for better Pulumi comparison
+- [databricks] - Add the ability to install Python packages from custom repos on the Databricks clusters.
 
 ## 0.1.20 (2021-10-29)
 

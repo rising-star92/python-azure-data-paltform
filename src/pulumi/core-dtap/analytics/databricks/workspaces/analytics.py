@@ -89,7 +89,7 @@ for assignment in iam_role_assignments:
         )
 
 # ----------------------------------------------------------------------------------------------------------------------
-# ENGINEERING DATABRICKS WORKSPACE -> PROVIDER
+# ANALYTICS DATABRICKS WORKSPACE -> PROVIDER
 # ----------------------------------------------------------------------------------------------------------------------
 databricks_provider = DatabricksProvider(
     resource_name=workspace_name,
@@ -134,10 +134,7 @@ secret_scope = databricks.SecretScope(
 # ----------------------------------------------------------------------------------------------------------------------
 
 # If no clusters are defined in the YAML files, we'll not attempt to create any.
-try:
-    cluster_definitions = workspace_config["clusters"]
-except:
-    cluster_definitions = {}
+cluster_definitions = workspace_config.get("clusters", {})
 
 clusters = {}
 for ref_key, cluster_config in cluster_definitions.items():
@@ -148,17 +145,16 @@ for ref_key, cluster_config in cluster_definitions.items():
     )
 
     # Cluster Libraries
-    cluster_libraries = []
-    try:
-        # PyPi
-        for lib in cluster_config["libraries"]["pypi"]:
-            cluster_libraries.append(
-                databricks.ClusterLibraryArgs(
-                    pypi=databricks.ClusterLibraryPypiArgs(package=lib["package"])
-                )
+    pypi_libraries = [
+        databricks.ClusterLibraryArgs(
+            pypi=databricks.ClusterLibraryPypiArgs(
+                package=lib.get("package"), repo=lib.get("repo")
             )
-    except KeyError:
-        pass
+        )
+        for lib in cluster_config.get("libraries", {}).get("pypi", [])
+    ]
+
+    cluster_libraries = [*pypi_libraries]
 
     base_cluster_configuration = {
         "resource_name": cluster_resource_name,

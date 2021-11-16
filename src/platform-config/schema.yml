@@ -164,6 +164,7 @@ _databricks_cluster_libraries:
 
 _databricks_cluster_library_pypi:
   package: str()
+  repo: str(required=False)
 
 _datafactory:
   factories: map(include('_datafactory_factory'),key=str())
