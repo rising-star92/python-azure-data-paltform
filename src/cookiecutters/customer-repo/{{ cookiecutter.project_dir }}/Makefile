@@ -126,43 +126,43 @@ upload-notebooks:
 	@ls ${SOURCE_DIR}/src/notebooks/engineering | awk -F '.' '{ print $$1 }' | xargs -I {} databricks workspace import -l PYTHON ${SOURCE_DIR}/src/notebooks/engineering/{}.py '/Shared/Ingenii Engineering/{}' --overwrite
 
 # PACKAGES (Additional Packages)
-CORE_PACKAGES_DIR := ${RUNTIME_DIR}/core-packages
-init-core-packages:
+CORE_EXTENSIONS_DIR := ${RUNTIME_DIR}/core-extensions
+init-core-extensions:
 	@if test -z "${CUSTOMER_CODE}"; then echo "CUSTOMER_CODE not set"; exit 1; fi
-	@mkdir -p ${CORE_PACKAGES_DIR}
-	@pulumi new ${SOURCE_DIR}/src/pulumi/core-packages -C ${CORE_PACKAGES_DIR} -n ${CUSTOMER_CODE}-iadp-core-packages -g --yes --non-interactive > /dev/null
+	@mkdir -p ${CORE_EXTENSIONS_DIR}
+	@pulumi new ${SOURCE_DIR}/src/pulumi/core-extensions -C ${CORE_EXTENSIONS_DIR} -n ${CUSTOMER_CODE}-iadp-core-extensions -g --yes --non-interactive > /dev/null
 
-init-core-packages-stack:
+init-core-extensions-stack:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
-	@pulumi stack init -C ${CORE_PACKAGES_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --yes --non-interactive 2>/dev/null | true
+	@pulumi stack init -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --yes --non-interactive 2>/dev/null | true
 
-preview-core-packages: init-core-packages-stack
-	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
-	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
-	pulumi preview -C ${CORE_PACKAGES_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --diff --non-interactive ${EXTRA_ARGS}
-
-refresh-core-packages: init-core-packages-stack
+preview-core-extensions: init-core-extensions-stack
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
-	pulumi refresh -C ${CORE_PACKAGES_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --yes --non-interactive ${EXTRA_ARGS}
+	pulumi preview -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --diff --non-interactive ${EXTRA_ARGS}
 
-apply-core-packages: init-core-packages-stack
+refresh-core-extensions: init-core-extensions-stack
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
-	pulumi up -C ${CORE_PACKAGES_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} -p 3 --color always --diff --yes --non-interactive ${EXTRA_ARGS} 
+	pulumi refresh -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --yes --non-interactive ${EXTRA_ARGS}
 
-destroy-core-packages: 
+apply-core-extensions: init-core-extensions-stack
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
-	pulumi destroy -C ${CORE_PACKAGES_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --yes --non-interactive ${EXTRA_ARGS}
+	pulumi up -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} -p 3 --color always --diff --yes --non-interactive ${EXTRA_ARGS} 
+
+destroy-core-extensions: 
+	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
+	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
+	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
+	pulumi destroy -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --yes --non-interactive ${EXTRA_ARGS}
 #--------------------------------------------------------------------------------------------------------------------
 # CLEANUP
 #--------------------------------------------------------------------------------------------------------------------
@@ -187,11 +187,11 @@ refresh-dtap: refresh-core-dtap
 apply-dtap: apply-core-dtap
 destroy-dtap: destroy-core-dtap
 
-init-packages: init-core-packages
-preview-packages: preview-core-packages
-refresh-packages: refresh-core-packages
-apply-packages: apply-core-packages
-destroy-packages: destroy-core-packages
+init-packages: init-core-extensions
+preview-packages: preview-core-extensions
+refresh-packages: refresh-core-extensions
+apply-packages: apply-core-extensions
+destroy-packages: destroy-core-extensions
 
 init: init-shared init-dtap init-packages
 preview: preview-dtap preview-packages
