@@ -45,7 +45,7 @@ init-core-shared:
 	@pulumi new ${SOURCE_DIR}/src/pulumi/core-shared -C ${CORE_SHARED_DIR} -n ${CUSTOMER_CODE}-iadp-core-shared -g --yes --non-interactive > /dev/null
 
 init-core-shared-stack:
-	@pulumi stack init -C ${CORE_SHARED_DIR} --stack ${PULUMI_ORGANIZATION}/shared --color always --yes --non-interactive 2>/dev/null | true
+	@pulumi -C ${CORE_SHARED_DIR} stack select ${PULUMI_ORGANIZATION}/shared --create --color always --non-interactive
 
 preview-core-shared: init-core-shared-stack
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
@@ -80,7 +80,7 @@ init-core-dtap:
 
 init-core-dtap-stack:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
-	@pulumi stack init -C ${CORE_DTAP_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --non-interactive 2>/dev/null | true
+	@pulumi -C ${CORE_DTAP_DIR} stack select ${PULUMI_ORGANIZATION}/${STACK} --create --color always --non-interactive
 
 preview-core-dtap: init-core-dtap-stack
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
@@ -125,7 +125,7 @@ upload-notebooks:
 	@databricks workspace mkdirs '/Shared/Ingenii Engineering'
 	@ls ${SOURCE_DIR}/src/notebooks/engineering | awk -F '.' '{ print $$1 }' | xargs -I {} databricks workspace import -l PYTHON ${SOURCE_DIR}/src/notebooks/engineering/{}.py '/Shared/Ingenii Engineering/{}' --overwrite
 
-# PACKAGES (Additional Packages)
+# EXTENSIONS
 CORE_EXTENSIONS_DIR := ${RUNTIME_DIR}/core-extensions
 init-core-extensions:
 	@if test -z "${CUSTOMER_CODE}"; then echo "CUSTOMER_CODE not set"; exit 1; fi
@@ -134,7 +134,7 @@ init-core-extensions:
 
 init-core-extensions-stack:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
-	@pulumi stack init -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --yes --non-interactive 2>/dev/null | true
+	@pulumi -C ${CORE_EXTENSIONS_DIR} stack select ${PULUMI_ORGANIZATION}/${STACK} --create --color always --non-interactive
 
 preview-core-extensions: init-core-extensions-stack
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
@@ -163,6 +163,38 @@ destroy-core-extensions:
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi destroy -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --yes --non-interactive ${EXTRA_ARGS}
+
+init-core-shared-extensions:
+	@if test -z "${CUSTOMER_CODE}"; then echo "CUSTOMER_CODE not set"; exit 1; fi
+	@mkdir -p ${CORE_EXTENSIONS_DIR}
+	@pulumi new ${SOURCE_DIR}/src/pulumi/core-extensions -C ${CORE_EXTENSIONS_DIR} -n ${CUSTOMER_CODE}-iadp-core-extensions -g --yes --non-interactive > /dev/null
+
+init-core-shared-extensions-stack:
+	@pulumi -C ${CORE_EXTENSIONS_DIR} stack select ${PULUMI_ORGANIZATION}/shared --create --color always --non-interactive
+
+preview-core-shared-extensions: init-core-shared-extensions-stack
+	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.shared.yml \
+	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/shared.yml \
+	pulumi preview -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/shared --color always --diff --non-interactive ${EXTRA_ARGS}
+
+refresh-core-shared-extensions: init-core-shared-extensions-stack
+	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.shared.yml \
+	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/shared.yml \
+	pulumi refresh -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/shared --color always --yes --non-interactive ${EXTRA_ARGS}
+
+apply-core-shared-extensions: init-core-shared-extensions-stack
+	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.shared.yml \
+	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/shared.yml \
+	pulumi up -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/shared -p 3 --color always --diff --yes --non-interactive ${EXTRA_ARGS} 
+
+destroy-core-shared-extensions: init-core-shared-extensions-stack
+	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
+	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.shared.yml \
+	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/shared.yml \
+	pulumi destroy -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/shared --color always --yes --non-interactive ${EXTRA_ARGS}
 #--------------------------------------------------------------------------------------------------------------------
 # CLEANUP
 #--------------------------------------------------------------------------------------------------------------------
@@ -175,26 +207,16 @@ clean-runtime:
 #--------------------------------------------------------------------------------------------------------------------
 # GENERAL API
 #--------------------------------------------------------------------------------------------------------------------
-init-shared: init-core-shared
-preview-shared: preview-core-shared
-refresh-shared: refresh-core-shared
-apply-shared: apply-core-shared
-destroy-shared: destroy-core-shared
+init-shared: init-core-shared init-core-shared-extensions
+preview-shared: preview-core-shared preview-core-shared-extensions
+refresh-shared: refresh-core-shared refresh-core-shared-extensions
+apply-shared: apply-core-shared apply-core-shared-extensions
+destroy-shared: destroy-core-shared destroy-core-shared-extensions
 
-init-dtap: init-core-dtap
-preview-dtap: preview-core-dtap
-refresh-dtap: refresh-core-dtap
-apply-dtap: apply-core-dtap
-destroy-dtap: destroy-core-dtap
-
-init-packages: init-core-extensions
-preview-packages: preview-core-extensions
-refresh-packages: refresh-core-extensions
-apply-packages: apply-core-extensions
-destroy-packages: destroy-core-extensions
-
-init: init-shared init-dtap init-packages
-preview: preview-dtap preview-packages
-apply: apply-dtap apply-packages
+init-dtap: init-core-dtap init-core-extensions
+preview-dtap: preview-core-dtap preview-core-extensions
+refresh-dtap: refresh-core-dtap refresh-core-extensions
+apply-dtap: apply-core-dtap	apply-core-extensions
+destroy-dtap: destroy-core-dtap	destroy-core-extensions
 
 clean: clean-source clean-runtime

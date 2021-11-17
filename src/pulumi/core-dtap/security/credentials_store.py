@@ -56,7 +56,7 @@ key_vault = azure_native.keyvault.Vault(
                         vnet.dbw_engineering_hosts_subnet,
                         vnet.dbw_engineering_containers_subnet,
                         vnet.dbw_analytics_hosts_subnet,
-                        vnet.dbw_analytics_containers_subnet
+                        vnet.dbw_analytics_containers_subnet,
                     )
                 ],
             )
@@ -126,7 +126,7 @@ private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Create role assignments defined in the YAML files
-for assignment in key_vault_config["iam"].get("role_assignments", []):
+for assignment in key_vault_config.get("iam", {}).get("role_assignments", []):
     # User Group Assignment
     user_group_ref_key = assignment.get("user_group_ref_key")
     if user_group_ref_key is not None:

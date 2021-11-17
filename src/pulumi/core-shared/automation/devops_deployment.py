@@ -17,35 +17,41 @@ devops_virtual_machine_scale_set_name = "devops-deployment"
 
 resource_group_name = generate_resource_name(
     resource_type="resource_group",
-    resource_name=resource_groups_config["infra"]["display_name"],
+    resource_name=resource_groups_config["security"]["display_name"],
     platform_config=platform_config,
 )
+
 
 def generate_user_assigned_identity_name(environment):
     return f"devops-deployment-managed-identity-{environment}"
 
+
 def generate_user_assigned_identity_id(environment):
-    return "/".join([
-        "/subscriptions", azure_client.subscription_id, 
-        "resourceGroups", resource_group_name,
-        "providers/Microsoft.ManagedIdentity/userAssignedIdentities", 
-        generate_user_assigned_identity_name(environment)
-    ])
+    return "/".join(
+        [
+            "/subscriptions",
+            azure_client.subscription_id,
+            "resourceGroups",
+            resource_group_name,
+            "providers/Microsoft.ManagedIdentity/userAssignedIdentities",
+            generate_user_assigned_identity_name(environment),
+        ]
+    )
+
 
 user_assigned_identities = {
     env: managedidentity.UserAssignedIdentity(
         resource_name=generate_user_assigned_identity_name(env),
         resource_name_=generate_user_assigned_identity_name(env),
         location=platform_config.region.long_name,
-        resource_group_name=resource_groups["infra"].name,
-        tags=platform_config.tags
+        resource_group_name=resource_groups["security"].name,
+        tags=platform_config.tags,
     )
     for env in ["dev", "test", "acc", "prod"]
 }
 
 outputs["deployment_user_assigned_identities"] = {
-    env: identity.principal_id 
-    for env, identity in user_assigned_identities.items()
+    env: identity.principal_id for env, identity in user_assigned_identities.items()
 }
 
 admin_password = pulumi_random.RandomPassword(
@@ -56,7 +62,8 @@ admin_password = pulumi_random.RandomPassword(
     ),
     length=16,
     special=True,
-    override_special="_%@")
+    override_special="_%@",
+)
 
 # https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/scale-set-agents?view=azure-devops
 devops_virtual_machine_scale_set = compute.VirtualMachineScaleSet(
@@ -76,22 +83,26 @@ devops_virtual_machine_scale_set = compute.VirtualMachineScaleSet(
     upgrade_policy=compute.UpgradePolicyArgs(mode="Manual"),
     virtual_machine_profile=compute.VirtualMachineScaleSetVMProfileArgs(
         network_profile=compute.VirtualMachineScaleSetNetworkProfileArgs(
-            network_interface_configurations=[compute.VirtualMachineScaleSetNetworkConfigurationArgs(
-                enable_ip_forwarding=True,
-                ip_configurations=[compute.VirtualMachineScaleSetIPConfigurationArgs(
+            network_interface_configurations=[
+                compute.VirtualMachineScaleSetNetworkConfigurationArgs(
+                    enable_ip_forwarding=True,
+                    ip_configurations=[
+                        compute.VirtualMachineScaleSetIPConfigurationArgs(
+                            name=devops_virtual_machine_scale_set_name,
+                            subnet=compute.ApiEntityReferenceArgs(
+                                id=devops_deployment_subnet.id,
+                            ),
+                        )
+                    ],
                     name=devops_virtual_machine_scale_set_name,
-                    subnet=compute.ApiEntityReferenceArgs(
-                        id=devops_deployment_subnet.id,
-                    ),
-                )],
-                name=devops_virtual_machine_scale_set_name,
-                primary=True,
-            )],
+                    primary=True,
+                )
+            ],
         ),
         os_profile=compute.VirtualMachineScaleSetOSProfileArgs(
             computer_name_prefix=devops_virtual_machine_scale_set_name,
             admin_username="azuredevopsdeploymentadmin",
-            admin_password=admin_password.result
+            admin_password=admin_password.result,
         ),
         storage_profile=compute.VirtualMachineScaleSetStorageProfileArgs(
             image_reference=compute.ImageReferenceArgs(
@@ -117,10 +128,11 @@ devops_virtual_machine_scale_set = compute.VirtualMachineScaleSet(
         user_assigned_identities={
             generate_user_assigned_identity_id(env): {}
             for env in user_assigned_identities
-        }
+        },
     ),
     vm_scale_set_name=devops_virtual_machine_scale_set_name,
-    tags=platform_config.tags)
+    tags=platform_config.tags,
+)
 
 # Variables required for CI/CD pipelines
 
@@ -140,7 +152,8 @@ variable_group_managed_identities = ado.VariableGroup(
             value=identity.principal_id,
         )
         for env, identity in user_assigned_identities.items()
-    ])
+    ],
+)
 
 variable_group_config_registry = ado.VariableGroup(
     resource_name=generate_resource_name(
@@ -157,7 +170,8 @@ variable_group_config_registry = ado.VariableGroup(
             name=f"CONFIGURATION_REGISTRY_NAME",
             value=key_vault.name,
         )
-    ])
+    ],
+)
 
 # Grant access to configuration registry
 
@@ -165,5 +179,5 @@ for _, identity in user_assigned_identities.items():
     UserAssignedIdentityRoleAssignment(
         role_name="Key Vault Secrets User",
         principal_id=identity.principal_id,
-        scope=key_vault.id
+        scope=key_vault.id,
     )

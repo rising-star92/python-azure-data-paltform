@@ -22,18 +22,26 @@ PULUMI_ORG_NAME = "ingenii"
 CURRENT_STACK_NAME = pulumi.get_stack()
 CURRENT_PROJECT_NAME = pulumi.get_project()
 
-DTAP_OUTPUTS = pulumi.StackReference(
-    "/".join(
-        [
-            PULUMI_ORG_NAME,
-            CURRENT_PROJECT_NAME.replace("packages", "dtap"),
-            CURRENT_STACK_NAME,
-        ]
-    )
-).get_output("root")
+DTAP_OUTPUTS = (
+    pulumi.StackReference(
+        "/".join(
+            [
+                PULUMI_ORG_NAME,
+                CURRENT_PROJECT_NAME.replace("extensions", "dtap"),
+                CURRENT_STACK_NAME,
+            ]
+        )
+    ).get_output("root")
+    if CURRENT_STACK_NAME != "shared"
+    else {}
+)
 
 SHARED_OUTPUTS = pulumi.StackReference(
     "/".join(
-        [PULUMI_ORG_NAME, CURRENT_PROJECT_NAME.replace("packages", "shared"), "shared"]
+        [
+            PULUMI_ORG_NAME,
+            CURRENT_PROJECT_NAME.replace("extensions", "shared"),
+            "shared",
+        ]
     )
 ).get_output("root")

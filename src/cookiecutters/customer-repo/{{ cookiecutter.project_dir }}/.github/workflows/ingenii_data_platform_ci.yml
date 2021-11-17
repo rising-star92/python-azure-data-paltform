@@ -103,6 +103,10 @@ jobs:
       ARM_CLIENT_SECRET: {% raw %}${{ secrets[matrix.client_secret] }}{%- endraw %}
       ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets[matrix.subscription_id] }}{%- endraw %}
       ARM_TENANT_ID: {% raw %}${{ secrets[matrix.tenant_id] }}{%- endraw %}
+      SHARED_ARM_CLIENT_ID: {% raw %}${{ secrets.SHARED_ARM_CLIENT_ID }}{%- endraw %}
+      SHARED_ARM_CLIENT_SECRET: {% raw %}${{ secrets.SHARED_ARM_CLIENT_SECRET }}{%- endraw %}
+      SHARED_ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets.SHARED_ARM_SUBSCRIPTION_ID }}{%- endraw %}
+      SHARED_ARM_TENANT_ID: {% raw %}${{ secrets.SHARED_ARM_TENANT_ID }}{%- endraw %}
     steps:
       #---------------------------------
       - name: Checkout Customer Repo
@@ -121,9 +125,9 @@ jobs:
       #---------------------------------
       - name: Run Pulumi Preview
         run: |
-          make preview STACK={%- raw %}${{ matrix.stack }}{%- endraw %}
+          make preview-dtap STACK={%- raw %}${{ matrix.stack }}{%- endraw %}
       #---------------------------------
       - name: Run Pulumi Up
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
-          make apply STACK={%- raw %}${{ matrix.stack }}{%- endraw %} EXTRA_ARGS="-f"
+          make apply-dtap STACK={%- raw %}${{ matrix.stack }}{%- endraw %} EXTRA_ARGS="-f"

@@ -11,6 +11,7 @@ from ingenii_azure_data_platform.utils import generate_resource_name
 
 from analytics.databricks.workspaces import engineering as databricks_engineering
 from platform_shared import (
+    shared_services_provider,
     get_devops_principal_id,
     get_devops_config_registry,
     get_devops_config_registry_resource_group,
@@ -263,4 +264,5 @@ keyvault.Secret(
     vault_name=get_devops_config_registry()["key_vault_name"],
     secret_name=f"data-factory-name-{platform_config.stack}",
     properties=keyvault.SecretPropertiesArgs(value=datafactory.name),
+    opts=ResourceOptions(provider=shared_services_provider),
 )

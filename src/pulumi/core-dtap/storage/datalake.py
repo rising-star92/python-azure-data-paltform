@@ -1,3 +1,4 @@
+from pulumi import ResourceOptions
 import pulumi_azure_native as azure_native
 import pulumi_azure as azure_classic
 
@@ -5,11 +6,18 @@ from pulumi import Output
 
 from ingenii_azure_data_platform.utils import generate_resource_name
 from ingenii_azure_data_platform.defaults import STORAGE_ACCOUNT_DEFAULT_FIREWALL
-from ingenii_azure_data_platform.iam import GroupRoleAssignment, UserAssignedIdentityRoleAssignment
+from ingenii_azure_data_platform.iam import (
+    GroupRoleAssignment,
+    UserAssignedIdentityRoleAssignment,
+)
 
 from project_config import azure_client, platform_config, platform_outputs
-from platform_shared import get_devops_principal_id, get_devops_config_registry, \
-    get_devops_config_registry_resource_group
+from platform_shared import (
+    shared_services_provider,
+    get_devops_principal_id,
+    get_devops_config_registry,
+    get_devops_config_registry_resource_group,
+)
 from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet, dns
@@ -25,7 +33,6 @@ firewall = platform_config.from_yml["network"]["firewall"]
 firewall_ip_access_list = [
     azure_native.storage.IPRuleArgs(i_p_address_or_range=ip_address)
     for ip_address in firewall.get("ip_access_list", [])
-
 ]
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -292,7 +299,7 @@ for container in ["dbt", "utilities"]:
     UserAssignedIdentityRoleAssignment(
         role_name="Storage Blob Data Contributor",
         principal_id=devops_principal_id,
-        scope=datalake_containers[container].id
+        scope=datalake_containers[container].id,
     )
 
 azure_native.keyvault.Secret(
@@ -300,9 +307,8 @@ azure_native.keyvault.Secret(
     resource_group_name=get_devops_config_registry_resource_group(),
     vault_name=get_devops_config_registry()["key_vault_name"],
     secret_name=f"data-lake-name-{platform_config.stack}",
-    properties=azure_native.keyvault.SecretPropertiesArgs(
-        value=datalake.name
-    ),
+    properties=azure_native.keyvault.SecretPropertiesArgs(value=datalake.name),
+    opts=ResourceOptions(provider=shared_services_provider),
 )
 
 # Required while the Azure CLI command 'sync' does not support MSI authentication
@@ -310,5 +316,5 @@ azure_native.keyvault.Secret(
 UserAssignedIdentityRoleAssignment(
     role_name="Reader and Data Access",
     principal_id=devops_principal_id,
-    scope=datalake.id
+    scope=datalake.id,
 )
