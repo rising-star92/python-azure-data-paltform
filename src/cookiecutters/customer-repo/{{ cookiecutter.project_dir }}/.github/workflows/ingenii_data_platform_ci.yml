@@ -121,7 +121,7 @@ jobs:
       - name: Prepare Platform Source Files
         run: |
           make clone-repo-using-ssh
-          make init
+          make init-dtap
       #---------------------------------
       - name: Run Pulumi Preview
         run: |
