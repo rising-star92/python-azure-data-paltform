@@ -103,18 +103,18 @@ automation:
           - user_group_ref_key: analysts
             azure_devops_project_group_name: "Contributors"
     repositories:
-      - name: "Data Engineering"
+      - name: "DataEngineering"
         import_url: "https://github.com/ingenii-solutions/azure-data-platform-data-engineering-example"
         pipelines:
-          - name: Data Engineering - dbt
+          - name: DataEngineering - dbt
             use_yml: True
             yml_path: "CICD/dbt.yml"
-          - name: Data Engineering - dbt - Production
+          - name: DataEngineering - dbt - Production
             use_yml: True
             yml_path: "CICD/dbt_production.yml"
-          - name: Data Engineering - pre-processing
+          - name: DataEngineering - pre-processing
             use_yml: True
             yml_path: "CICD/pre-processing.yml"
-          - name: Data Engineering - pre-processing - Production
+          - name: DataEngineering - pre-processing - Production
             use_yml: True
             yml_path: "CICD/pre-processing_production.yml"

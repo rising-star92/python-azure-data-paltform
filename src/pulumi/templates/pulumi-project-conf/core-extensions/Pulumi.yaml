@@ -1,4 +1,4 @@
-name: ingenii-adp-core-packages
+name: ingenii-adp-core-extensions
 runtime:
   name: python
 description: Ingenii Azure Data Platform - Core Packages Module.

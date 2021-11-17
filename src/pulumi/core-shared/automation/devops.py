@@ -28,17 +28,36 @@ ado_project = ado.Project(
 )
 
 # Azure DevOps Project Permissions
-ado_project_iam_role_assignments = ado_configs["project"].get("iam", {}).get("role_assignments", [])
+ado_project_iam_role_assignments = (
+    ado_configs["project"].get("iam", {}).get("role_assignments", [])
+)
+
 
 def apply_iam_role_assignments(project_id: str, role_assignments: list):
     for assignment in role_assignments:
-        resource_name = generate_hash(assignment["azure_devops_project_group_name"], assignment["user_group_ref_key"])
-        aad_group = ado.Group(resource_name=resource_name, origin_id=user_groups[assignment["user_group_ref_key"]]["object_id"])
-        ado_group = ado.get_group(project_id=project_id, name=assignment["azure_devops_project_group_name"])
-        membership=ado.GroupMembership(resource_name=resource_name,group=ado_group.descriptor,members=[aad_group.descriptor]
-)
+        resource_name = generate_hash(
+            assignment["azure_devops_project_group_name"],
+            assignment["user_group_ref_key"],
+        )
+        aad_group = ado.Group(
+            resource_name=resource_name,
+            origin_id=user_groups[assignment["user_group_ref_key"]]["object_id"],
+        )
+        ado_group = ado.get_group(
+            project_id=project_id, name=assignment["azure_devops_project_group_name"]
+        )
+        membership = ado.GroupMembership(
+            resource_name=resource_name,
+            group=ado_group.descriptor,
+            members=[aad_group.descriptor],
+        )
 
-ado_project.id.apply(lambda id: apply_iam_role_assignments(project_id=id, role_assignments=ado_project_iam_role_assignments))
+
+ado_project.id.apply(
+    lambda id: apply_iam_role_assignments(
+        project_id=id, role_assignments=ado_project_iam_role_assignments
+    )
+)
 
 
 # Azure DevOps Repositories
@@ -54,6 +73,7 @@ for repo in ado_repo_configs:
         ),
         name=repo["name"],
         project_id=ado_project.id,
+        default_branch=f"refs/heads/{repo.get('default_branch', 'main')}",
         initialization=ado.GitInitializationArgs(
             init_type="Import",
             source_type="Git",

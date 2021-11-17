@@ -130,30 +130,30 @@ upload-notebooks:
 
 # EXTENSIONS
 CORE_EXTENSIONS_DIR := ${RUNTIME_DIR}/core-extensions
-init-core-dtap-extensions:
+init-core-extensions:
 	@if test -z "${CUSTOMER_CODE}"; then echo "CUSTOMER_CODE not set"; exit 1; fi
 	@mkdir -p ${CORE_EXTENSIONS_DIR}
 	@pulumi new ${SOURCE_DIR}/src/pulumi/core-extensions -C ${CORE_EXTENSIONS_DIR} -n ${CUSTOMER_CODE}-iadp-core-extensions -g --yes --non-interactive > /dev/null
 
-init-core-dtap-extensions-stack:
+init-core-dtap-extensions:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@pulumi -C ${CORE_EXTENSIONS_DIR} stack select ${PULUMI_ORGANIZATION}/${STACK} --create --color always --non-interactive
 
-preview-core-dtap-extensions: init-core-dtap-extensions-stack
+preview-core-dtap-extensions: init-core-dtap-extensions
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi preview -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --diff --non-interactive ${EXTRA_ARGS}
 
-refresh-core-dtap-extensions: init-core-dtap-extensions-stack
+refresh-core-dtap-extensions: init-core-dtap-extensions
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi refresh -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --yes --non-interactive ${EXTRA_ARGS}
 
-apply-core-dtap-extensions: init-core-dtap-extensions-stack
+apply-core-dtap-extensions: init-core-dtap-extensions
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
@@ -168,32 +168,27 @@ destroy-core-dtap-extensions:
 	pulumi destroy -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --yes --non-interactive ${EXTRA_ARGS}
 
 init-core-shared-extensions:
-	@if test -z "${CUSTOMER_CODE}"; then echo "CUSTOMER_CODE not set"; exit 1; fi
-	@mkdir -p ${CORE_EXTENSIONS_DIR}
-	@pulumi new ${SOURCE_DIR}/src/pulumi/core-extensions -C ${CORE_EXTENSIONS_DIR} -n ${CUSTOMER_CODE}-iadp-core-extensions -g --yes --non-interactive > /dev/null
-
-init-core-shared-extensions-stack:
 	@pulumi -C ${CORE_EXTENSIONS_DIR} stack select ${PULUMI_ORGANIZATION}/shared --create --color always --non-interactive
 
-preview-core-shared-extensions: init-core-shared-extensions-stack
+preview-core-shared-extensions: init-core-shared-extensions
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.shared.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/shared.yml \
 	pulumi preview -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/shared --color always --diff --non-interactive ${EXTRA_ARGS}
 
-refresh-core-shared-extensions: init-core-shared-extensions-stack
+refresh-core-shared-extensions: init-core-shared-extensions
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.shared.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/shared.yml \
 	pulumi refresh -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/shared --color always --yes --non-interactive ${EXTRA_ARGS}
 
-apply-core-shared-extensions: init-core-shared-extensions-stack
+apply-core-shared-extensions: init-core-shared-extensions
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.shared.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/shared.yml \
 	pulumi up -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/shared -p 3 --color always --diff --yes --non-interactive ${EXTRA_ARGS} 
 
-destroy-core-shared-extensions: init-core-shared-extensions-stack
+destroy-core-shared-extensions: init-core-shared-extensions
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.shared.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/shared.yml \
@@ -211,6 +206,8 @@ clean-runtime:
 #--------------------------------------------------------------------------------------------------------------------
 # GENERAL API
 #--------------------------------------------------------------------------------------------------------------------
+init: init-core-shared init-core-dtap init-core-extensions
+
 init-shared: init-core-shared init-core-shared-extensions
 preview-shared: preview-core-shared preview-core-shared-extensions
 refresh-shared: refresh-core-shared refresh-core-shared-extensions
