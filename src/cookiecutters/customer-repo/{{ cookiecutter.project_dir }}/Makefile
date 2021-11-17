@@ -34,6 +34,9 @@ set-platform-version:
 	@sed -i 's/azure-data-platform-iac-runtime:.*/azure-data-platform-iac-runtime:${VERSION}/g' ${PROJECT_ROOT}/.github/workflows/ingenii_data_platform_ci.yml
 	@sed -i 's/azure-data-platform-iac-runtime:.*/azure-data-platform-iac-runtime:${VERSION}/g' ${PROJECT_ROOT}/.devcontainer/devcontainer.json
 
+sync:
+	@cruft update
+
 #--------------------------------------------------------------------------------------------------------------------
 # STACKS
 #--------------------------------------------------------------------------------------------------------------------
@@ -127,37 +130,37 @@ upload-notebooks:
 
 # EXTENSIONS
 CORE_EXTENSIONS_DIR := ${RUNTIME_DIR}/core-extensions
-init-core-extensions:
+init-core-dtap-extensions:
 	@if test -z "${CUSTOMER_CODE}"; then echo "CUSTOMER_CODE not set"; exit 1; fi
 	@mkdir -p ${CORE_EXTENSIONS_DIR}
 	@pulumi new ${SOURCE_DIR}/src/pulumi/core-extensions -C ${CORE_EXTENSIONS_DIR} -n ${CUSTOMER_CODE}-iadp-core-extensions -g --yes --non-interactive > /dev/null
 
-init-core-extensions-stack:
+init-core-dtap-extensions-stack:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@pulumi -C ${CORE_EXTENSIONS_DIR} stack select ${PULUMI_ORGANIZATION}/${STACK} --create --color always --non-interactive
 
-preview-core-extensions: init-core-extensions-stack
+preview-core-dtap-extensions: init-core-dtap-extensions-stack
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi preview -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --diff --non-interactive ${EXTRA_ARGS}
 
-refresh-core-extensions: init-core-extensions-stack
+refresh-core-dtap-extensions: init-core-dtap-extensions-stack
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi refresh -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --color always --yes --non-interactive ${EXTRA_ARGS}
 
-apply-core-extensions: init-core-extensions-stack
+apply-core-dtap-extensions: init-core-dtap-extensions-stack
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/${STACK}.yml \
 	pulumi up -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} -p 3 --color always --diff --yes --non-interactive ${EXTRA_ARGS} 
 
-destroy-core-extensions: 
+destroy-core-dtap-extensions: 
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 	@ADP_CONFIG_SCHEMA_FILE_PATH=${SOURCE_DIR}/src/platform-config/schema.yml \
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.yml \
@@ -195,6 +198,7 @@ destroy-core-shared-extensions: init-core-shared-extensions-stack
 	ADP_DEFAULT_CONFIG_FILE_PATH=${SOURCE_DIR}/src/platform-config/defaults.shared.yml \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=${CONFIGS_DIR}/shared.yml \
 	pulumi destroy -C ${CORE_EXTENSIONS_DIR} --stack ${PULUMI_ORGANIZATION}/shared --color always --yes --non-interactive ${EXTRA_ARGS}
+
 #--------------------------------------------------------------------------------------------------------------------
 # CLEANUP
 #--------------------------------------------------------------------------------------------------------------------
@@ -213,10 +217,10 @@ refresh-shared: refresh-core-shared refresh-core-shared-extensions
 apply-shared: apply-core-shared apply-core-shared-extensions
 destroy-shared: destroy-core-shared destroy-core-shared-extensions
 
-init-dtap: init-core-dtap init-core-extensions
-preview-dtap: preview-core-dtap preview-core-extensions
-refresh-dtap: refresh-core-dtap refresh-core-extensions
-apply-dtap: apply-core-dtap	apply-core-extensions
-destroy-dtap: destroy-core-dtap	destroy-core-extensions
+init-dtap: init-core-dtap init-core-dtap-extensions
+preview-dtap: preview-core-dtap preview-core-dtap-extensions
+refresh-dtap: refresh-core-dtap refresh-core-dtap-extensions
+apply-dtap: apply-core-dtap	apply-core-dtap-extensions
+destroy-dtap: destroy-core-dtap	destroy-core-dtap-extensions
 
 clean: clean-source clean-runtime
