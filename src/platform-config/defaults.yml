@@ -106,8 +106,16 @@ storage:
               role_definition_name: "Storage Blob Data Contributor"
       raw: # Mount in DBW Engineering(RW)
         display_name: raw
+        iam:
+          role_assignments:
+            - user_group_ref_key: engineers
+              role_definition_name: "Storage Blob Data Contributor"
       archive: # Mount in DBW Engineering(RW)
         display_name: archive
+        iam:
+          role_assignments:
+            - user_group_ref_key: engineers
+              role_definition_name: "Storage Blob Data Contributor"
       source: # Mount in DBW Engineering(RW), Analytics
         display_name: source
         iam:
@@ -126,8 +134,16 @@ storage:
               role_definition_name: "Storage Blob Data Reader"
       dbt: # Mount in DBW Engineering(RW)
         display_name: dbt
+        iam:
+          role_assignments:
+            - user_group_ref_key: engineers
+              role_definition_name: "Storage Blob Data Contributor"
       dbt_logs: # Mount in DBW Engineering(RW)
         display_name: dbt-logs
+        iam:
+          role_assignments:
+            - user_group_ref_key: engineers
+              role_definition_name: "Storage Blob Data Reader"
     tables:
       sftp_known_files:
         display_name: "SFTPKnownFiles"
