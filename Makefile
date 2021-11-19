@@ -43,15 +43,6 @@ setup-env-file:
 	$(info [INFO] Setting up the .env file)
 	@if [ ! -f ${DEV_DIR}/.env ]; then cp ${DEV_DIR}/.env-dist ${DEV_DIR}/.env ; else echo "[INFO] '${DEV_DIR}/.env' file already exist. Skipping env file setup."; fi
 
-PULUMI_PRJ_CONF_TEMPLATES_DIR	:= ${PULUMI_SOURCE_DIR}/templates/pulumi-project-conf
-setup-pulumi-project-configs:
-	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-shared/Pulumi.yaml		${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
-	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-dtap/Pulumi.yaml			${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml
-	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-extensions/Pulumi.yaml	${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
-	@sed -i 's|ingenii-|${RANDOM_STR_LEN_4}-|g'	${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
-	@sed -i 's|ingenii-|${RANDOM_STR_LEN_4}-|g'	${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml
-	@sed -i 's|ingenii-|${RANDOM_STR_LEN_4}-|g'	${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
-
 setup-python-venv:
 	$(info [INFO] Setting up the Python virtual environment at ${VENV_DIR})
 	@python3 -m venv ${VENV_DIR}
@@ -113,7 +104,7 @@ set-python-version:
 #####################################################################################################################
 # API
 #####################################################################################################################
-setup: setup-cruft-config setup-cruft-project setup-dir-links setup-env-file setup-pulumi-project-configs setup-python-venv show-setup-banner
+setup: setup-cruft-config setup-cruft-project setup-dir-links setup-env-file setup-python-venv show-setup-banner
 
 project-reset: show-reset-banner remove-dev-dir remove-pulumi-project-configs
 

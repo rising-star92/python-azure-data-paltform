@@ -10,7 +10,7 @@ name: Ingenii Data Platform CI
 on:
   workflow_dispatch:
   pull_request:
-    types: ["reopened", "synchronize"]
+    types: ["reopened"]
   push:
     paths-ignore:
       - "README.md"
@@ -39,7 +39,7 @@ env:
 #----------------------------------------------------------------------------------------------------------------------
 jobs:
   shared:
-    name: Shared
+    name: Shared Stack
     runs-on: [self-hosted, linux, x64]
     container:
       image: ingeniisolutions/azure-data-platform-iac-runtime:{{ cookiecutter.platform_version }}
@@ -71,7 +71,7 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: make apply-shared EXTRA_ARGS="-f"
   dtap:
-    name: DTAP
+    name: DTAP Stacks
     needs: shared
     runs-on: [self-hosted, linux, x64]
     container:
@@ -128,7 +128,7 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: make apply-dtap EXTRA_ARGS="-f"
   extensions:
-    name: extensions
+    name: Extension Stacks
     needs: dtap
     runs-on: [self-hosted, linux, x64]
     container:

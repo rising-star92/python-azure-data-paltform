@@ -1,5 +1,7 @@
 # {{ cookiecutter.project_dir.upper() }}
 
+> IMPORTANT - The makefile is out of date. It will be updated ASAP. (#TODO)
+
 ## Overview
 
 Ingenii Azure Data Platform deployment for customer '{{ cookiecutter.customer_code }}'.

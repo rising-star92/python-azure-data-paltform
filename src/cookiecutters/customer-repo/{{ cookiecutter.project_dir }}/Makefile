@@ -260,4 +260,4 @@ preview: _check-for-stack-var preview-shared preview-dtap preview-extensions
 refresh: _check-for-stack-var refresh-shared refresh-dtap refresh-extensions
 apply: _check-for-stack-var apply-shared apply-dtap apply-extensions
 destroy: _check-for-stack-var destroy-extensions destroy-dtap
-	@(info You need to run 'make destroy-shared' after you have destroyed all DTAP environments.)
+	@($info You need to run 'make destroy-shared' after you have destroyed all DTAP environments.)
