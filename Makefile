@@ -48,9 +48,9 @@ setup-pulumi-project-configs:
 	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-shared/Pulumi.yaml		${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
 	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-dtap/Pulumi.yaml			${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml
 	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-extensions/Pulumi.yaml	${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
-	@sed -i 's|ingenii-.*|${RANDOM_STR_LEN_4}-adp-core-shared|g'		${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
-	@sed -i 's|ingenii-.*|${RANDOM_STR_LEN_4}-adp-core-dtap|g'			${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml
-	@sed -i 's|ingenii-.*|${RANDOM_STR_LEN_4}-adp-core-extensions|g'	${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
+	@sed -i 's|ingenii-|${RANDOM_STR_LEN_4}-|g'	${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
+	@sed -i 's|ingenii-|${RANDOM_STR_LEN_4}-|g'	${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml
+	@sed -i 's|ingenii-|${RANDOM_STR_LEN_4}-|g'	${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
 
 setup-python-venv:
 	$(info [INFO] Setting up the Python virtual environment at ${VENV_DIR})

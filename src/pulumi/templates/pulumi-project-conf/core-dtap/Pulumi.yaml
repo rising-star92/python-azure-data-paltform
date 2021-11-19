@@ -1,4 +1,4 @@
-name: ingenii-adp-core-dtap
+name: ingenii-iadp-core-dtap
 runtime:
   name: python
 description: Ingenii Azure Data Platform - Core DTAP Module.

@@ -9,9 +9,11 @@ VENV_DIR 		:= ${PROJECT_ROOT}/venv
 SOURCE_DIR 		:= ${PROJECT_ROOT}/src
 RUNTIME_DIR 	:= ${PROJECT_ROOT}/runtime
 
-PULUMI_CORE_SHARED_SRC_DIR 		:= ${SOURCE_DIR}/pulumi/core-shared
-PULUMI_CORE_DTAP_SRC_DIR 		:= ${SOURCE_DIR}/pulumi/core-dtap
-PULUMI_CORE_EXTENSIONS_SRC_DIR 	:= ${SOURCE_DIR}/pulumi/core-extensions
+PULUMI_SOURCE_DIR 				:= ${SOURCE_DIR}/pulumi
+PULUMI_CORE_SHARED_SRC_DIR 		:= ${PULUMI_SOURCE_DIR}/core-shared
+PULUMI_CORE_DTAP_SRC_DIR 		:= ${PULUMI_SOURCE_DIR}/core-dtap
+PULUMI_CORE_EXTENSIONS_SRC_DIR 	:= ${PULUMI_SOURCE_DIR}/core-extensions
+PULUMI_PRJ_CONF_TEMPLATES_DIR	:= ${PULUMI_SOURCE_DIR}/templates/pulumi-project-conf
 
 PLATFORM_CONF_SCHEMA_FILE			:= ${SOURCE_DIR}/platform-config/schema.yml
 PLATFORM_CONF_DEFAULTS_FILE 		:= ${SOURCE_DIR}/platform-config/defaults.yml
@@ -27,7 +29,7 @@ EXTRA_ARGS 		:=
 include platform.cfg	# Import platform config
 
 #####################################################################################################################
-# Functions
+# Functions and Helpers
 #####################################################################################################################
 define pulumi_init
 	@pulumi --cwd $(1) stack select $(2) --create --color always --non-interactive $(3)
@@ -67,112 +69,124 @@ define pulumi_import_stack
 	@pulumi --cwd $(1) stack import --stack $(2) --file $(4) $(3) 
 endef
 
+_check-for-stack-var:
+	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
+
+_check-for-cust-code-var:
+	@if test -z "${CUSTOMER_CODE}"; then echo "CUSTOMER_CODE variable not set. Check if platform.cfg exist in the current directory."; exit 1; fi
+
+
 #####################################################################################################################
 # Stacks
 #####################################################################################################################
 
 # Shared Stack
 CORE_SHARED_STACK	:= ${PULUMI_ORGANIZATION}/shared
-init-core-shared:
+init-core-shared: _check-for-cust-code-var
+	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-shared/Pulumi.yaml	${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
+	@sed -i 's|ingenii-|${CUSTOMER_CODE}-|g'		${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
 	@$(call pulumi_init,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS})
 
-preview-core-shared: init-core-shared
+preview-core-shared:
 	@$(call pulumi_preview,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
 
-refresh-core-shared: init-core-shared
+refresh-core-shared: 
 	@$(call pulumi_refresh,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
 
-apply-core-shared: init-core-shared
+apply-core-shared: 
 	@$(call pulumi_apply,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
 
-destroy-core-shared: init-core-shared
+destroy-core-shared: 
 	@$(call pulumi_destroy,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS})
 
 CORE_SHARED_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.shared.json
-export-stack-core-shared: init-core-shared
+export-stack-core-shared: 
 	@$(info Exporting stack to ${CORE_SHARED_STACK_OUTPUT_FILE})
 	@$(call pulumi_export_stack,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${CORE_SHARED_STACK_OUTPUT_FILE})
 
-import-stack-core-shared: init-core-shared
+import-stack-core-shared: 
 	@$(info Importing stack file ${CORE_SHARED_STACK_OUTPUT_FILE})
 	@$(call pulumi_import_stack,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${CORE_SHARED_STACK_OUTPUT_FILE})
 
 # Shared Stack Extensions
 CORE_SHARED_EXTENSIONS_STACK	:= ${PULUMI_ORGANIZATION}/shared
-init-core-shared-extensions:
+init-core-shared-extensions: _check-for-cust-code-var
+	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-extensions/Pulumi.yaml ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
+	@sed -i 's|ingenii-|${CUSTOMER_CODE}-|g' ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
 	@$(call pulumi_init,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS})
 
-preview-core-shared-extensions: init-core-shared-extensions
+preview-core-shared-extensions: 
 	@$(call pulumi_preview,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
 
-refresh-core-shared-extensions: init-core-shared-extensions
+refresh-core-shared-extensions: 
 	@$(call pulumi_refresh,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
 
-apply-core-shared-extensions: init-core-shared-extensions
+apply-core-shared-extensions: 
 	@$(call pulumi_apply,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
 
-destroy-core-shared-extensions: init-core-shared-extensions
+destroy-core-shared-extensions: 
 	@$(call pulumi_destroy,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS})
 
 CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.shared.extensions.json
-export-stack-core-shared-extensions: init-core-shared-extensions
+export-stack-core-shared-extensions: 
 	@$(info Exporting stack to ${CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE})
 	@$(call pulumi_export_stack,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE})
 
-import-stack-core-shared-extensions: init-core-shared-extensions
+import-stack-core-shared-extensions: 
 	@$(info Importing stack file ${CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE})
 	@$(call pulumi_import_stack,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE})
 
 # DTAP Stack
-_check-for-stack-var:
-	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
-
-init-core-dtap: _check-for-stack-var
+init-core-dtap: _check-for-stack-var _check-for-cust-code-var
+	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-dtap/Pulumi.yaml ${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml
+	@sed -i 's|ingenii-|${CUSTOMER_CODE}-|g' ${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml
 	@$(call pulumi_init,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS})
 
-preview-core-dtap: init-core-dtap
+preview-core-dtap: 
 	@$(call pulumi_preview,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
-refresh-core-dtap: init-core-dtap
+refresh-core-dtap: 
 	@$(call pulumi_refresh,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
-apply-core-dtap: init-core-dtap
+apply-core-dtap: 
 	@$(call pulumi_apply,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
-destroy-core-dtap: init-core-dtap
+destroy-core-dtap: 
 	@$(call pulumi_destroy,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS})
 
 CORE_DTAP_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.json
-export-stack-core-dtap: init-core-dtap
+export-stack-core-dtap: 
 	@$(info Exporting stack to ${CORE_DTAP_STACK_OUTPUT_FILE})
 	@$(call pulumi_export_stack,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${CORE_DTAP_STACK_OUTPUT_FILE})
 
-import-stack-core-dtap: init-core-dtap
+import-stack-core-dtap: 
 	@$(info Importing stack file ${CORE_DTAP_STACK_OUTPUT_FILE})
 	@$(call pulumi_import_stack,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${CORE_DTAP_STACK_OUTPUT_FILE})
 
 # DTAP Stack Extensions
-init-core-dtap-extensions: _check-for-stack-var
+init-core-dtap-extensions: _check-for-stack-var _check-for-cust-code-var
+	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-extensions/Pulumi.yaml ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
+	@sed -i 's|ingenii-|${CUSTOMER_CODE}-|g' ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
 	@$(call pulumi_init,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS})
 
-preview-core-dtap-extensions: init-core-dtap-extensions
+preview-core-dtap-extensions: 
 	@$(call pulumi_preview,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
-refresh-core-dtap-extensions: init-core-dtap-extensions
+refresh-core-dtap-extensions: 
 	@$(call pulumi_refresh,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
-apply-core-dtap-extensions: init-core-dtap-extensions
+apply-core-dtap-extensions: 
 	@$(call pulumi_apply,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
-destroy-core-dtap-extensions: init-core-dtap-extensions
+destroy-core-dtap-extensions: 
 	@$(call pulumi_destroy,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS})
 
 CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.extensions.json
-export-stack-core-dtap-extensions: init-core-dtap-extensions
+export-stack-core-dtap-extensions: 
 	@$(info Exporting stack to ${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
 	@$(call pulumi_export_stack,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
 
-import-stack-core-dtap-extensions: init-core-dtap-extensions
+import-stack-core-dtap-extensions: 
 	@$(info Importing stack file ${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
 	@$(call pulumi_import_stack,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
 
@@ -204,6 +218,7 @@ set-platform-version:
 	@sed -i 's/azure-data-platform-iac-runtime:.*/azure-data-platform-iac-runtime:${VERSION}/g' ${PROJECT_ROOT}/.github/workflows/ingenii_data_platform_ci.yml
 	@sed -i 's/azure-data-platform-iac-runtime:.*/azure-data-platform-iac-runtime:${VERSION}/g' ${PROJECT_ROOT}/.devcontainer/devcontainer.json
 
+.PHONY: clean
 clean:
 	@rm -rf ${SOURCE_DIR}
 	@rm -rf ${PROJECT_ROOT}/temp_clone
