@@ -6,9 +6,9 @@
 #
 # The Makefile makes sure all dependencies are in place for the docker image to be built.
 # ---------------------------------------------------------------------------------------------------------------------
-FROM python:3.10
+FROM python:3.9
 
-ARG PULUMI_VERSION="3.17.1"
+ARG PULUMI_VERSION="3.18.0"
 
 # Install Pulumi
 RUN cd /tmp && curl -fsSL https://get.pulumi.com | sh -s -- --silent --version ${PULUMI_VERSION}

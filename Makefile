@@ -1,193 +1,120 @@
-.PHONY: setup setup-env-file setup-dev-dir setup-venv clean init preview apply destroy
-.PHONY: init-core-shared preview-core-shared apply-core-shared destroy-core-shared
-.PHONY: init-core-dtap preview-core-dtap apply-core-dtap destroy-core-dtap
-.PHONY: init-core-extensions preview-core-extensions apply-core-extensions destroy-core-extensions
-.PHONY: import-stack-core-shared export-stack-core-shared import-stack-core-dtap export-stack-core-dtap import-stack-core-extensions export-stack-core-extensions
-
 SHELL := /bin/bash
 
-PULUMI_ORGANIZATION :=	ingenii
-PULUMI_PARALLELISM  := 	3 	# Increasing this number will speed up deployments but you are likely to encounter race conditions.
+REGION := EastUS
 
-PROJECT_ROOT 					:= $(realpath .)
-SOURCE_DIR 						:= ${PROJECT_ROOT}/src
-PULUMI_SOURCE_DIR 				:= ${PROJECT_ROOT}/src/pulumi
-PULUMI_PRJ_CONF_TEMPLATES_DIR 	:= ${PULUMI_SOURCE_DIR}/templates/pulumi-project-conf
-DEV_DIR							:= ${PROJECT_ROOT}/dev
+TEMP_DIR		:= /tmp
+PROJECT_ROOT	:= $(realpath .)
 
-CORE_DEFAULT_SHARED_PLATFORM_CONF   := ${DEV_DIR}/platform-config/defaults.shared.yml
-CORE_DEFAULT_PLATFORM_CONF 			:= ${DEV_DIR}/platform-config/defaults.yml
-PLATFORM_CONF_SCHEMA				:= ${DEV_DIR}/platform-config/schema.yml
+VENV_DIR 			:= ${PROJECT_ROOT}/venv
+SOURCE_DIR			:= ${PROJECT_ROOT}/src
+PULUMI_SOURCE_DIR	:= ${PROJECT_ROOT}/src/pulumi
 
-CORE_SHARED_SOURCE_DIR 		:= ${PULUMI_SOURCE_DIR}/core-shared
-CORE_DTAP_SOURCE_DIR 		:= ${PULUMI_SOURCE_DIR}/core-dtap
-CORE_EXTENSIONS_SOURCE_DIR 	:= ${PULUMI_SOURCE_DIR}/core-extensions
+DEV_DIR_NAME	:= dev
+DEV_DIR 		:= ${PROJECT_ROOT}/${DEV_DIR_NAME}
 
-VENV_DIR	:= ${PROJECT_ROOT}/venv
-RANDOM_STR  := $(shell python -c "import random, string; print(''.join(random.SystemRandom().choice(string.ascii_lowercase) for _ in range(3)))")
+RANDOM_STR			:= $(shell python -c "import random, string; print(''.join(random.SystemRandom().choice(string.ascii_lowercase) for _ in range(10)))")
+RANDOM_STR_LEN_3	:= $(shell python -c "print('${RANDOM_STR}'[:3])")
+RANDOM_STR_LEN_4	:= $(shell python -c "print('${RANDOM_STR}'[:4])")
 
-# This variable is intentionally left empty.
-EXTRA_ARGS 		:=
+#####################################################################################################################
+# Helper Targets
+# Please only use these targets if really necessary. Scroll down to the API section for the list of targets to use.
+#####################################################################################################################
+COOKIECUTTER_CUSTOMER_REPO_DIR				:= ${SOURCE_DIR}/cookiecutters/customer-repo
+COOKIECUTTER_CUSTOMER_REPO_CONFIG_TPL_FILE	:= ${COOKIECUTTER_CUSTOMER_REPO_DIR}/cookiecutter.tpl
+setup-cruft-config:
+	$(info [INFO] Configuring the Cookiecutter template...)
+	@cp ${COOKIECUTTER_CUSTOMER_REPO_CONFIG_TPL_FILE} ${TEMP_DIR}/${RANDOM_STR}.yml
+	@sed -i 's|customer_code_replace_me.*|${RANDOM_STR_LEN_3}|g' ${TEMP_DIR}/${RANDOM_STR}.yml;
+	@sed -i 's|region_replace_me.*|${REGION}|g' ${TEMP_DIR}/${RANDOM_STR}.yml;
+	@sed -i 's|resource_prefix_replace_me.*|${RANDOM_STR_LEN_3}|g' ${TEMP_DIR}/${RANDOM_STR}.yml;
+	@sed -i 's|unique_id_replace_me.*|${RANDOM_STR_LEN_4}|g' ${TEMP_DIR}/${RANDOM_STR}.yml;
+	@sed -i 's|platform_version_replace_me.*|development|g' ${TEMP_DIR}/${RANDOM_STR}.yml;
+	@sed -i 's|project_dir_replace_me.*|${DEV_DIR_NAME}|g' ${TEMP_DIR}/${RANDOM_STR}.yml;
 
--include .env
+setup-cruft-project:
+	$(info [INFO] Setting up the Cookiecutter project in ${DEV_DIR})
+	@cruft create ${PROJECT_ROOT} --directory src/cookiecutters/customer-repo --config-file ${TEMP_DIR}/${RANDOM_STR}.yml --no-input \
 
-#--------------------------------------------------------------------------------------------------------------------
-# SETUP
-#--------------------------------------------------------------------------------------------------------------------
+setup-dir-links:
+	@ln -s ${SOURCE_DIR} ${DEV_DIR}/src
+
 setup-env-file:
 	$(info [INFO] Setting up the .env file)
-	@if test -f ".env"; then echo "[INFO] .env file already exist. Skipping .env-dist setup."; else cp .env-dist .env; fi
+	@if [ ! -f ${DEV_DIR}/.env ]; then cp ${DEV_DIR}/.env-dist ${DEV_DIR}/.env ; else echo "[INFO] '${DEV_DIR}/.env' file already exist. Skipping env file setup."; fi
 
-setup-dev-dir:
-	$(info [INFO] Setting up the dev directory at ${DEV_DIR})
-	@mkdir ${DEV_DIR}
-	@cp -r ${SOURCE_DIR}/platform-config ${DEV_DIR}
-	@find ${DEV_DIR}/platform-config -type f -name 'defaults*.yml' -exec sed -i 's/prefix:.*/prefix: ${RANDOM_STR}/g' {} +
-	@find ${DEV_DIR}/platform-config -type f -name 'defaults*.yml' -exec sed -i 's/name: Ingenii Data Platform.*/name: Ingenii Data Platform ${RANDOM_STR}/g' {} +
-	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-shared/Pulumi.yaml ${CORE_SHARED_SOURCE_DIR}/Pulumi.yaml
-	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-dtap/Pulumi.yaml ${CORE_DTAP_SOURCE_DIR}/Pulumi.yaml
-	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-extensions/Pulumi.yaml ${CORE_EXTENSIONS_SOURCE_DIR}/Pulumi.yaml
-	@sed -i 's/ingenii-.*/${RANDOM_STR}-adp-core-shared/g' ${CORE_SHARED_SOURCE_DIR}/Pulumi.yaml
-	@sed -i 's/ingenii-.*/${RANDOM_STR}-adp-core-dtap/g' ${CORE_DTAP_SOURCE_DIR}/Pulumi.yaml
-	@sed -i 's/ingenii-.*/${RANDOM_STR}-adp-core-extensions/g' ${CORE_EXTENSIONS_SOURCE_DIR}/Pulumi.yaml
+PULUMI_PRJ_CONF_TEMPLATES_DIR	:= ${PULUMI_SOURCE_DIR}/templates/pulumi-project-conf
+setup-pulumi-project-configs:
+	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-shared/Pulumi.yaml		${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
+	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-dtap/Pulumi.yaml			${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml
+	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-extensions/Pulumi.yaml	${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
+	@sed -i 's|ingenii-.*|${RANDOM_STR_LEN_4}-adp-core-shared|g'		${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
+	@sed -i 's|ingenii-.*|${RANDOM_STR_LEN_4}-adp-core-dtap|g'			${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml
+	@sed -i 's|ingenii-.*|${RANDOM_STR_LEN_4}-adp-core-extensions|g'	${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
 
-setup-venv:
-	$(info [INFO] Setting up the virtual environment at ${VENV_DIR})
+setup-python-venv:
+	$(info [INFO] Setting up the Python virtual environment at ${VENV_DIR})
 	@python3 -m venv ${VENV_DIR}
 	@source ${VENV_DIR}/bin/activate && cd ${SOURCE_DIR} && pip install -r requirements-dev.txt
 
-setup: setup-env-file setup-dev-dir setup-venv
-	@$(info ##############################################)
-	@$(info You need to complete the following steps to complete the setup:)
-	@$(info 	1. Populate the .env file with your credentials.)
-	@$(info 	2. Activate the virtual environment by running > source ${VENV_DIR}/bin/activate)
-	@$(info ##############################################)
+show-setup-banner:
+	@$(info ####################################################################################)
+	@$(info	Success! A new development environment has been created at ${PROJECT_ROOT}/${DEV_DIR_NAME})
+	@$(info )
+	@$(info Step 1 -> Populate the ${PROJECT_ROOT}/${DEV_DIR_NAME}/.env file with your credentials)
+	@$(info ------------------------------------------------------------------------------------)
+	@$(info )
+	@$(info Step 2 -> Activate the virtual environment by running the command below:)
+	@$(info source ${VENV_DIR}/bin/activate)
+	@$(info ------------------------------------------------------------------------------------)
+	@$(info )
+	@$(info Important)
+	@$(info ------------------------------------------------------------------------------------)
+	@$(info Please note that the ${PROJECT_ROOT}/src directory is linked to the)
+	@$(info ${PROJECT_ROOT}/${DEV_DIR_NAME}/src directory.)
+	@$(info ####################################################################################)
 
-reset:
-	@rm -rf ${DEV_DIR}
-	@rm -rf ${CORE_SHARED_SOURCE_DIR}/Pulumi.yaml
-	@rm -rf ${CORE_DTAP_SOURCE_DIR}/Pulumi.yaml
-	@rm -rf ${CORE_EXTENSIONS_SOURCE_DIR}/Pulumi.yaml
+show-reset-banner:
+	@$(info ####################################################################################)
+	@$(info PLEASE READ CAREFULLY)
+	@$(info ####################################################################################)
 
-clean: reset
-	@rm -rf ${VENV_DIR}
+remove-dev-dir:
+	$(info Removing the Development directory at: ${DEV_DIR})
+	$(info Please make a copy of your .env file if you wish to retain your credentials.)
+	@rm -r -I ${DEV_DIR}
 
-#--------------------------------------------------------------------------------------------------------------------
-# STACKS
-#--------------------------------------------------------------------------------------------------------------------
+remove-venv-dir:
+	$(info Removing the Python Virtual Environment directory at: ${VENV_DIR})
+	@rm -r -I ${VENV_DIR}
 
-# SHARED (Shared Services)
-CORE_SHARED_STACK 	   	:= ${PULUMI_ORGANIZATION}/shared
-init-core-shared:
-	@pulumi -C ${CORE_SHARED_SOURCE_DIR} stack select ${CORE_SHARED_STACK} --create --color always --non-interactive ${EXTRA_ARGS}
+remove-pulumi-project-configs:
+	$(info Removing the Pulumi project configuration files)
+	@rm  ${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
+	@rm  ${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml
+	@rm  ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
 
-preview-core-shared: init-core-shared
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_SHARED_PLATFORM_CONF} \
-	pulumi -C ${CORE_SHARED_SOURCE_DIR} preview --color always --diff --non-interactive ${EXTRA_ARGS}
+set-pulumi-version:
+	@if test -z "${VERSION}"; then echo "VERSION variable not set. Try 'make set-pulumi-version VERSION=<pulumi version>'"; exit 1; fi
+	$(info Setting the Pulumi version to ${VERSION})
+	@sed -i 's|pulumi==.*|pulumi==${VERSION}|g'	${SOURCE_DIR}/requirements-common.txt
+	@sed -i 's|PULUMI_VERSION=.*|PULUMI_VERSION=\"${VERSION}\"|g'	${SOURCE_DIR}/docker-images/iac-runtime/Dockerfile
+	@sed -i 's|\"PULUMI_VERSION\".*|\"PULUMI_VERSION\": \"${VERSION}\"|g'	${PROJECT_ROOT}/.devcontainer/devcontainer.json
+	$(info Rebuild the VSCode dev container for the changes to take an effect.)
 
-refresh-core-shared: init-core-shared
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_SHARED_PLATFORM_CONF} \
-	pulumi -C ${CORE_SHARED_SOURCE_DIR} refresh --color always --non-interactive --yes --diff --skip-preview ${EXTRA_ARGS}
-
-apply-core-shared: init-core-shared
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_SHARED_PLATFORM_CONF} \
-	pulumi -C ${CORE_SHARED_SOURCE_DIR} up --parallel ${PULUMI_PARALLELISM} --color always --non-interactive --yes --diff --skip-preview ${EXTRA_ARGS}
-
-destroy-core-shared: init-core-shared
-	@pulumi destroy -C ${CORE_SHARED_SOURCE_DIR}  --parallel ${PULUMI_PARALLELISM} --color always ${EXTRA_ARGS}
-	@pulumi stack rm -C ${CORE_SHARED_SOURCE_DIR} --stack ${CORE_SHARED_STACK} --non-interactive --yes ${EXTRA_ARGS}
-
-export-stack-core-shared: init-core-shared
-	@$(info Exporting stack to ${DEV_DIR}/core-shared.pulumi.stack.json)
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_SHARED_PLATFORM_CONF} \
-	pulumi -C ${CORE_SHARED_SOURCE_DIR} stack export --file ${DEV_DIR}/core-shared.pulumi.stack.json ${EXTRA_ARGS}
-
-import-stack-core-shared: init-core-shared
-	@$(info Importing stack file ${DEV_DIR}/core-shared.pulumi.stack.json)
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_SHARED_PLATFORM_CONF} \
-	pulumi -C ${CORE_SHARED_SOURCE_DIR} stack import --file ${DEV_DIR}/core-shared.pulumi.stack.json ${EXTRA_ARGS}
+set-python-version:
+	@if test -z "${VERSION}"; then echo "VERSION variable not set. Try 'make set-pulumi-version VERSION=<pulumi version>'"; exit 1; fi
+	$(info Setting the Python version to ${VERSION})
+	@sed -i 's|\"VARIANT\".*|\"VARIANT\": \"${VERSION}\",|g'	${PROJECT_ROOT}/.devcontainer/devcontainer.json
+	@sed -i 's|python:.*|python:${VERSION}|g'	${SOURCE_DIR}/docker-images/iac-runtime/Dockerfile
+	$(info Rebuild the VSCode dev container for the changes to take an effect.)
 
 
-# DTAP (Dev, Test, Prod)
-init-core-dtap:
-	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
-	@pulumi -C ${CORE_DTAP_SOURCE_DIR} stack select ${PULUMI_ORGANIZATION}/${STACK} --create --color always --non-interactive ${EXTRA_ARGS}
+#####################################################################################################################
+# API
+#####################################################################################################################
+setup: setup-cruft-config setup-cruft-project setup-dir-links setup-env-file setup-pulumi-project-configs setup-python-venv show-setup-banner
 
-preview-core-dtap: init-core-dtap
-	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_DTAP_SOURCE_DIR} preview --color always --diff --non-interactive ${EXTRA_ARGS}
+project-reset: show-reset-banner remove-dev-dir remove-pulumi-project-configs
 
-refresh-core-dtap: init-core-dtap
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_DTAP_SOURCE_DIR} refresh --color always --diff --non-interactive --yes --skip-preview ${EXTRA_ARGS}
-
-apply-core-dtap: init-core-dtap
-	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_DTAP_SOURCE_DIR} up --parallel ${PULUMI_PARALLELISM}  --color always --diff --non-interactive --yes --skip-preview ${EXTRA_ARGS}
-
-destroy-core-dtap: init-core-dtap
-	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
-	@pulumi destroy -C ${CORE_DTAP_SOURCE_DIR} --parallel ${PULUMI_PARALLELISM} --color always --non-interactive --yes --skip-preview ${EXTRA_ARGS}
-	@pulumi stack rm -C ${CORE_DTAP_SOURCE_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --non-interactive --yes ${EXTRA_ARGS}
-
-export-stack-core-dtap: init-core-dtap
-	@$(info Exporting stack to ${DEV_DIR}/core-dtap.pulumi.stack.json)
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_DTAP_SOURCE_DIR} stack export --file ${DEV_DIR}/core-dtap.pulumi.stack.json ${EXTRA_ARGS}
-
-import-stack-core-dtap: init-core-dtap
-	@$(info Importing stack file ${DEV_DIR}/core-dtap.pulumi.stack.json)
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_DTAP_SOURCE_DIR} stack import --file ${DEV_DIR}/core-dtap.pulumi.stack.json ${EXTRA_ARGS}
-
-
-# EXTENSIONS
-init-core-extensions:
-	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
-	@pulumi -C ${CORE_EXTENSIONS_SOURCE_DIR} stack select ${PULUMI_ORGANIZATION}/${STACK} --create --color always --non-interactive ${EXTRA_ARGS}
-
-preview-core-extensions: init-core-extensions
-	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_EXTENSIONS_SOURCE_DIR} preview --color always --diff --non-interactive ${EXTRA_ARGS}
-
-refresh-core-extensions: init-core-extensions
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_EXTENSIONS_SOURCE_DIR} refresh --color always --diff --non-interactive --yes --skip-preview ${EXTRA_ARGS}
-
-apply-core-extensions: init-core-extensions
-	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_EXTENSIONS_SOURCE_DIR} up --parallel ${PULUMI_PARALLELISM}  --color always --diff --non-interactive --yes --skip-preview ${EXTRA_ARGS}
-
-destroy-core-extensions: init-core-extensions
-	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
-	@pulumi destroy -C ${CORE_EXTENSIONS_SOURCE_DIR} --parallel ${PULUMI_PARALLELISM} --color always --non-interactive --yes --skip-preview ${EXTRA_ARGS}
-	@pulumi stack rm -C ${CORE_EXTENSIONS_SOURCE_DIR} --stack ${PULUMI_ORGANIZATION}/${STACK} --non-interactive --yes ${EXTRA_ARGS}
-
-export-stack-core-extensions: init-core-extensions
-	@$(info Exporting stack to ${DEV_DIR}/core-extensions.pulumi.stack.json)
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_EXTENSIONS_SOURCE_DIR} stack export --file ${DEV_DIR}/core-extensions.pulumi.stack.json ${EXTRA_ARGS}
-
-import-stack-core-extensions: init-core-extensions
-	@$(info Importing stack file ${DEV_DIR}/core-extensions.pulumi.stack.json)
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA} \
-	ADP_DEFAULT_CONFIG_FILE_PATH=${CORE_DEFAULT_PLATFORM_CONF} \
-	pulumi -C ${CORE_EXTENSIONS_SOURCE_DIR} stack import --file ${DEV_DIR}/core-extensions.pulumi.stack.json ${EXTRA_ARGS}
+reset: project-reset remove-venv-dir

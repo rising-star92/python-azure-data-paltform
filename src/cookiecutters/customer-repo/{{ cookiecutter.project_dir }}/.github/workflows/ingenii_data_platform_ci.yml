@@ -65,13 +65,11 @@ jobs:
           make init-shared
       #---------------------------------
       - name: Run Pulumi Preview
-        run: |
-          make preview-shared
+        run: make preview-shared
       #---------------------------------
       - name: Run Pulumi Up
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          make apply-shared EXTRA_ARGS="-f"
+        run: make apply-shared EXTRA_ARGS="-f"
   dtap:
     name: DTAP
     needs: shared
@@ -124,10 +122,85 @@ jobs:
           make init-dtap
       #---------------------------------
       - name: Run Pulumi Preview
-        run: |
-          make preview-dtap STACK={%- raw %}${{ matrix.stack }}{%- endraw %}
+        run: make preview-dtap
       #---------------------------------
       - name: Run Pulumi Up
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          make apply-dtap STACK={%- raw %}${{ matrix.stack }}{%- endraw %} EXTRA_ARGS="-f"
+        run: make apply-dtap EXTRA_ARGS="-f"
+  extensions:
+    name: extensions
+    needs: dtap
+    runs-on: [self-hosted, linux, x64]
+    container:
+      image: ingeniisolutions/azure-data-platform-iac-runtime:{{ cookiecutter.platform_version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - stack: dev
+            client_id: DEV_ARM_CLIENT_ID
+            client_secret: DEV_ARM_CLIENT_SECRET
+            subscription_id: DEV_ARM_SUBSCRIPTION_ID
+            tenant_id: DEV_ARM_TENANT_ID
+          - stack: test
+            client_id: TEST_ARM_CLIENT_ID
+            client_secret: TEST_ARM_CLIENT_SECRET
+            subscription_id: TEST_ARM_SUBSCRIPTION_ID
+            tenant_id: TEST_ARM_TENANT_ID
+          - stack: prod
+            client_id: PROD_ARM_CLIENT_ID
+            client_secret: PROD_ARM_CLIENT_SECRET
+            subscription_id: PROD_ARM_SUBSCRIPTION_ID
+            tenant_id: PROD_ARM_TENANT_ID
+          - stack: shared
+            client_id: SHARED_ARM_CLIENT_ID
+            client_secret: SHARED_ARM_CLIENT_SECRET
+            subscription_id: SHARED_ARM_SUBSCRIPTION_ID
+            tenant_id: SHARED_ARM_TENANT_ID
+    env:
+      STACK: {% raw %}${{ matrix.stack }}{%- endraw %}
+      ARM_CLIENT_ID: {% raw %}${{ secrets[matrix.client_id] }}{%- endraw %}
+      ARM_CLIENT_SECRET: {% raw %}${{ secrets[matrix.client_secret] }}{%- endraw %}
+      ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets[matrix.subscription_id] }}{%- endraw %}
+      ARM_TENANT_ID: {% raw %}${{ secrets[matrix.tenant_id] }}{%- endraw %}
+      SHARED_ARM_CLIENT_ID: {% raw %}${{ secrets.SHARED_ARM_CLIENT_ID }}{%- endraw %}
+      SHARED_ARM_CLIENT_SECRET: {% raw %}${{ secrets.SHARED_ARM_CLIENT_SECRET }}{%- endraw %}
+      SHARED_ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets.SHARED_ARM_SUBSCRIPTION_ID }}{%- endraw %}
+      SHARED_ARM_TENANT_ID: {% raw %}${{ secrets.SHARED_ARM_TENANT_ID }}{%- endraw %}
+    steps:
+      #---------------------------------
+      - name: Checkout Customer Repo
+        uses: actions/checkout@v2
+      #---------------------------------
+      - name: Install Deployment SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: {% raw %}${{ secrets.SSH_DEPLOY_KEY }}{%- endraw %}
+          known_hosts: "github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+      #---------------------------------
+      - name: Prepare Platform Source Files
+        run: make clone-repo-using-ssh
+      #---------------------------------
+      - name: Run Pulumi Init
+        if: matrix.stack == 'shared'
+        run: make init-shared-extensions
+      #---------------------------------
+      - name: Run Pulumi Preview
+        if: matrix.stack == 'shared'
+        run: make preview-shared-extensions
+      #---------------------------------
+      - name: Run Pulumi Up
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && matrix.stack == 'shared'
+        run: make apply-shared-extensions EXTRA_ARGS="-f"
+      #---------------------------------
+      - name: Run Pulumi Init
+        if: matrix.stack != 'shared'
+        run: make init-dtap-extensions
+      #---------------------------------
+      - name: Run Pulumi Preview
+        if: matrix.stack != 'shared'
+        run: make preview-dtap-extensions
+      #---------------------------------
+      - name: Run Pulumi Up
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && matrix.stack != 'shared'
+        run: make apply-dtap-extensions EXTRA_ARGS="-f"

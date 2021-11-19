@@ -5,7 +5,7 @@
 ## 0.1.21 (2021-11-16)
 
 ### Improvements
-- [core/runtime] - Update Pulumi to v3.17.1 and Python to 3.10
+- [core/runtime] - Update Pulumi to v3.18.0
 - [shared_services] - Export outputs
 - [docs] - Update documentation
 - [core/makefile] - Updating makefile

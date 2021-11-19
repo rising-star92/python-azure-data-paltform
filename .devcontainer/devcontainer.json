@@ -6,8 +6,8 @@
     "dockerfile": "Dockerfile",
     "context": "..",
     "args": {
-      "VARIANT": "3.10",
-      "PULUMI_VERSION": "3.17.1"
+      "VARIANT": "3.9",
+      "PULUMI_VERSION": "3.18.0"
     }
   },
 
@@ -35,24 +35,24 @@
 
   // Add the IDs of extensions you want installed when the container is created.
   "extensions": [
-	"ms-python.python",
-	"ms-python.vscode-pylance",
-	"coenraads.bracket-pair-colorizer-2",
-	"christian-kohler.path-intellisense",
-	"gruntfuggly.todo-tree",
-	"oderwat.indent-rainbow",
-	"redhat.vscode-yaml",
-	"geeebe.duplicate",
-	"eamodio.gitlens",
-	"codezombiech.gitignore",
-	"donjayamanne.githistory",
-	"mhutchie.git-graph",
-	"redvanworkshop.explorer-exclude-vscode-extension",
-	"streetsidesoftware.code-spell-checker",
-	"yzhang.markdown-all-in-one",
-	"hitode909.zentabs",
-	"github.copilot"
-],
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "coenraads.bracket-pair-colorizer-2",
+    "christian-kohler.path-intellisense",
+    "gruntfuggly.todo-tree",
+    "oderwat.indent-rainbow",
+    "redhat.vscode-yaml",
+    "geeebe.duplicate",
+    "eamodio.gitlens",
+    "codezombiech.gitignore",
+    "donjayamanne.githistory",
+    "mhutchie.git-graph",
+    "redvanworkshop.explorer-exclude-vscode-extension",
+    "streetsidesoftware.code-spell-checker",
+    "yzhang.markdown-all-in-one",
+    "hitode909.zentabs",
+    "github.copilot"
+  ],
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
