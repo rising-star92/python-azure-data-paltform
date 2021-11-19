@@ -2,7 +2,7 @@
 
 ## 0.1.22 (TBD)
 
-## 0.1.21 (2021-11-16)
+## 0.1.21 (2021-11-19)
 
 ### Improvements
 - [core/runtime] - Update Pulumi to v3.18.0
