@@ -2,6 +2,7 @@
 
 ## 0.1.22 (TBD)
 
+- [devops] - Pipeline generation pipelines
 - [databricks] - Makefile commands to upload notebooks
 - [databricks] - Initial pre-processing package added
 
@@ -18,7 +19,7 @@
 ## 0.1.20 (2021-10-29)
 
 - [databricks] - Add Ingenii Engineering notebooks
-- [shared_services] - Adding default AAD group permissions to ADO project
+- [devops] - Adding default AAD group permissions to ADO project
 - [docs] - Update documentation and migrate to the user section
 
 ## 0.1.19 (2021-10-13)
@@ -28,7 +29,7 @@
 - [shared_services] - Add the management resources
 - [shared_services] - Add the network resources
 - [shared_services] - Add the config registry
-- [shared_services] - Add the Azure DevOps project and repos.
+- [devops] - Add the Azure DevOps project and repos.
 
 ### Improvements
 - [databricks] - Make sure the default clusters are pinned by default. This would prevent Databricks from automatically removing them.
