@@ -1,5 +1,5 @@
 import pulumi
-from os import getenv
+from os import getcwd, getenv
 from pulumi_azure_native.authorization import get_client_config
 from ingenii_azure_data_platform.config import PlatformConfiguration
 
@@ -27,6 +27,8 @@ SHARED_OUTPUTS = pulumi.StackReference("/".join([
     CURRENT_PROJECT_NAME.replace("dtap", "shared"), 
     "shared"
 ])).get_output("root")
+
+DTAP_ROOT = getcwd()
 
 # Outputs
 platform_outputs = {}

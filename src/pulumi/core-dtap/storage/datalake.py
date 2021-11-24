@@ -1,8 +1,6 @@
-from pulumi import ResourceOptions
+from pulumi import ResourceOptions, Output
 import pulumi_azure_native as azure_native
 import pulumi_azure as azure_classic
-
-from pulumi import Output
 
 from ingenii_azure_data_platform.utils import generate_resource_name
 from ingenii_azure_data_platform.defaults import STORAGE_ACCOUNT_DEFAULT_FIREWALL
@@ -203,20 +201,17 @@ for ref_key, container_config in datalake_config.get("containers", {}).items():
         resource_group_name=resource_groups["data"].name,
     )
     # Container Role Assignments
-    try:
-        role_assignments = container_config["iam"]["role_assignments"]
-        for assignment in role_assignments:
-            # User Group Role Assignment
-            if assignment.get("user_group_ref_key") is not None:
-                user_group_ref_key = assignment.get("user_group_ref_key")
-                GroupRoleAssignment(
-                    role_name=assignment["role_definition_name"],
-                    group_object_id=user_groups[user_group_ref_key]["object_id"],
-                    scope=datalake_containers[ref_key].id,
-                )
-    except KeyError:
-        # No role assignments are found. Evaluate the next container.
-        continue
+    role_assignments = container_config.get("iam", {}) \
+                                       .get("role_assignments", [])
+    for assignment in role_assignments:
+        # User Group Role Assignment
+        if assignment.get("user_group_ref_key") is not None:
+            user_group_ref_key = assignment.get("user_group_ref_key")
+            GroupRoleAssignment(
+                role_name=assignment["role_definition_name"],
+                group_object_id=user_groups[user_group_ref_key]["object_id"],
+                scope=datalake_containers[ref_key].id,
+            )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA LAKE -> TABLES

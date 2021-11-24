@@ -2,6 +2,8 @@
 
 ## 0.1.22 (TBD)
 
+- [databricks] - Initial pre-processing package added
+
 ## 0.1.21 (2021-11-19)
 
 ### Improvements

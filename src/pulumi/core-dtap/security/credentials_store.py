@@ -5,13 +5,10 @@ from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
 )
-from pulumi_azure_native import keyvault
-from pulumi_azure_native.keyvault import key
 
 from project_config import platform_config, azure_client, platform_outputs
 from management import resource_groups
 from management.user_groups import user_groups
-
 from network import vnet, dns
 
 outputs = platform_outputs["security"]["credentials_store"] = {}

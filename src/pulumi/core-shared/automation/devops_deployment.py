@@ -23,7 +23,11 @@ resource_group_name = generate_resource_name(
 
 
 def generate_user_assigned_identity_name(environment):
-    return f"devops-deployment-managed-identity-{environment}"
+    return "-".join([
+        platform_config.prefix, 
+        "devops-deployment-managed-identity", 
+        environment
+    ])
 
 
 def generate_user_assigned_identity_id(environment):
@@ -130,7 +134,8 @@ devops_virtual_machine_scale_set = compute.VirtualMachineScaleSet(
             for env in user_assigned_identities
         },
     ),
-    vm_scale_set_name=devops_virtual_machine_scale_set_name,
+    vm_scale_set_name=platform_config.prefix + "-" + 
+                      devops_virtual_machine_scale_set_name,
     tags=platform_config.tags,
 )
 

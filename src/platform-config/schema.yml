@@ -161,6 +161,7 @@ _databricks_high_concurrency_cluster:
 
 _databricks_cluster_libraries:
   pypi: list(include('_databricks_cluster_library_pypi'), required=False)
+  whl: list(str(), required=False)
 
 _databricks_cluster_library_pypi:
   package: str()

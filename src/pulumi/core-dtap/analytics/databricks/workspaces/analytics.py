@@ -71,14 +71,10 @@ outputs["url"] = workspace.workspace_url
 # ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS DATABRICKS WORKSPACE -> IAM ROLE ASSIGNMENTS
 # ----------------------------------------------------------------------------------------------------------------------
-try:
-    iam_role_assignments = workspace_config["iam"]["role_assignments"]
-except:
-    iam_role_assignments = {}
 
 # TODO: Create a function that takes care of the role assignments. Replace all role assignments using the function.
 # Create role assignments defined in the YAML files
-for assignment in iam_role_assignments:
+for assignment in workspace_config.get("iam", {}).get("role_assignments", []):
     # User Group Assignment
     user_group_ref_key = assignment.get("user_group_ref_key")
     if user_group_ref_key is not None:
