@@ -75,6 +75,20 @@ _check-for-stack-var:
 _check-for-cust-code-var:
 	@if test -z "${CUSTOMER_CODE}"; then echo "CUSTOMER_CODE variable not set. Check if platform.cfg exist in the current directory."; exit 1; fi
 
+define upload_notebooks
+	@az login --service-principal -t ${ARM_TENANT_ID} -u ${ARM_CLIENT_ID} -p ${ARM_CLIENT_SECRET} > /dev/null
+	@$(eval DATABRICKS_AAD_TOKEN=$(shell az account get-access-token  --subscription ${ARM_SUBSCRIPTION_ID} --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d | jq '.accessToken' --raw-output))
+
+	@$(eval ANALYTICS_HOST=$(shell pulumi stack output --cwd $(1) --stack $(2) --json $(3) | jq '.root.analytics.databricks.workspaces.analytics.url' | sed 's/"//g'))
+	@DATABRICKS_AAD_TOKEN=${DATABRICKS_AAD_TOKEN} databricks configure --aad-token --host https://${ANALYTICS_HOST}
+	@databricks workspace mkdirs '/Shared/Ingenii Engineering'
+	@ls ${SOURCE_DIR}/notebooks/analytics | awk -F '.' '{ print $$1 }' | xargs -I {} databricks workspace import -l PYTHON ${SOURCE_DIR}/notebooks/analytics/{}.py '/Shared/Ingenii Engineering/{}' --overwrite
+
+	@$(eval ENGINEERING_HOST=$(shell pulumi stack output --cwd $(1) --stack $(2) --json $(3) | jq '.root.analytics.databricks.workspaces.engineering.url' | sed 's/"//g'))
+	@DATABRICKS_AAD_TOKEN=${DATABRICKS_AAD_TOKEN} databricks configure --aad-token --host https://${ENGINEERING_HOST}
+	@databricks workspace mkdirs '/Shared/Ingenii Engineering'
+	@ls ${SOURCE_DIR}/notebooks/engineering | awk -F '.' '{ print $$1 }' | xargs -I {} databricks workspace import -l PYTHON ${SOURCE_DIR}/notebooks/engineering/{}.py '/Shared/Ingenii Engineering/{}' --overwrite
+endef
 
 #####################################################################################################################
 # Stacks
@@ -150,6 +164,9 @@ refresh-core-dtap:
 
 apply-core-dtap: 
 	@$(call pulumi_apply,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
+
+upload-core-dtap: 
+	@$(call upload_notebooks,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS})
 
 destroy-core-dtap: 
 	@$(call pulumi_destroy,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS})
@@ -241,6 +258,7 @@ init-dtap: init-core-dtap
 preview-dtap: preview-core-dtap
 refresh-dtap: refresh-core-dtap
 apply-dtap: apply-core-dtap
+upload-dtap: upload-core-dtap
 destroy-dtap: destroy-core-dtap
 
 init-dtap-extensions: init-core-dtap-extensions

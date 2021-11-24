@@ -34,7 +34,12 @@ setup-cruft-config:
 
 setup-cruft-project:
 	$(info [INFO] Setting up the Cookiecutter project in ${DEV_DIR})
-	@cruft create ${PROJECT_ROOT} --directory src/cookiecutters/customer-repo --config-file ${TEMP_DIR}/${RANDOM_STR}.yml --no-input \
+	@cruft create ${PROJECT_ROOT} --directory src/cookiecutters/customer-repo --config-file ${TEMP_DIR}/${RANDOM_STR}.yml --no-input
+	@echo "" >> ${DEV_DIR}/configs/shared.yml
+	@echo "automation:" >> ${DEV_DIR}/configs/shared.yml
+	@echo "  devops:" >> ${DEV_DIR}/configs/shared.yml
+	@echo "    project:" >> ${DEV_DIR}/configs/shared.yml
+	@echo "      name: Ingenii Data Platform ${RANDOM_STR_LEN_3}" >> ${DEV_DIR}/configs/shared.yml
 
 setup-dir-links:
 	@ln -s ${SOURCE_DIR} ${DEV_DIR}/src
@@ -50,9 +55,9 @@ setup-python-venv:
 
 show-setup-banner:
 	@$(info ####################################################################################)
-	@$(info	Success! A new development environment has been created at ${PROJECT_ROOT}/${DEV_DIR_NAME})
+	@$(info	Success! A new development environment has been created at ${DEV_DIR})
 	@$(info )
-	@$(info Step 1 -> Populate the ${PROJECT_ROOT}/${DEV_DIR_NAME}/.env file with your credentials)
+	@$(info Step 1 -> Populate the ${DEV_DIR}/.env file with your credentials)
 	@$(info ------------------------------------------------------------------------------------)
 	@$(info )
 	@$(info Step 2 -> Activate the virtual environment by running the command below:)
@@ -62,7 +67,7 @@ show-setup-banner:
 	@$(info Important)
 	@$(info ------------------------------------------------------------------------------------)
 	@$(info Please note that the ${PROJECT_ROOT}/src directory is linked to the)
-	@$(info ${PROJECT_ROOT}/${DEV_DIR_NAME}/src directory.)
+	@$(info ${DEV_DIR}/src directory.)
 	@$(info ####################################################################################)
 
 show-reset-banner:

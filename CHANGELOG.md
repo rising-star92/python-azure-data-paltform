@@ -2,6 +2,7 @@
 
 ## 0.1.22 (TBD)
 
+- [databricks] - Makefile commands to upload notebooks
 - [databricks] - Initial pre-processing package added
 
 ## 0.1.21 (2021-11-19)
