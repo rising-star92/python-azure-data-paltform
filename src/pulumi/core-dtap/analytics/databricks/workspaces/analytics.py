@@ -11,8 +11,10 @@ from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
 )
+from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.utils import generate_hash, generate_resource_name
 
+from logs import log_analytics_workspace
 from project_config import azure_client, platform_config, platform_outputs
 from management import resource_groups
 from management.user_groups import user_groups
@@ -67,6 +69,17 @@ workspace = azure_native.databricks.Workspace(
 outputs["name"] = workspace.name
 outputs["id"] = workspace.workspace_id
 outputs["url"] = workspace.workspace_url
+
+# ----------------------------------------------------------------------------------------------------------------------
+# ANALYTICS DATABRICKS WORKSPACE -> LOGGING
+# ----------------------------------------------------------------------------------------------------------------------
+
+log_diagnostic_settings(
+    platform_config, log_analytics_workspace.id,
+    workspace.type, workspace.id, workspace_name,
+    logs_config=workspace_config.get("logs", {}),
+    metrics_config=workspace_config.get("metrics", {}),
+)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS DATABRICKS WORKSPACE -> IAM ROLE ASSIGNMENTS
@@ -130,10 +143,8 @@ secret_scope = databricks.SecretScope(
 # ----------------------------------------------------------------------------------------------------------------------
 
 # If no clusters are defined in the YAML files, we'll not attempt to create any.
-cluster_definitions = workspace_config.get("clusters", {})
-
 clusters = {}
-for ref_key, cluster_config in cluster_definitions.items():
+for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
     cluster_resource_name = generate_resource_name(
         resource_type="databricks_cluster",
         resource_name=f"{workspace_short_name}-{ref_key}",

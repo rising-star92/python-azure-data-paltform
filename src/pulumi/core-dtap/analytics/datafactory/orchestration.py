@@ -6,6 +6,7 @@ from ingenii_azure_data_platform.iam import (
     ServicePrincipalRoleAssignment,
     UserAssignedIdentityRoleAssignment,
 )
+from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.orchestration import AdfSelfHostedIntegrationRuntime
 from ingenii_azure_data_platform.utils import generate_resource_name
 
@@ -16,6 +17,7 @@ from platform_shared import (
     get_devops_config_registry,
     get_devops_config_registry_resource_group,
 )
+from logs import log_analytics_workspace
 from project_config import platform_config, platform_outputs
 from management import resource_groups
 from management.user_groups import user_groups
@@ -265,4 +267,15 @@ keyvault.Secret(
     secret_name=f"data-factory-name-{platform_config.stack}",
     properties=keyvault.SecretPropertiesArgs(value=datafactory.name),
     opts=ResourceOptions(provider=shared_services_provider),
+)
+
+# ----------------------------------------------------------------------------------------------------------------------
+# LOGGING
+# ----------------------------------------------------------------------------------------------------------------------
+
+log_diagnostic_settings(
+    platform_config, log_analytics_workspace.id,
+    datafactory.type, datafactory.id, datafactory_name,
+    logs_config=datafactory_config.get("logs", {}),
+    metrics_config=datafactory_config.get("metrics", {}),
 )

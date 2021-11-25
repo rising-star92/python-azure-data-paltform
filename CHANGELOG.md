@@ -5,6 +5,7 @@
 - [devops] - Pipeline generation pipelines
 - [databricks] - Makefile commands to upload notebooks
 - [databricks] - Initial pre-processing package added
+- [logging] - Add Log Analytics Workspace per environment, and configurations
 
 ## 0.1.21 (2021-11-19)
 

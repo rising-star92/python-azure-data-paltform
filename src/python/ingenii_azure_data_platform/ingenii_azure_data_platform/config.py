@@ -186,3 +186,9 @@ class PlatformConfiguration:
     @property
     def from_yml(self):
         return self._from_yml
+
+    def __getitem__(self, key):
+        return self._from_yml[key]
+
+    def __setitem__(self, key, value):
+        raise Exception("You should not be updating the platform configuration!")

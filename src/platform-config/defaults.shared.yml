@@ -66,6 +66,21 @@ security:
           role_definition_name: "Key Vault Secrets User"
 
 # ----------------------------------------------------------------------------------------------------------------------
+# LOGS
+# ----------------------------------------------------------------------------------------------------------------------
+logs:
+  retention: 30 # Log retention in days
+  resource_types:
+    # Default is true, so any type can be added to the client configuration if it needs disabling
+    Microsoft.Databricks/workspaces: true
+    Microsoft.DataFactory/factories: true
+    Microsoft.KeyVault/vaults: true
+    Microsoft.Network/networkInterfaces: true
+    Microsoft.Network/networkSecurityGroups: true
+    Microsoft.Network/publicIPAddresses: true
+    Microsoft.Storage/storageAccounts: true
+
+# ----------------------------------------------------------------------------------------------------------------------
 # NETWORK
 # ----------------------------------------------------------------------------------------------------------------------
 network:

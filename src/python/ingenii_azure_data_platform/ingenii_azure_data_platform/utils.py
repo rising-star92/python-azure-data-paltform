@@ -51,6 +51,7 @@ def generate_resource_name(
         "random_password": "rp",
         "user_assigned_managed_identity": "uami",
         "virtual_machine_scale_set": "vmss",
+        "log_analytics_workspace": "law",
     }
 
     resource_type = resource_type.lower()
@@ -90,6 +91,10 @@ def generate_resource_name(
     # Storage Account
     elif resource_type == "storage_account":
         return f"{prefix}{stack}{resource_name}{unique_id}"
+
+    # Log Analytics Workspace
+    elif resource_type == "log_analytics_workspace":
+        return f"{prefix}-{stack}-{region_short_name}-law-{resource_name.lower()}-{unique_id}"
 
     # Other Resources
     elif resource_type in resource_names:

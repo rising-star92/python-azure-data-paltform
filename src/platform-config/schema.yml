@@ -5,6 +5,7 @@
 #----------------------------------------------------------------------------------------------------------------------
 general: include('general', required=False)
 management: include('management', required=False)
+logs: include('logs', required=False)
 network: include('network', required=False)
 storage: include('storage', required=False)
 security: include('security', required=False)
@@ -41,12 +42,20 @@ resource_group:
   iam: include('_iam', required=False)
 
 #----------------------------------------------------------------------------------------------------------------------
+# LOGS
+#----------------------------------------------------------------------------------------------------------------------
+logs:
+  retention: int()
+  resource_types: map(bool(), key=str())
+
+#----------------------------------------------------------------------------------------------------------------------
 # NETWORK
 #----------------------------------------------------------------------------------------------------------------------
 network:
   firewall: include('_network_firewall')
   nat_gateway:
     enabled: bool()
+    public_ip: include('_logs_and_metrics', required=False)
   virtual_network: include('_network_virtual_network')
 
 # network.firewall
@@ -65,12 +74,16 @@ _network_virtual_network:
 storage:
   datalake:
     display_name: str(max=9)
-    containers: map(include('storage_datalake_container'),key=str())
-    tables: map(include('storage_datalake_table'),key=str())
+    containers: map(include('storage_datalake_container'), key=str())
+    tables: map(include('storage_datalake_table'), key=str())
     network:
       firewall:
         enabled: bool()
+      private_endpoint: include('storage_datalake_network_private_endpoint', required=False)
     iam: include('_iam', required=False)
+    logs: include('_logs', required=False)
+    metrics: include('_metrics', required=False)
+    storage_type_logging: include('storage_datalake_storage_type_logging', required=False)
 
 # storage.datalake.containers
 storage_datalake_container:
@@ -88,6 +101,16 @@ storage_datalake_table_entity:
   row_key: str()
   entity: map(required=False)
 
+# storage.datalake.network.private_endpoint
+storage_datalake_network_private_endpoint:
+  blob: include('_logs_and_metrics', required=False)
+  dfs: include('_logs_and_metrics', required=False)
+
+# storage.datalake.storage_type_logging
+storage_datalake_storage_type_logging:
+  blob: include('_logs_and_metrics', required=False)
+  table: include('_logs_and_metrics', required=False)
+
 #----------------------------------------------------------------------------------------------------------------------
 # SECURITY
 #----------------------------------------------------------------------------------------------------------------------
@@ -99,13 +122,19 @@ _config_registry:
   network:
     firewall:
       enabled: bool()
+    private_endpoint: include('_logs_and_metrics', required=False)
   iam: include('_iam', required=False)
+  logs: include('_logs', required=False)
+  metrics: include('_metrics', required=False)
 
 _credentials_store:
   network:
     firewall:
       enabled: bool()
+    private_endpoint: include('_logs_and_metrics', required=False)
   iam: include('_iam', required=False)
+  logs: include('_logs', required=False)
+  metrics: include('_metrics', required=False)
 
 #----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS SERVICES
@@ -122,6 +151,9 @@ _databricks_workspace:
   iam: include('_iam', required=False)
   storage_mounts: list(include('_databricks_storage_mount'), required=False)
   clusters: map(include('_databricks_single_node_cluster'),include('_databricks_high_concurrency_cluster'),key=str(), required=False)
+  logs: include('_logs', required=False)
+  metrics: include('_metrics', required=False)
+  network_security_groups: include('_logs_and_metrics', required=False)
 
 _databricks_workspace_config:
   enable_container_services: str(required=False)
@@ -174,6 +206,8 @@ _datafactory_factory:
   display_name: str()
   iam: include('_iam', required=False)
   integration_runtimes: list(include('_datafactory_integration_runtime'), required=False)
+  logs: include('_logs', required=False)
+  metrics: include('_metrics', required=False)
 
 _datafactory_integration_runtime:
   type: enum("self-hosted","self-hosted-azure-vnet-integrated")
@@ -210,3 +244,15 @@ _iam_role_assignment:
   object_id: str(required=False)
   user_group_ref_key: str(required=False)
   azure_devops_project_group_name: str(required=False)
+
+_logs:
+  enabled: bool(required=False)
+  categories: list(str(), required=False)
+
+_metrics:
+  enabled: bool(required=False)
+  categories: list(str(), required=False)
+
+_logs_and_metrics:
+  logs: include('_logs', required=False)
+  metrics: include('_metrics', required=False)

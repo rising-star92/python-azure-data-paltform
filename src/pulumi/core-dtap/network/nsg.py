@@ -1,6 +1,10 @@
+from logging import log
 import pulumi
 import pulumi_azure_native as azure_native
+from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.utils import generate_resource_name
+
+from logs import log_analytics_workspace
 from project_config import platform_config, platform_outputs
 from management import resource_groups
 
@@ -55,3 +59,31 @@ outputs["databricks_analytics"] = {
     "name": databricks_analytics.name,
     "id": databricks_analytics.id,
 }
+
+# ----------------------------------------------------------------------------------------------------------------------
+# LOGGING
+# ----------------------------------------------------------------------------------------------------------------------
+
+engineering_workspace_config = platform_config["analytics_services"]["databricks"][
+    "workspaces"
+]["engineering"]
+engineering_nsg_details = engineering_workspace_config.get("network_security_groups", {})
+log_diagnostic_settings(
+    platform_config, log_analytics_workspace.id,
+    databricks_engineering.type, databricks_engineering.id,
+    databricks_engineering_resource_name,
+    logs_config=engineering_nsg_details.get("logs", {}),
+    metrics_config=engineering_nsg_details.get("metrics", {})
+)
+
+analytics_workspace_config = platform_config["analytics_services"]["databricks"][
+    "workspaces"
+]["analytics"]
+analytics_nsg_details = analytics_workspace_config.get("network_security_groups", {})
+log_diagnostic_settings(
+    platform_config, log_analytics_workspace.id,
+    databricks_analytics.type, databricks_analytics.id,
+    databricks_analytics_resource_name,
+    logs_config=analytics_nsg_details.get("logs", {}),
+    metrics_config=analytics_nsg_details.get("metrics", {})
+)

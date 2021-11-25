@@ -1,11 +1,13 @@
 import pulumi_azure_native as azure_native
-from ingenii_azure_data_platform.utils import generate_resource_name
 from ingenii_azure_data_platform.defaults import KEY_VAULT_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
 )
+from ingenii_azure_data_platform.logs import log_diagnostic_settings, log_network_interfaces
+from ingenii_azure_data_platform.utils import generate_resource_name
 
+from logs import log_analytics_workspace
 from project_config import platform_config, azure_client, platform_outputs
 from management import resource_groups
 from management.user_groups import user_groups
@@ -99,6 +101,16 @@ private_endpoint = azure_native.network.PrivateEndpoint(
     subnet=azure_native.network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
 
+# To Log Analytics Workspace
+private_endpoint_logs_and_metrics = key_vault_config.get("network", {}) \
+                                                    .get("private_endpoint", {})
+log_network_interfaces(
+    platform_config, log_analytics_workspace.id,
+    private_endpoint_name, private_endpoint.network_interfaces,
+    logs_config=private_endpoint_logs_and_metrics.get("logs", {}),
+    metrics_config=private_endpoint_logs_and_metrics.get("metrics", {})
+)
+
 # PRIVATE DNS ZONE GROUP
 private_endpoint_dns_zone_group_name = generate_resource_name(
     resource_type="private_dns_zone",
@@ -139,4 +151,15 @@ ServicePrincipalRoleAssignment(
     service_principal_object_id=azure_client.object_id,
     role_name="Key Vault Administrator",
     scope=key_vault.id,
+)
+
+# ----------------------------------------------------------------------------------------------------------------------
+# KEY VAULT -> LOGGING
+# ----------------------------------------------------------------------------------------------------------------------
+
+log_diagnostic_settings(
+    platform_config, log_analytics_workspace.id,
+    key_vault.type, key_vault.id, key_vault_name,
+    logs_config=key_vault_config.get("logs", {}),
+    metrics_config=key_vault_config.get("metrics", {})
 )
