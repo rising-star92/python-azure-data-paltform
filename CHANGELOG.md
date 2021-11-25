@@ -1,11 +1,16 @@
 # CHANGELOG
 
-## 0.1.22 (TBD)
+## 0.1.23 (Unreleased)
 
+## 0.1.22 (2021-11-25)
+
+### New Features
 - [devops] - Pipeline generation pipelines
-- [databricks] - Makefile commands to upload notebooks
-- [databricks] - Initial pre-processing package added
 - [logging] - Add Log Analytics Workspace per environment, and configurations
+- [databricks] - Initial pre-processing package added
+
+### Improvements
+- [databricks] - Makefile commands to upload notebooks
 - [extensions/general] - Rename the 'packages' folder to 'extensions'.
 - [extensions/sql_results_server] - Ignore changes to the SQL Server administrators. I.e. Leave the users to freely assign Administrators using the Azure Portal.
 
