@@ -6,6 +6,8 @@
 - [databricks] - Makefile commands to upload notebooks
 - [databricks] - Initial pre-processing package added
 - [logging] - Add Log Analytics Workspace per environment, and configurations
+- [extensions/general] - Rename the 'packages' folder to 'extensions'.
+- [extensions/sql_results_server] - Ignore changes to the SQL Server administrators. I.e. Leave the users to freely assign Administrators using the Azure Portal.
 
 ## 0.1.21 (2021-11-19)
 

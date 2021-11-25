@@ -1,6 +1,8 @@
 import pulumi_azure_native as azure_native
 import pulumi_random as random
 
+from pulumi import ResourceOptions
+
 from ingenii_azure_data_platform.contracts.packages import PackageInputArgs
 
 
@@ -62,9 +64,10 @@ def init(args: PackageInputArgs) -> None:
         if _enable_public_access
         else azure_native.sql.ServerPublicNetworkAccess.DISABLED,
         minimal_tls_version=_minimal_tls_version,
+        opts=ResourceOptions(ignore_changes=["administrators"])
     )
 
-    # Databse
+    # Database
     database = azure_native.sql.Database(
         resource_name=f"{args.namespace}-{_database_name}",
         database_name=_database_name,

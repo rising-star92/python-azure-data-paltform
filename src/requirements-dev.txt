@@ -1,6 +1,6 @@
 -r requirements-common.txt
 -e ./python/ingenii_azure_data_platform
--e ./python/packages/ingenii_adp_sql_results_server
+-e ./python/extensions/ingenii_adp_sql_results_server
 pre-commit>=1.21.0
 flake8>=3.7.9
 flake8-junit-report>=2.1.0
