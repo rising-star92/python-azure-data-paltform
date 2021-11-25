@@ -3,3 +3,4 @@ runtime
 *.secret
 venv
 src
+*.rej # Cruft reject files.
