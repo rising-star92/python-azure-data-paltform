@@ -136,59 +136,66 @@ class PlatformConfiguration:
         # Validate the schema
         self._validate_schema(config_schema_file_path, self._from_yml)
 
+        # Add properties
+        self._prefix = self._from_yml["general"]["prefix"]
+        self._region = CloudRegion(self._from_yml["general"]["region"])
+        self._tags = self._from_yml["general"]["tags"]
+        self._unique_id = self._from_yml["general"]["unique_id"]
         self._use_legacy_naming = self._from_yml["general"]["use_legacy_naming"]
 
-        self._stack = stack
-
-    @property
-    def use_legacy_naming(self):
-        return self._use_legacy_naming
-
-    @property
-    def stack(self):
-        stack = self._stack.lower()
-
-        # If we use the legacy naming conventions, we pass the stack name directly.
-        if self._use_legacy_naming:
-            return stack
+        self._stack = stack.lower()
 
         # In the new naming convention, we have shortened the stack names if they are either test, prod or shared.
-        if stack == "test":
-            return "tst"
-        elif stack == "prod":
-            return "prd"
-        elif stack == "shared":
-            return "shr"
-        else:
-            return stack
-
-    @property
-    def prefix(self):
-        return self._from_yml["general"]["prefix"]
-
-    @property
-    def region(self):
-        return CloudRegion(self._from_yml["general"]["region"])
-
-    @property
-    def tags(self):
-        return self._from_yml["general"]["tags"]
-
-    @property
-    def unique_id(self):
-        return self._from_yml["general"]["unique_id"]
-
-    # TODO: Left for backward compatibility. To be deleted in future releases.
-    @property
-    def yml_config(self):
-        return self._from_yml
+        self._stack_short_name = {
+            "test": "tst",
+            "prod": "prd",
+            "shared": "shr"
+        }.get(self._stack, self._stack)
 
     @property
     def from_yml(self):
         return self._from_yml
 
+    @property
+    def prefix(self):
+        return self._prefix
+
+    @property
+    def region(self):
+        return self._region
+
+    @property
+    def stack(self):
+        return self._stack
+
+    @property
+    def stack_short_name(self):
+
+        # If we use the legacy naming conventions, we pass the long name
+        if self._use_legacy_naming:
+            return self._stack
+        else:
+            return self._stack_short_name
+
+    @property
+    def tags(self):
+        return self._tags
+
+    @property
+    def unique_id(self):
+        return self._unique_id
+
+    @property
+    def use_legacy_naming(self):
+        return self._use_legacy_naming
+
+    # TODO: Left for backward compatibility. To be deleted in future releases.
+    @property
+    def yml_config(self):
+        return self.from_yml
+
     def __getitem__(self, key):
-        return self._from_yml[key]
+        return self.from_yml[key]
 
     def __setitem__(self, key, value):
         raise Exception("You should not be updating the platform configuration!")

@@ -56,7 +56,7 @@ def generate_resource_name(
 
     resource_type = resource_type.lower()
     prefix = platform_config.prefix
-    stack = platform_config.stack
+    stack = platform_config.stack_short_name
     region_short_name = platform_config.region.short_name
     unique_id = platform_config.unique_id
     use_legacy_naming = platform_config.use_legacy_naming

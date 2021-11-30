@@ -1,6 +1,12 @@
 # CHANGELOG
 
-## 0.1.23 (Unreleased)
+## 0.1.24 (Unreleased)
+
+## 0.1.23 (2021-11-29)
+
+### Bugfixes
+- [devops] - Environment name syncing
+- [datafactory] - Enable our trigger in post-deployment script
 
 ## 0.1.22 (2021-11-25)
 
