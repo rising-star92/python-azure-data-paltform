@@ -1,3 +1,4 @@
+from pulumi import Output
 from pulumi_azure import monitoring
 from pulumi_azure_native import insights
 
@@ -89,9 +90,16 @@ def log_diagnostic_settings(platform_config, log_analytics_workspace_id,
     if not logs_config.get("enabled", True) and not metrics_config.get("enabled", True):
         return
 
-    _log_diagnostic_settings(
-        log_analytics_workspace_id, resource_id, resource_name,
-        logs_config, metrics_config)
+    if isinstance(resource_id, Output):
+        resource_id.apply(lambda r_id: 
+            _log_diagnostic_settings(
+                log_analytics_workspace_id, r_id, resource_name,
+                logs_config, metrics_config)
+        )
+    else:
+        _log_diagnostic_settings(
+            log_analytics_workspace_id, resource_id, resource_name,
+            logs_config, metrics_config)
 
 
 def log_network_interfaces(platform_config, log_analytics_workspace_id,

@@ -2,6 +2,9 @@
 
 ## 0.1.24 (Unreleased)
 
+### Bugfixes
+- [logging] - Diagnostic settings handles when the resource does not yet exist
+
 ## 0.1.23 (2021-11-29)
 
 ### Bugfixes
