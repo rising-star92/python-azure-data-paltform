@@ -1,0 +1,232 @@
+name: Check for Platform Changes
+
+#----------------------------------------------------------------------------------------------------------------------
+# Workflow Triggers
+#
+# - Manual Run
+# - On Schedule
+#----------------------------------------------------------------------------------------------------------------------
+on:
+  workflow_dispatch:
+  schedule:
+    # Run every day at 4:30AM UTC
+    - cron: "30 4 * * *"
+
+#----------------------------------------------------------------------------------------------------------------------
+# Concurrency Policy
+# We are making sure only one instance of this workflow can be running at a time.
+# Concurrent Pulumi preview/up runs will error out.
+#----------------------------------------------------------------------------------------------------------------------
+concurrency: "data-platform"
+
+#----------------------------------------------------------------------------------------------------------------------
+# Global Environment Variables
+# These variables are accessible from all jobs and their steps.
+#----------------------------------------------------------------------------------------------------------------------
+env:
+  PULUMI_ACCESS_TOKEN: {% raw %}${{ secrets.PULUMI_ACCESS_TOKEN }}{%- endraw %}
+  AZDO_PERSONAL_ACCESS_TOKEN: {% raw %}${{ secrets.AZURE_DEVOPS_PERSONAL_ACCESS_TOKEN }}{%- endraw %}
+  AZDO_ORG_SERVICE_URL: {% raw %}${{ secrets.AZURE_DEVOPS_ORG_SERVICE_URL }}{%- endraw %}
+  PULUMI_SKIP_UPDATE_CHECK: true
+  PULUMI_SKIP_CONFIRMATIONS: true
+  NOTIFICATION_WARNING_COLOUR: FFC300
+  NOTIFICATION_TIMEZONE: UTC
+
+#----------------------------------------------------------------------------------------------------------------------
+# Jobs
+#----------------------------------------------------------------------------------------------------------------------
+jobs:
+  shared:
+    name: Shared Stack
+    runs-on: [self-hosted, linux, x64]
+    container:
+      image: ingeniisolutions/azure-data-platform-iac-runtime:{{ cookiecutter.platform_version }}
+    env:
+      ARM_CLIENT_ID: {% raw %}${{ secrets.SHARED_ARM_CLIENT_ID }}{%- endraw %}
+      ARM_CLIENT_SECRET: {% raw %}${{ secrets.SHARED_ARM_CLIENT_SECRET }}{%- endraw %}
+      ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets.SHARED_ARM_SUBSCRIPTION_ID }}{%- endraw %}
+      ARM_TENANT_ID: {% raw %}${{ secrets.SHARED_ARM_TENANT_ID }}{%- endraw %}
+    steps:
+      #---------------------------------
+      - name: Checkout Customer Repo
+        uses: actions/checkout@v2
+      #---------------------------------
+      - name: Install Deployment SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: {% raw %}${{ secrets.SSH_DEPLOY_KEY }}{%- endraw %}
+          known_hosts: "github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+      #---------------------------------
+      - name: Prepare Platform Source Files
+        run: |
+          make clone-repo-using-ssh
+          make init-shared
+      #---------------------------------
+      - name: Run Pulumi Refresh
+        run: make refresh-shared
+      #---------------------------------
+      - name: Run Pulumi Preview (Expect No Changes)
+        run: make preview-shared EXTRA_ARGS="--expect-no-changes"
+      #---------------------------------
+      - name: Send Notification to Teams
+        if: {% raw %}${{ failure() }}{%- endraw %}
+        uses: jdcargile/ms-teams-notification@v1.3
+        with:
+          github-token: {% raw %}${{ github.token }}{%- endraw %}
+          ms-teams-webhook-uri: {% raw %}${{ secrets.MS_TEAMS_STATUS_ALERTS_GITHUB_DEPLOYMENTS_WEBHOOK }}{%- endraw %}
+          notification-summary: A Pulumi diff has been detected on {% raw %}${{ github.repository }}.{%- endraw %}
+          notification-color: {% raw %}${{ env.NOTIFICATION_WARNING_COLOUR }}{%- endraw %}
+          timezone: {% raw %}${{ env.NOTIFICATION_TIMEZONE }}{%- endraw %}
+  dtap:
+    name: DTAP Stacks
+    needs: shared
+    runs-on: [self-hosted, linux, x64]
+    container:
+      image: ingeniisolutions/azure-data-platform-iac-runtime:{{ cookiecutter.platform_version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - stack: dev
+            client_id: DEV_ARM_CLIENT_ID
+            client_secret: DEV_ARM_CLIENT_SECRET
+            subscription_id: DEV_ARM_SUBSCRIPTION_ID
+            tenant_id: DEV_ARM_TENANT_ID
+          - stack: test
+            client_id: TEST_ARM_CLIENT_ID
+            client_secret: TEST_ARM_CLIENT_SECRET
+            subscription_id: TEST_ARM_SUBSCRIPTION_ID
+            tenant_id: TEST_ARM_TENANT_ID
+          - stack: prod
+            client_id: PROD_ARM_CLIENT_ID
+            client_secret: PROD_ARM_CLIENT_SECRET
+            subscription_id: PROD_ARM_SUBSCRIPTION_ID
+            tenant_id: PROD_ARM_TENANT_ID
+    env:
+      STACK: {% raw %}${{ matrix.stack }}{%- endraw %}
+      ARM_CLIENT_ID: {% raw %}${{ secrets[matrix.client_id] }}{%- endraw %}
+      ARM_CLIENT_SECRET: {% raw %}${{ secrets[matrix.client_secret] }}{%- endraw %}
+      ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets[matrix.subscription_id] }}{%- endraw %}
+      ARM_TENANT_ID: {% raw %}${{ secrets[matrix.tenant_id] }}{%- endraw %}
+      SHARED_ARM_CLIENT_ID: {% raw %}${{ secrets.SHARED_ARM_CLIENT_ID }}{%- endraw %}
+      SHARED_ARM_CLIENT_SECRET: {% raw %}${{ secrets.SHARED_ARM_CLIENT_SECRET }}{%- endraw %}
+      SHARED_ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets.SHARED_ARM_SUBSCRIPTION_ID }}{%- endraw %}
+      SHARED_ARM_TENANT_ID: {% raw %}${{ secrets.SHARED_ARM_TENANT_ID }}{%- endraw %}
+    steps:
+      #---------------------------------
+      - name: Checkout Customer Repo
+        uses: actions/checkout@v2
+      #---------------------------------
+      - name: Install Deployment SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: {% raw %}${{ secrets.SSH_DEPLOY_KEY }}{%- endraw %}
+          known_hosts: "github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+      #---------------------------------
+      - name: Prepare Platform Source Files
+        run: |
+          make clone-repo-using-ssh
+          make init-dtap
+      #---------------------------------
+      - name: Run Pulumi Refresh
+        run: make refresh-dtap
+      #---------------------------------
+      - name: Run Pulumi Preview (Expect No Changes)
+        run: make preview-dtap EXTRA_ARGS="--expect-no-changes"
+      #---------------------------------
+      - name: Send Notification to Teams
+        if: {% raw %}${{ failure() }}{%- endraw %}
+        uses: jdcargile/ms-teams-notification@v1.3
+        with:
+          github-token: {% raw %}${{ github.token }}{%- endraw %}
+          ms-teams-webhook-uri: {% raw %}${{ secrets.MS_TEAMS_STATUS_ALERTS_GITHUB_DEPLOYMENTS_WEBHOOK }}{%- endraw %}
+          notification-summary: A Pulumi diff has been detected on {% raw %}${{ github.repository }}.{%- endraw %}
+          notification-color: {% raw %}${{ env.NOTIFICATION_WARNING_COLOUR }}{%- endraw %}
+          timezone: {% raw %}${{ env.NOTIFICATION_TIMEZONE }}{%- endraw %}
+  extensions:
+    name: Extension Stacks
+    needs: dtap
+    runs-on: [self-hosted, linux, x64]
+    container:
+      image: ingeniisolutions/azure-data-platform-iac-runtime:{{ cookiecutter.platform_version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - stack: dev
+            client_id: DEV_ARM_CLIENT_ID
+            client_secret: DEV_ARM_CLIENT_SECRET
+            subscription_id: DEV_ARM_SUBSCRIPTION_ID
+            tenant_id: DEV_ARM_TENANT_ID
+          - stack: test
+            client_id: TEST_ARM_CLIENT_ID
+            client_secret: TEST_ARM_CLIENT_SECRET
+            subscription_id: TEST_ARM_SUBSCRIPTION_ID
+            tenant_id: TEST_ARM_TENANT_ID
+          - stack: prod
+            client_id: PROD_ARM_CLIENT_ID
+            client_secret: PROD_ARM_CLIENT_SECRET
+            subscription_id: PROD_ARM_SUBSCRIPTION_ID
+            tenant_id: PROD_ARM_TENANT_ID
+          - stack: shared
+            client_id: SHARED_ARM_CLIENT_ID
+            client_secret: SHARED_ARM_CLIENT_SECRET
+            subscription_id: SHARED_ARM_SUBSCRIPTION_ID
+            tenant_id: SHARED_ARM_TENANT_ID
+    env:
+      STACK: {% raw %}${{ matrix.stack }}{%- endraw %}
+      ARM_CLIENT_ID: {% raw %}${{ secrets[matrix.client_id] }}{%- endraw %}
+      ARM_CLIENT_SECRET: {% raw %}${{ secrets[matrix.client_secret] }}{%- endraw %}
+      ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets[matrix.subscription_id] }}{%- endraw %}
+      ARM_TENANT_ID: {% raw %}${{ secrets[matrix.tenant_id] }}{%- endraw %}
+      SHARED_ARM_CLIENT_ID: {% raw %}${{ secrets.SHARED_ARM_CLIENT_ID }}{%- endraw %}
+      SHARED_ARM_CLIENT_SECRET: {% raw %}${{ secrets.SHARED_ARM_CLIENT_SECRET }}{%- endraw %}
+      SHARED_ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets.SHARED_ARM_SUBSCRIPTION_ID }}{%- endraw %}
+      SHARED_ARM_TENANT_ID: {% raw %}${{ secrets.SHARED_ARM_TENANT_ID }}{%- endraw %}
+    steps:
+      #---------------------------------
+      - name: Checkout Customer Repo
+        uses: actions/checkout@v2
+      #---------------------------------
+      - name: Install Deployment SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: {% raw %}${{ secrets.SSH_DEPLOY_KEY }}{%- endraw %}
+          known_hosts: "github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+      #---------------------------------
+      - name: Prepare Platform Source Files
+        run: make clone-repo-using-ssh
+      #---------------------------------
+      - name: Run Pulumi Init
+        if: matrix.stack == 'shared'
+        run: make init-shared-extensions
+      #---------------------------------
+      - name: Run Pulumi Refresh
+        if: matrix.stack == 'shared'
+        run: make refresh-shared-extensions
+      #---------------------------------
+      - name: Run Pulumi Preview (Expect No Changes)
+        if:  matrix.stack == 'shared'
+        run: make preview-shared-extensions EXTRA_ARGS="--expect-no-changes"
+      #---------------------------------
+      - name: Run Pulumi Init
+        if: matrix.stack != 'shared'
+        run: make init-dtap-extensions
+      #---------------------------------
+      - name: Run Pulumi Refresh
+        if: matrix.stack != 'shared'
+        run: make refresh-dtap-extensions
+      #---------------------------------
+      - name: Run Pulumi Preview (Expect No Changes)
+        if:  matrix.stack != 'shared'
+        run: make preview-dtap-extensions EXTRA_ARGS="--expect-no-changes"
+      #---------------------------------
+      - name: Send Notification to Teams
+        if: {% raw %}${{ failure() }}{%- endraw %}
+        uses: jdcargile/ms-teams-notification@v1.3
+        with:
+          github-token: {% raw %}${{ github.token }}{%- endraw %}
+          ms-teams-webhook-uri: {% raw %}${{ secrets.MS_TEAMS_STATUS_ALERTS_GITHUB_DEPLOYMENTS_WEBHOOK }}{%- endraw %}
+          notification-summary: A Pulumi diff has been detected on {% raw %}${{ github.repository }}.{%- endraw %}
+          notification-color: {% raw %}${{ env.NOTIFICATION_WARNING_COLOUR }}{%- endraw %}
+          timezone: {% raw %}${{ env.NOTIFICATION_TIMEZONE }}{%- endraw %}

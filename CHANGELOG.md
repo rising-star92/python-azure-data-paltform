@@ -2,8 +2,13 @@
 
 ## 0.1.24 (Unreleased)
 
+### New Features
+- [platform/cicd] - Introduce a new "Preview Only" scheduled CICD pipeline. The pipeline will notify Teams channel, whenever a drift between Pulumi state and infrastructure is detected.
+
 ### Bugfixes
 - [logging] - Diagnostic settings handles when the resource does not yet exist
+- [logging] - Make sure the 'log_analytics_destination_type' property of the Diagnostic Settings resource is ignored by Pulumi to prevent infinite drifts
+- [network] - Make sure the 'nat_gateway' property of the PublicIP resource is ignored by Pulumi to prevent infinite drifts
 
 ## 0.1.23 (2021-11-29)
 

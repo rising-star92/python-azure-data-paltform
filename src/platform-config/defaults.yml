@@ -186,6 +186,13 @@ analytics_services:
             - user_group_ref_key: engineers
               role_definition_name: Owner
         clusters:
+          system:
+            type: single_node
+            display_name: system
+            spark_version: "8.4.x-scala2.12"
+            node_type_id: "Standard_F4s"
+            is_pinned: true
+            autotermination_minutes: 10
           default:
             type: single_node
             display_name: engineering
@@ -193,7 +200,10 @@ analytics_services:
             node_type_id: "Standard_F4s"
             is_pinned: true
             autotermination_minutes: 15
-            docker_image_url: "ingeniisolutions/databricks-runtime:0.4.2"
+            docker_image_url: "ingeniisolutions/databricks-runtime:0.5.0"
+            libraries:
+              whl:
+                - "dbfs:/mnt/utilities/pre_process/pre_process-1.0.0-py3-none-any.whl"
         storage_mounts:
           - type: datalake
             container_name: utilities

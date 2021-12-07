@@ -78,8 +78,11 @@ outputs["url"] = workspace.workspace_url
 # ----------------------------------------------------------------------------------------------------------------------
 
 log_diagnostic_settings(
-    platform_config, log_analytics_workspace.id,
-    workspace.type, workspace.id, workspace_name,
+    platform_config,
+    log_analytics_workspace.id,
+    workspace.type,
+    workspace.id,
+    workspace_name,
     logs_config=workspace_config.get("logs", {}),
     metrics_config=workspace_config.get("metrics", {}),
 )
@@ -176,28 +179,130 @@ datafactory_token = databricks.Token(
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
+# ENGINEERING DATABRICKS WORKSPACE -> CLUSTERS -> SYSTEM CLUSTER
+# ----------------------------------------------------------------------------------------------------------------------
+system_cluster_config = workspace_config["clusters"]["system"]
+system_cluster_resource_name = generate_resource_name(
+    resource_type="databricks_cluster",
+    resource_name=f"{workspace_short_name}-system",
+    platform_config=platform_config,
+)
+
+system_cluster = databricks.Cluster(
+    resource_name=system_cluster_resource_name,
+    cluster_name=system_cluster_config["display_name"],
+    spark_version=system_cluster_config["spark_version"],
+    node_type_id=system_cluster_config["node_type_id"],
+    is_pinned=system_cluster_config["is_pinned"],
+    autotermination_minutes=system_cluster_config["autotermination_minutes"],
+    spark_conf={
+        "spark.databricks.cluster.profile": "singleNode",
+        "spark.master": "local[*]",
+        "spark.databricks.delta.preview.enabled": "true",
+        **system_cluster_config.get("spark_conf", {}),
+    },
+    custom_tags={"ResourceClass": "SingleNode", **platform_config.tags},
+    opts=ResourceOptions(provider=databricks_provider),
+)
+# ----------------------------------------------------------------------------------------------------------------------
+# ENGINEERING DATABRICKS WORKSPACE -> STORAGE MOUNTS
+# ----------------------------------------------------------------------------------------------------------------------
+
+# AZURE AD SERVICE PRINCIPAL USED FOR STORAGE MOUNTING
+storage_mounts_sp_name = generate_resource_name(
+    resource_type="service_principal",
+    resource_name="dbw-eng-mounts",
+    platform_config=platform_config,
+)
+storage_mounts_sp_app = azuread.Application(
+    resource_name=storage_mounts_sp_name,
+    display_name=storage_mounts_sp_name,
+    identifier_uris=[f"api://{storage_mounts_sp_name}"],
+    owners=[azure_client.object_id],
+)
+
+storage_mounts_sp = azuread.ServicePrincipal(
+    resource_name=storage_mounts_sp_name,
+    application_id=storage_mounts_sp_app.application_id,
+    app_role_assignment_required=False,
+)
+
+storage_mounts_sp_password = azuread.ServicePrincipalPassword(
+    resource_name=storage_mounts_sp_name,
+    service_principal_id=storage_mounts_sp.object_id,
+)
+
+storage_mounts_dbw_password = databricks.Secret(
+    resource_name=storage_mounts_sp_name,
+    scope=secret_scope.id,
+    string_value=storage_mounts_sp_password.value,
+    key=storage_mounts_sp_name,
+    opts=pulumi.ResourceOptions(provider=databricks_provider),
+)
+
+# ----------------------------------------------------------------------------------------------------------------------
+# ENGINEERING DATABRICKS WORKSPACE -> STORAGE MOUNTS -> ADLS GEN 2
+# ----------------------------------------------------------------------------------------------------------------------
+
+# IAM ROLE ASSIGNMENT
+# Allow the Storage Mounts service principal to access the Datalake.
+storage_mounts_datalake_role_assignment = ServicePrincipalRoleAssignment(
+    role_name="Storage Blob Data Contributor",
+    service_principal_object_id=storage_mounts_sp.object_id,
+    scope=datalake.id,
+)
+
+# STORAGE MOUNTS
+# If no storage mounts are defined in the YAML files, we'll not attempt to create any.
+storage_mounts = {}
+for definition in workspace_config.get("storage_mounts", []):
+    storage_mounts[definition["mount_name"]] = databricks.AzureAdlsGen2Mount(
+        resource_name=f'{workspace_name}-{definition["mount_name"]}',
+        client_id=storage_mounts_sp.application_id,
+        client_secret_key=storage_mounts_dbw_password.key,
+        tenant_id=azure_client.tenant_id,
+        client_secret_scope=secret_scope.name,
+        storage_account_name=datalake.name,
+        initialize_file_system=False,
+        container_name=definition["container_name"],
+        mount_name=definition["mount_name"],
+        cluster_id=system_cluster.id,
+        opts=pulumi.ResourceOptions(
+            provider=databricks_provider,
+            delete_before_replace=True,
+        ),
+    )
+
+# ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> PRE-PROCESSING PACKAGE
 # ----------------------------------------------------------------------------------------------------------------------
 
 blob_name = "pre_process-1.0.0-py3-none-any.whl"
 pre_processing_package = pulumi.FileAsset(f"{DTAP_ROOT}/assets/{blob_name}")
 pre_processing_blob = azure_native.storage.Blob(
-    resource_name=f'{workspace_name}-pre_processing_package',
+    resource_name=f"{workspace_name}-pre_processing_package",
     account_name=datalake.name,
     blob_name="pre_process/" + blob_name,
     container_name=datalake_containers["utilities"].name,
     resource_group_name=resource_groups["data"].name,
     source=pre_processing_package,
-    opts=pulumi.ResourceOptions(ignore_changes=["content_md5"]),
+    opts=pulumi.ResourceOptions(
+        ignore_changes=["content_md5"], depends_on=[storage_mounts["utilities"]]
+    ),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> CLUSTERS
 # ----------------------------------------------------------------------------------------------------------------------
 
-# If no clusters are defined in the YAML files, we'll not attempt to create any.
+# A dict of all clusters that are deployed.
 clusters = {}
+
+# If no clusters are defined in the YAML files, we'll not attempt to create any.
 for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
+    if ref_key == "system":
+        continue
+
     cluster_resource_name = generate_resource_name(
         resource_type="databricks_cluster",
         resource_name=f"{workspace_short_name}-{ref_key}",
@@ -215,12 +320,7 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
         for lib in libraries.get("pypi", [])
     ]
     whl_libraries = [
-        databricks.ClusterLibraryArgs(
-            whl="dbfs:/mnt/utilities/pre_process/pre_process-1.0.0-py3-none-any.whl"
-        )
-    ] + [
-        databricks.ClusterLibraryArgs(whl=lib)
-        for lib in libraries.get("whl", [])
+        databricks.ClusterLibraryArgs(whl=lib) for lib in libraries.get("whl", [])
     ]
 
     cluster_libraries = pypi_libraries + whl_libraries
@@ -243,11 +343,11 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
             "DBT_LOGS_FOLDER": "/dbfs/mnt/dbt-logs",
             **cluster_config.get("spark_env_vars", {}),
         },
-        "opts": pulumi.ResourceOptions(
-            provider=databricks_provider, 
-            depends_on=[pre_processing_blob]
+        "opts": ResourceOptions(
+            provider=databricks_provider, depends_on=[pre_processing_blob]
         ),
     }
+
     if cluster_config.get("docker_image_url"):
         base_cluster_configuration["docker_image"] = databricks.ClusterDockerImageArgs(
             url=cluster_config["docker_image_url"]
@@ -306,72 +406,4 @@ for ref_key, cluster_config in clusters.items():
             )
         ],
         opts=pulumi.ResourceOptions(provider=databricks_provider),
-    )
-
-# ----------------------------------------------------------------------------------------------------------------------
-# ENGINEERING DATABRICKS WORKSPACE -> STORAGE MOUNTS
-# ----------------------------------------------------------------------------------------------------------------------
-
-# AZURE AD SERVICE PRINCIPAL USED FOR STORAGE MOUNTING
-storage_mounts_sp_name = generate_resource_name(
-    resource_type="service_principal",
-    resource_name="dbw-eng-mounts",
-    platform_config=platform_config,
-)
-storage_mounts_sp_app = azuread.Application(
-    resource_name=storage_mounts_sp_name,
-    display_name=storage_mounts_sp_name,
-    identifier_uris=[f"api://{storage_mounts_sp_name}"],
-    owners=[azure_client.object_id],
-)
-
-storage_mounts_sp = azuread.ServicePrincipal(
-    resource_name=storage_mounts_sp_name,
-    application_id=storage_mounts_sp_app.application_id,
-    app_role_assignment_required=False,
-)
-
-storage_mounts_sp_password = azuread.ServicePrincipalPassword(
-    resource_name=storage_mounts_sp_name,
-    service_principal_id=storage_mounts_sp.object_id,
-)
-
-storage_mounts_dbw_password = databricks.Secret(
-    resource_name=storage_mounts_sp_name,
-    scope=secret_scope.id,
-    string_value=storage_mounts_sp_password.value,
-    key=storage_mounts_sp_name,
-    opts=pulumi.ResourceOptions(provider=databricks_provider),
-)
-
-# ----------------------------------------------------------------------------------------------------------------------
-# ENGINEERING DATABRICKS WORKSPACE -> STORAGE MOUNTS -> ADLS GEN 2
-# ----------------------------------------------------------------------------------------------------------------------
-
-# IAM ROLE ASSIGNMENT
-# Allow the Storage Mounts service principal to access the Datalake.
-storage_mounts_datalake_role_assignment = ServicePrincipalRoleAssignment(
-    role_name="Storage Blob Data Contributor",
-    service_principal_object_id=storage_mounts_sp.object_id,
-    scope=datalake.id,
-)
-
-# CONTAINER MOUNTS
-# If no storage mounts are defined in the YAML files, we'll not attempt to create any.
-for definition in workspace_config.get("storage_mounts", []):
-    resource = databricks.AzureAdlsGen2Mount(
-        resource_name=f'{workspace_name}-{definition["mount_name"]}',
-        client_id=storage_mounts_sp.application_id,
-        client_secret_key=storage_mounts_dbw_password.key,
-        tenant_id=azure_client.tenant_id,
-        client_secret_scope=secret_scope.name,
-        storage_account_name=datalake.name,
-        initialize_file_system=False,
-        container_name=definition["container_name"],
-        mount_name=definition["mount_name"],
-        cluster_id=clusters["default"].id,
-        opts=pulumi.ResourceOptions(
-            provider=databricks_provider,
-            delete_before_replace=True,
-        ),
     )

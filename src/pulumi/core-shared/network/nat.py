@@ -1,4 +1,5 @@
 import pulumi_azure_native as azure_native
+from pulumi.resource import ResourceOptions
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.utils import generate_resource_name
 
@@ -28,16 +29,20 @@ if is_gateway_enabled:
         public_ip_allocation_method="Static",
         resource_group_name=resource_groups["infra"].name,
         sku=azure_native.network.PublicIPAddressSkuArgs(name="Standard"),
+        opts=ResourceOptions(ignore_changes=["nat_gateway"]),
     )
 
     # Send diagnostic logs to Log Analytics Workspace
     public_ip_details = gateway_config.get("public_ip", {})
     log_diagnostic_settings(
-        platform_config, log_analytics_workspace.id,
-        gateway_public_ip.type, gateway_public_ip.id,
+        platform_config,
+        log_analytics_workspace.id,
+        gateway_public_ip.type,
+        gateway_public_ip.id,
         gateway_public_ip_resource_name,
         logs_config=public_ip_details.get("logs", {}),
-        metrics_config=public_ip_details.get("metrics", {}))
+        metrics_config=public_ip_details.get("metrics", {}),
+    )
 
     outputs["public_ip_address"] = gateway_public_ip.ip_address
 

@@ -289,7 +289,7 @@ storage_mounts_datalake_role_assignment = ServicePrincipalRoleAssignment(
     scope=datalake.id,
 )
 
-# CONTAINER MOUNTS
+# STORAGE MOUNTS
 # If no storage mounts are defined in the YAML files, we'll not attempt to create any.
 for definition in workspace_config.get("storage_mounts", []):
     resource = databricks.AzureAdlsGen2Mount(

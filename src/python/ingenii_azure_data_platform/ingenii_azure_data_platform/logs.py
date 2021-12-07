@@ -1,17 +1,26 @@
 from pulumi import Output
+from pulumi.resource import ResourceOptions
 from pulumi_azure import monitoring
 from pulumi_azure_native import insights
 
 
-def _log_diagnostic_settings(log_analytics_workspace_id, resource_id, resource_name,
-                             log_config_obj, metrics_config_obj):
-    
+def _log_diagnostic_settings(
+    log_analytics_workspace_id,
+    resource_id,
+    resource_name,
+    log_config_obj,
+    metrics_config_obj,
+):
+
     # Instead of None, empty dictionary
     log_config_obj = log_config_obj or {}
     metrics_config_obj = metrics_config_obj or {}
 
     # Determine if we need to find what all the categories are
-    if log_config_obj.get("categories") is None or metrics_config_obj.get("categories") is None:
+    if (
+        log_config_obj.get("categories") is None
+        or metrics_config_obj.get("categories") is None
+    ):
         all_categories = monitoring.get_diagnostic_categories(resource_id=resource_id)
     else:
         all_categories = None
@@ -69,21 +78,31 @@ def _log_diagnostic_settings(log_analytics_workspace_id, resource_id, resource_n
         log_analytics_destination_type="Dedicated",
         resource_uri=resource_id,
         logs=log_objects,
-        metrics=metric_objects
+        metrics=metric_objects,
+        opts=ResourceOptions(ignore_changes=["log_analytics_destination_type"]),
     )
 
 
-def log_diagnostic_settings(platform_config, log_analytics_workspace_id,
-                            resource_type, resource_id, resource_name,
-                            logs_config={}, metrics_config={}):
+def log_diagnostic_settings(
+    platform_config,
+    log_analytics_workspace_id,
+    resource_type,
+    resource_id,
+    resource_name,
+    logs_config={},
+    metrics_config={},
+):
 
     # If any of these three are set, we will add the diagnostics
     # If the resource type is disabled, then the individual object must be
     # explicitly enabled
-    if not any([
-        platform_config["logs"]["resource_types"].get(resource_type, True),
-        logs_config.get("enabled", False), metrics_config.get("enabled", False)
-    ]):
+    if not any(
+        [
+            platform_config["logs"]["resource_types"].get(resource_type, True),
+            logs_config.get("enabled", False),
+            metrics_config.get("enabled", False),
+        ]
+    ):
         return
 
     # If logs and metrics both disabled, don't go any further
@@ -102,17 +121,24 @@ def log_diagnostic_settings(platform_config, log_analytics_workspace_id,
             logs_config, metrics_config)
 
 
-def log_network_interfaces(platform_config, log_analytics_workspace_id,
-                           resource_name, network_interfaces,
-                           logs_config={}, metrics_config={}):
+def log_network_interfaces(
+    platform_config,
+    log_analytics_workspace_id,
+    resource_name,
+    network_interfaces,
+    logs_config={},
+    metrics_config={},
+):
     network_interfaces.apply(
         lambda network_interfaces: [
             log_diagnostic_settings(
-                platform_config, log_analytics_workspace_id,
-                "Microsoft.Network/networkInterfaces", network_interface.id,
+                platform_config,
+                log_analytics_workspace_id,
+                "Microsoft.Network/networkInterfaces",
+                network_interface.id,
                 f"{resource_name}-network_interface-{str(idx)}",
                 logs_config=logs_config,
-                metrics_config=metrics_config
+                metrics_config=metrics_config,
             )
             for idx, network_interface in enumerate(network_interfaces)
         ]

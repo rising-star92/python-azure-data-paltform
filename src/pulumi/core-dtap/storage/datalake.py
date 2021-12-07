@@ -1,12 +1,17 @@
-from pulumi import ResourceOptions, Output
 import pulumi_azure_native as azure_native
 import pulumi_azure as azure_classic
+from pulumi import ResourceOptions, Output
 
 from ingenii_azure_data_platform.defaults import STORAGE_ACCOUNT_DEFAULT_FIREWALL
 
-from ingenii_azure_data_platform.iam import GroupRoleAssignment, UserAssignedIdentityRoleAssignment
-from ingenii_azure_data_platform.logs import log_diagnostic_settings, \
-    log_network_interfaces
+from ingenii_azure_data_platform.iam import (
+    GroupRoleAssignment,
+    UserAssignedIdentityRoleAssignment,
+)
+from ingenii_azure_data_platform.logs import (
+    log_diagnostic_settings,
+    log_network_interfaces,
+)
 from ingenii_azure_data_platform.utils import generate_resource_name
 
 from logs import log_analytics_workspace
@@ -92,30 +97,37 @@ outputs["name"] = datalake.name
 # ----------------------------------------------------------------------------------------------------------------------
 
 log_diagnostic_settings(
-    platform_config, log_analytics_workspace.id, datalake.type,
-    datalake.id, datalake_name,
+    platform_config,
+    log_analytics_workspace.id,
+    datalake.type,
+    datalake.id,
+    datalake_name,
     logs_config=datalake_config.get("logs", {}),
-    metrics_config=datalake_config.get("metrics", {})
+    metrics_config=datalake_config.get("metrics", {}),
 )
 
-blob_logs_and_metrics = datalake_config.get("storage_type_logging", {}) \
-                                       .get("blob", {})
+blob_logs_and_metrics = datalake_config.get("storage_type_logging", {}).get("blob", {})
 log_diagnostic_settings(
-    platform_config, log_analytics_workspace.id, datalake.type, 
+    platform_config,
+    log_analytics_workspace.id,
+    datalake.type,
     datalake.id.apply(lambda dl_id: f"{dl_id}/blobservices/default"),
     f"{datalake_name}-blob",
     logs_config=blob_logs_and_metrics.get("logs", {}),
-    metrics_config=blob_logs_and_metrics.get("metrics", {})
+    metrics_config=blob_logs_and_metrics.get("metrics", {}),
 )
 
-table_logs_and_metrics = datalake_config.get("storage_type_logging", {}) \
-                                        .get("table", {})
+table_logs_and_metrics = datalake_config.get("storage_type_logging", {}).get(
+    "table", {}
+)
 log_diagnostic_settings(
-    platform_config, log_analytics_workspace.id, datalake.type,
+    platform_config,
+    log_analytics_workspace.id,
+    datalake.type,
     datalake.id.apply(lambda dl_id: f"{dl_id}/tableservices/default"),
     f"{datalake_name}-table",
     logs_config=table_logs_and_metrics.get("logs", {}),
-    metrics_config=table_logs_and_metrics.get("metrics", {})
+    metrics_config=table_logs_and_metrics.get("metrics", {}),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -146,15 +158,16 @@ blob_private_endpoint = azure_native.network.PrivateEndpoint(
 )
 
 # To Log Analytics Workspace
-blob_private_endpoint_details = \
-    datalake_config.get("network", {}) \
-                   .get("private_endpoint", {}) \
-                   .get("blob", {})
+blob_private_endpoint_details = (
+    datalake_config.get("network", {}).get("private_endpoint", {}).get("blob", {})
+)
 log_network_interfaces(
-    platform_config, log_analytics_workspace.id,
-    blob_private_endpoint_name, blob_private_endpoint.network_interfaces,
+    platform_config,
+    log_analytics_workspace.id,
+    blob_private_endpoint_name,
+    blob_private_endpoint.network_interfaces,
     logs_config=blob_private_endpoint_details.get("logs", {}),
-    metrics_config=blob_private_endpoint_details.get("metrics", {})
+    metrics_config=blob_private_endpoint_details.get("metrics", {}),
 )
 
 # BLOB PRIVATE DNS ZONE GROUP
@@ -196,15 +209,16 @@ dfs_private_endpoint = azure_native.network.PrivateEndpoint(
 )
 
 # To Log Analytics Workspace
-dfs_private_endpoint_details = \
-    datalake_config.get("network", {}) \
-                   .get("private_endpoint", {}) \
-                   .get("dfs", {})
+dfs_private_endpoint_details = (
+    datalake_config.get("network", {}).get("private_endpoint", {}).get("dfs", {})
+)
 log_network_interfaces(
-    platform_config, log_analytics_workspace.id,
-    dfs_private_endpoint_name, dfs_private_endpoint.network_interfaces,
+    platform_config,
+    log_analytics_workspace.id,
+    dfs_private_endpoint_name,
+    dfs_private_endpoint.network_interfaces,
     logs_config=dfs_private_endpoint_details.get("logs", {}),
-    metrics_config=dfs_private_endpoint_details.get("metrics", {})
+    metrics_config=dfs_private_endpoint_details.get("metrics", {}),
 )
 
 # DFS PRIVATE DNS ZONE GROUP
@@ -255,10 +269,16 @@ for ref_key, container_config in datalake_config.get("containers", {}).items():
         account_name=datalake.name,
         container_name=container_config["display_name"],
         resource_group_name=resource_groups["data"].name,
+        opts=ResourceOptions(
+            ignore_changes=[
+                "public_access",
+                "default_encryption_scope",
+                "deny_encryption_scope_override",
+            ]
+        ),
     )
     # Container Role Assignments
-    role_assignments = container_config.get("iam", {}) \
-                                       .get("role_assignments", [])
+    role_assignments = container_config.get("iam", {}).get("role_assignments", [])
     for assignment in role_assignments:
         # User Group Role Assignment
         if assignment.get("user_group_ref_key") is not None:
