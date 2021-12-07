@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 0.1.24 (Unreleased)
+## 0.1.24 (2021-12-07)
 
 ### New Features
 - [platform/cicd] - Introduce a new "Preview Only" scheduled CICD pipeline. The pipeline will notify Teams channel, whenever a drift between Pulumi state and infrastructure is detected.
