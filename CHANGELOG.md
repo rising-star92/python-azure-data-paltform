@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.1.25 (TBD)
+
+### Bugfixes
+- [cookiecutter/makefile] - Updating the 'set-platform-version' target to make sure all Github workflows are updated to the latest Docker image.
+
 ## 0.1.24 (2021-12-07)
 
 ### New Features
