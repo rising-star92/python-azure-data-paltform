@@ -7,6 +7,7 @@ from typing import Union
 from ingenii_data_engineering.dbt_schema import get_source
 from ingenii_data_engineering.validation import check_source_schema
 
+from ingenii_databricks.enums import Stages
 from ingenii_databricks.pipeline import add_to_source_table, archive_file, \
     create_file_table, move_rows_to_review, prepare_individual_table_yml, \
     pre_process_file, remove_file_table, revert_individual_table_yml, \
@@ -80,20 +81,20 @@ compare_schema_and_table(spark, import_entry, table_schema)
 
 # COMMAND ----------
 
-if import_entry.is_stage("new"):
+if import_entry.is_stage(Stages.NEW):
     archive_file(import_entry)
-    import_entry.update_status("archived")
+    import_entry.update_status(Stages.ARCHIVED)
 
 # COMMAND ----------
 
 # Pre-process and stage the file
-if import_entry.is_stage("archived"):
+if import_entry.is_stage(Stages.ARCHIVED):
     pre_process_file(import_entry)
 
     # Create individual table in the source database
     n_rows = create_file_table(spark, import_entry, table_schema)
     import_entry.update_rows_read(n_rows)
-    import_entry.update_status("staged")
+    import_entry.update_status(Stages.STAGED)
 
 # COMMAND ----------
 
@@ -101,7 +102,7 @@ if import_entry.is_stage("archived"):
 # Run the tests
 # Move any failed rows: https://docs.getdbt.com/faqs/failed-tests
 # Run cleaning checks, moving offending entries to a review table
-if import_entry.is_stage("staged"):
+if import_entry.is_stage(Stages.STAGED):
     prepare_individual_table_yml(table_schema["file_name"], import_entry)
 
     # Run tests and analyse the results
@@ -133,21 +134,31 @@ if import_entry.is_stage("staged"):
                 "stderr:", testing_result["stderr"]
                 ]))
     else:
-        import_entry.update_status("cleaned")
+        import_entry.update_status(Stages.CLEANED)
 
 # COMMAND ----------
 
 # Append / Merge into main table
-if import_entry.is_stage("cleaned"):
+if import_entry.is_stage(Stages.CLEANED):
     add_to_source_table(spark, import_entry, table_schema)
-    import_entry.update_status("inserted")
+    import_entry.update_status(Stages.INSERTED)
 
 # COMMAND ----------
 
 # Tidying
-if import_entry.is_stage("inserted"):
+if import_entry.is_stage(Stages.INSERTED):
     remove_file_table(spark, dbutils, import_entry)
-    import_entry.update_status("completed")
+    import_entry.update_status(Stages.COMPLETED)
 
     # Optimize table to keep it performant
     spark.sql("OPTIMIZE orchestration.import_file ZORDER BY (source, table)")
+
+# COMMAND ----------
+
+# Check pipeline did complete as expected
+final_stage = import_entry.get_current_stage()
+if final_stage != Stages.COMPLETED:
+    raise Exception(
+        f"Pipeline didn't make it to completion! "
+        f"Only made it to the '{final_stage}' stage!"
+    )

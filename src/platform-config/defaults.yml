@@ -201,9 +201,6 @@ analytics_services:
             is_pinned: true
             autotermination_minutes: 15
             docker_image_url: "ingeniisolutions/databricks-runtime:0.5.0"
-            libraries:
-              whl:
-                - "dbfs:/mnt/utilities/pre_process/pre_process-1.0.0-py3-none-any.whl"
         storage_mounts:
           - type: datalake
             container_name: utilities

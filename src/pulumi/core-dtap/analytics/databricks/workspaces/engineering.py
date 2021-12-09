@@ -328,8 +328,14 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
         )
         for lib in libraries.get("pypi", [])
     ]
+    whl_libraries_str = libraries.get("whl", [])
+    
+    if ref_key == "default":
+        whl_libraries_str.append("dbfs:/mnt/utilities/pre_process/pre_process-1.0.0-py3-none-any.whl")
+    
     whl_libraries = [
-        databricks.ClusterLibraryArgs(whl=lib) for lib in libraries.get("whl", [])
+        databricks.ClusterLibraryArgs(whl=lib)
+        for lib in set(whl_libraries_str)
     ]
 
     cluster_libraries = pypi_libraries + whl_libraries

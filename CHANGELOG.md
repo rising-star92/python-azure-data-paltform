@@ -15,6 +15,7 @@
 - [logging] - Diagnostic settings handles when the resource does not yet exist
 - [logging] - Make sure the 'log_analytics_destination_type' property of the Diagnostic Settings resource is ignored by Pulumi to prevent infinite drifts
 - [network] - Make sure the 'nat_gateway' property of the PublicIP resource is ignored by Pulumi to prevent infinite drifts
+- [databricks] - Update to data pipline notebook
 
 ## 0.1.23 (2021-11-29)
 
