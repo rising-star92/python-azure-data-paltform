@@ -4,6 +4,7 @@
 
 ### Bugfixes
 - [cookiecutter/makefile] - Updating the 'set-platform-version' target to make sure all Github workflows are updated to the latest Docker image.
+- [databricks] - Handle issue when workspace and cluster tags conflict
 
 ## 0.1.24 (2021-12-07)
 

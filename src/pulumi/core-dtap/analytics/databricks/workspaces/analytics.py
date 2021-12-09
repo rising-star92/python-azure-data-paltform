@@ -64,6 +64,7 @@ workspace = azure_native.databricks.Workspace(
     ),
     sku=azure_native.databricks.SkuArgs(name="Premium"),
     resource_group_name=resource_groups["infra"].name,
+    tags=platform_config.tags
 )
 
 outputs["name"] = workspace.name
@@ -139,6 +140,13 @@ secret_scope = databricks.SecretScope(
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
+# ANALYTICS DATABRICKS WORKSPACE -> CLUSTER TAGS
+# ----------------------------------------------------------------------------------------------------------------------
+
+# https://docs.microsoft.com/en-us/azure/databricks/administration-guide/account-settings/usage-detail-tags-azure#tag-conflict-resolution
+cluster_default_tags = {"x_" + k: v for k, v in platform_config.tags.items()}
+
+# ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS DATABRICKS WORKSPACE -> CLUSTERS
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -195,7 +203,7 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
                 "spark.databricks.delta.preview.enabled": "true",
                 **cluster_config.get("spark_conf", {}),
             },
-            custom_tags={"ResourceClass": "SingleNode", **platform_config.tags},
+            custom_tags={"ResourceClass": "SingleNode", **cluster_default_tags},
         )
     # High Concurrency Cluster Type
     elif cluster_config["type"] == "high_concurrency":
@@ -220,7 +228,7 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
                 "spark.databricks.delta.preview.enabled": "true",
                 **cluster_config.get("spark_conf", {}),
             },
-            custom_tags={"ResourceClass": "Serverless", **platform_config.tags},
+            custom_tags={"ResourceClass": "Serverless", **cluster_default_tags},
         )
 
 # ----------------------------------------------------------------------------------------------------------------------
