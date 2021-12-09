@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 0.1.25 (TBD)
+## 0.2.0 (2021-12-09)
 
 ### New Features
 - [platform/resource_protection] - Implement Pulumi resource protection on key services like Data Lake, Databricks Workspaces, Key Vaults, etc.
