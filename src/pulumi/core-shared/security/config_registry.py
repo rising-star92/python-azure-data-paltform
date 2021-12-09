@@ -4,15 +4,17 @@ from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
 )
-from ingenii_azure_data_platform.logs import log_diagnostic_settings, log_network_interfaces
+from ingenii_azure_data_platform.logs import (
+    log_diagnostic_settings,
+    log_network_interfaces,
+)
 from ingenii_azure_data_platform.utils import generate_resource_name
-
 from logs import log_analytics_workspace
-from project_config import platform_config, azure_client, platform_outputs
 from management import resource_groups
 from management.user_groups import user_groups
-
-from network import vnet, dns
+from network import dns, vnet
+from project_config import azure_client, platform_config, platform_outputs
+from pulumi import ResourceOptions
 
 outputs = platform_outputs["security"]["config_registry"] = {}
 
@@ -67,6 +69,7 @@ key_vault = azure_native.keyvault.Vault(
         ),
     ),
     tags=platform_config.tags,
+    opts=ResourceOptions(protect=platform_config.resource_protection),
 )
 
 outputs["key_vault_id"] = key_vault.id
@@ -101,13 +104,14 @@ private_endpoint = azure_native.network.PrivateEndpoint(
 )
 
 # To Log Analytics Workspace
-log_and_metrics_config = \
-    key_vault_config.get("network", {}).get("private_endpoint", {})
+log_and_metrics_config = key_vault_config.get("network", {}).get("private_endpoint", {})
 log_network_interfaces(
-    platform_config, log_analytics_workspace.id,
-    private_endpoint_name, private_endpoint.network_interfaces,
+    platform_config,
+    log_analytics_workspace.id,
+    private_endpoint_name,
+    private_endpoint.network_interfaces,
     logs_config=log_and_metrics_config.get("logs", {}),
-    metrics_config=log_and_metrics_config.get("metrics", {})
+    metrics_config=log_and_metrics_config.get("metrics", {}),
 )
 
 # PRIVATE DNS ZONE GROUP
@@ -157,8 +161,11 @@ ServicePrincipalRoleAssignment(
 # ----------------------------------------------------------------------------------------------------------------------
 
 log_diagnostic_settings(
-    platform_config, log_analytics_workspace.id,
-    key_vault.type, key_vault.id, key_vault_name,
+    platform_config,
+    log_analytics_workspace.id,
+    key_vault.type,
+    key_vault.id,
+    key_vault_name,
     logs_config=key_vault_config.get("logs", {}),
-    metrics_config=key_vault_config.get("metrics", {})
+    metrics_config=key_vault_config.get("metrics", {}),
 )

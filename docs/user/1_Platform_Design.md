@@ -11,6 +11,7 @@
   - [Infrastructure Environments](#infrastructure-environments)
 - [Infrastructure As Code](#infrastructure-as-code)
   - [Code Structure](#code-structure)
+  - [Resource Protection](#resource-protection)
 - [Costs](#costs)
   - [Small to Medium Sized Infrastructure Example](#small-to-medium-sized-infrastructure-example)
     - [Compute Resources](#compute-resources)
@@ -64,6 +65,27 @@ REDO
 ├── docs                      # Platform documentation
 │   └── assets                # Documentation assets such as images, files etc
 └── src                       # Platform source code
+```
+
+### Resource Protection
+
+All critical resources in the infrastructure code are protected using Pulumi's [resource protection](https://www.pulumi.com/docs/intro/concepts/resources/#protect).
+
+To disable the resource protection, you have to set up ENV variable `ENABLE_RESOURCE_PROTECTION` to `0`.
+
+Here is an example on how to configure the resource protection on a resource:
+
+```python
+from os import getenv
+from pulumi import ResourceOptions
+
+from pulumi_azure_native.storage import StorageAccount
+
+StorageAccount(
+    opts=ResourceOptions(
+        protect=platform_config.resource_protection,
+    ),
+)
 ```
 
 ## Costs

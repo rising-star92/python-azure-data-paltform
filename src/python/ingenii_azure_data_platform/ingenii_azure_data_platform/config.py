@@ -1,6 +1,7 @@
-import yamale
+from os import getenv
+
 import hiyapyco as hco
-from hashlib import md5
+import yamale
 
 
 class CloudRegionException(Exception):
@@ -142,15 +143,16 @@ class PlatformConfiguration:
         self._tags = self._from_yml["general"]["tags"]
         self._unique_id = self._from_yml["general"]["unique_id"]
         self._use_legacy_naming = self._from_yml["general"]["use_legacy_naming"]
+        
+        # Returns 'True' if the resource protection is enabled, 'False' otherwise.
+        self._resource_protection = bool(int(getenv("ENABLE_RESOURCE_PROTECTION", 1)))
 
         self._stack = stack.lower()
 
         # In the new naming convention, we have shortened the stack names if they are either test, prod or shared.
-        self._stack_short_name = {
-            "test": "tst",
-            "prod": "prd",
-            "shared": "shr"
-        }.get(self._stack, self._stack)
+        self._stack_short_name = {"test": "tst", "prod": "prd", "shared": "shr"}.get(
+            self._stack, self._stack
+        )
 
     @property
     def from_yml(self):
@@ -184,6 +186,10 @@ class PlatformConfiguration:
     @property
     def unique_id(self):
         return self._unique_id
+
+    @property
+    def resource_protection(self):
+        return self._resource_protection
 
     @property
     def use_legacy_naming(self):

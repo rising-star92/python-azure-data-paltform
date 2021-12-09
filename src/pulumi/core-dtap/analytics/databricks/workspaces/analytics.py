@@ -1,24 +1,21 @@
-import os
-import pulumi
+from os import getenv
+
 import pulumi_azure_native as azure_native
 import pulumi_azuread as azuread
-
-from pulumi_databricks import Provider as DatabricksProvider
-from pulumi_databricks import ProviderArgs as DatabricksProviderArgs
-from pulumi_databricks import databricks
-
-from ingenii_azure_data_platform.iam import (
-    GroupRoleAssignment,
-    ServicePrincipalRoleAssignment,
-)
+from ingenii_azure_data_platform.iam import (GroupRoleAssignment,
+                                             ServicePrincipalRoleAssignment)
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
-from ingenii_azure_data_platform.utils import generate_hash, generate_resource_name
-
+from ingenii_azure_data_platform.utils import (generate_hash,
+                                               generate_resource_name)
 from logs import log_analytics_workspace
-from project_config import azure_client, platform_config, platform_outputs
 from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet
+from project_config import azure_client, platform_config, platform_outputs
+from pulumi import ResourceOptions
+from pulumi_databricks import Provider as DatabricksProvider
+from pulumi_databricks import ProviderArgs as DatabricksProviderArgs
+from pulumi_databricks import databricks
 from storage.datalake import datalake
 
 outputs = platform_outputs["analytics"]["databricks"]["workspaces"]["analytics"] = {}
@@ -64,7 +61,9 @@ workspace = azure_native.databricks.Workspace(
     ),
     sku=azure_native.databricks.SkuArgs(name="Premium"),
     resource_group_name=resource_groups["infra"].name,
-    tags=platform_config.tags
+    opts=ResourceOptions(
+        protect=platform_config.resource_protection,
+    ),
 )
 
 outputs["name"] = workspace.name
@@ -76,8 +75,11 @@ outputs["url"] = workspace.workspace_url
 # ----------------------------------------------------------------------------------------------------------------------
 
 log_diagnostic_settings(
-    platform_config, log_analytics_workspace.id,
-    workspace.type, workspace.id, workspace_name,
+    platform_config,
+    log_analytics_workspace.id,
+    workspace.type,
+    workspace.id,
+    workspace_name,
     logs_config=workspace_config.get("logs", {}),
     metrics_config=workspace_config.get("metrics", {}),
 )
@@ -104,11 +106,11 @@ for assignment in workspace_config.get("iam", {}).get("role_assignments", []):
 databricks_provider = DatabricksProvider(
     resource_name=workspace_name,
     args=DatabricksProviderArgs(
-        azure_client_id=os.getenv("ARM_CLIENT_ID") or azure_client.client_id,
-        azure_client_secret=os.getenv("ARM_CLIENT_SECRET"),
-        azure_subscription_id=os.getenv("ARM_SUBSCRIPTION_ID")
+        azure_client_id=getenv("ARM_CLIENT_ID") or azure_client.client_id,
+        azure_client_secret=getenv("ARM_CLIENT_SECRET"),
+        azure_subscription_id=getenv("ARM_SUBSCRIPTION_ID")
         or azure_client.subscription_id,
-        azure_tenant_id=os.getenv("ARM_TENANT_ID") or azure_client.tenant_id,
+        azure_tenant_id=getenv("ARM_TENANT_ID") or azure_client.tenant_id,
         azure_workspace_resource_id=workspace.id,
     ),
 )
@@ -124,7 +126,7 @@ databricks.WorkspaceConf(
         "enableIpAccessLists": workspace_config["config"].get("enable_ip_access_lists")
         or "false",
     },
-    opts=pulumi.ResourceOptions(provider=databricks_provider),
+    opts=ResourceOptions(provider=databricks_provider),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -136,7 +138,7 @@ secret_scope_name = "main"
 secret_scope = databricks.SecretScope(
     resource_name=f"{workspace_name}-secret-scope-main",
     name=secret_scope_name,
-    opts=pulumi.ResourceOptions(provider=databricks_provider),
+    opts=ResourceOptions(provider=databricks_provider),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -186,7 +188,7 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
             "DATA_LAKE_NAME": datalake.name,
             **cluster_config.get("spark_env_vars", {}),
         },
-        "opts": pulumi.ResourceOptions(provider=databricks_provider),
+        "opts": ResourceOptions(provider=databricks_provider),
     }
     if cluster_config.get("docker_image_url"):
         base_cluster_configuration["docker_image"] = databricks.ClusterDockerImageArgs(
@@ -245,7 +247,7 @@ for ref_key, cluster_config in clusters.items():
                 permission_level="CAN_RESTART", group_name="users"
             )
         ],
-        opts=pulumi.ResourceOptions(provider=databricks_provider),
+        opts=ResourceOptions(provider=databricks_provider),
     )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -282,7 +284,7 @@ storage_mounts_dbw_password = databricks.Secret(
     scope=secret_scope.id,
     string_value=storage_mounts_sp_password.value,
     key=storage_mounts_sp_name,
-    opts=pulumi.ResourceOptions(provider=databricks_provider),
+    opts=ResourceOptions(provider=databricks_provider),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -311,7 +313,7 @@ for definition in workspace_config.get("storage_mounts", []):
         container_name=definition["container_name"],
         mount_name=definition["mount_name"],
         cluster_id=clusters["default"].id,
-        opts=pulumi.ResourceOptions(
+        opts=ResourceOptions(
             provider=databricks_provider,
             delete_before_replace=True,
         ),

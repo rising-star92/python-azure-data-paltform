@@ -3,6 +3,7 @@
 ## 0.1.25 (TBD)
 
 ### New Features
+- [platform/resource_protection] - Implement Pulumi resource protection on key services like Data Lake, Databricks Workspaces, Key Vaults, etc.
 - [platform/cicd] - DevOps configuration registry has the environment subscription IDs
 
 ### Bugfixes

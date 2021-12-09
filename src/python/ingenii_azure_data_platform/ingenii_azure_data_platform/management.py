@@ -1,10 +1,12 @@
-import pulumi_azure_native as azure_native
-import pulumi_azuread as azuread
+from pulumi import ResourceOptions
+from pulumi_azure_native.resources import ResourceGroup
+from pulumi_azuread import Group
+
 from ingenii_azure_data_platform.config import PlatformConfiguration
 from ingenii_azure_data_platform.utils import generate_resource_name
 
 
-class ResourceGroup(azure_native.resources.ResourceGroup):
+class ResourceGroup(ResourceGroup):
     """
     #TODO
     """
@@ -22,10 +24,11 @@ class ResourceGroup(azure_native.resources.ResourceGroup):
             resource_group_name=name,
             location=platform_config.region.long_name,
             tags=platform_config.tags,
+            opts=ResourceOptions(protect=platform_config.resource_protection),
         )
 
 
-class UserGroup(azuread.Group):
+class UserGroup(Group):
     """
     #TODO
     """
@@ -42,5 +45,8 @@ class UserGroup(azuread.Group):
             platform_config=platform_config,
         )
         super().__init__(
-            resource_name=name.lower(), display_name=name, description=description
+            resource_name=name.lower(),
+            display_name=name,
+            description=description,
+            opts=ResourceOptions(protect=platform_config.resource_protection),
         )

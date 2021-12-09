@@ -29,7 +29,10 @@ if is_gateway_enabled:
         public_ip_allocation_method="Static",
         resource_group_name=resource_groups["infra"].name,
         sku=azure_native.network.PublicIPAddressSkuArgs(name="Standard"),
-        opts=ResourceOptions(ignore_changes=["nat_gateway"]),
+        opts=ResourceOptions(
+            protect=platform_config.resource_protection,
+            ignore_changes=["nat_gateway"],
+        ),
     )
 
     # Send diagnostic logs to Log Analytics Workspace

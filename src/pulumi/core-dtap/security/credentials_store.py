@@ -6,15 +6,22 @@ from ingenii_azure_data_platform.iam import (
     ServicePrincipalRoleAssignment,
     UserAssignedIdentityRoleAssignment,
 )
-from ingenii_azure_data_platform.logs import log_diagnostic_settings, log_network_interfaces
+from ingenii_azure_data_platform.logs import (
+    log_diagnostic_settings,
+    log_network_interfaces,
+)
 from ingenii_azure_data_platform.utils import generate_resource_name
-
 from logs import log_analytics_workspace
-from project_config import platform_config, azure_client, platform_outputs
-from platform_shared import add_config_registry_secret, get_devops_principal_id, shared_services_provider, SHARED_OUTPUTS
+from platform_shared import (
+    add_config_registry_secret,
+    get_devops_principal_id,
+    shared_services_provider,
+    SHARED_OUTPUTS,
+)
 from management import resource_groups
 from management.user_groups import user_groups
-from network import vnet, dns
+from network import dns, vnet
+from project_config import azure_client, platform_config, platform_outputs
 
 outputs = platform_outputs["security"]["credentials_store"] = {}
 
@@ -66,11 +73,12 @@ key_vault = keyvault.Vault(
             else KEY_VAULT_DEFAULT_FIREWALL
         ),
         tenant_id=azure_client.tenant_id,
-        sku=keyvault.SkuArgs(
-            family="A", name=keyvault.SkuName("standard")
-        ),
+        sku=keyvault.SkuArgs(family="A", name=keyvault.SkuName("standard")),
     ),
     tags=platform_config.tags,
+    opts=ResourceOptions(
+        protect=platform_config.resource_protection,
+    ),
 )
 
 outputs["key_vault_id"] = key_vault.id
@@ -105,13 +113,16 @@ private_endpoint = network.PrivateEndpoint(
 )
 
 # To Log Analytics Workspace
-private_endpoint_logs_and_metrics = key_vault_config.get("network", {}) \
-                                                    .get("private_endpoint", {})
+private_endpoint_logs_and_metrics = key_vault_config.get("network", {}).get(
+    "private_endpoint", {}
+)
 log_network_interfaces(
-    platform_config, log_analytics_workspace.id,
-    private_endpoint_name, private_endpoint.network_interfaces,
+    platform_config,
+    log_analytics_workspace.id,
+    private_endpoint_name,
+    private_endpoint.network_interfaces,
     logs_config=private_endpoint_logs_and_metrics.get("logs", {}),
-    metrics_config=private_endpoint_logs_and_metrics.get("metrics", {})
+    metrics_config=private_endpoint_logs_and_metrics.get("metrics", {}),
 )
 
 # PRIVATE DNS ZONE GROUP
@@ -159,20 +170,21 @@ private_endpoint_devops = network.PrivateEndpoint(
     ],
     resource_group_name=resource_groups["infra"].name,
     custom_dns_configs=[],
-    subnet=network.SubnetArgs(
-        id=shared_vnet["subnets"]["privatelink"]["id"]
-    ),
-    opts=ResourceOptions(provider=shared_services_provider)
+    subnet=network.SubnetArgs(id=shared_vnet["subnets"]["privatelink"]["id"]),
+    opts=ResourceOptions(provider=shared_services_provider),
 )
 
 # To Log Analytics Workspace
-private_endpoint_logs_and_metrics = key_vault_config.get("network", {}) \
-                                                    .get("private_endpoint", {})
+private_endpoint_logs_and_metrics = key_vault_config.get("network", {}).get(
+    "private_endpoint", {}
+)
 log_network_interfaces(
-    platform_config, log_analytics_workspace.id,
-    private_endpoint_name_devops, private_endpoint_devops.network_interfaces,
+    platform_config,
+    log_analytics_workspace.id,
+    private_endpoint_name_devops,
+    private_endpoint_devops.network_interfaces,
     logs_config=private_endpoint_logs_and_metrics.get("logs", {}),
-    metrics_config=private_endpoint_logs_and_metrics.get("metrics", {})
+    metrics_config=private_endpoint_logs_and_metrics.get("metrics", {}),
 )
 
 # PRIVATE DNS ZONE GROUP
@@ -186,13 +198,15 @@ private_endpoint_dns_zone_group_devops = network.PrivateDnsZoneGroup(
     private_dns_zone_configs=[
         network.PrivateDnsZoneConfigArgs(
             name=private_endpoint_name_devops,
-            private_dns_zone_id=SHARED_OUTPUTS["network"]["dns"]["private_zones"]["key_vault"]["id"],
+            private_dns_zone_id=SHARED_OUTPUTS["network"]["dns"]["private_zones"][
+                "key_vault"
+            ]["id"],
         )
     ],
     private_dns_zone_group_name="privatelink",
     private_endpoint_name=private_endpoint_devops.name,
     resource_group_name=resource_groups["infra"].name,
-    opts=ResourceOptions(provider=shared_services_provider)
+    opts=ResourceOptions(provider=shared_services_provider),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -229,10 +243,13 @@ UserAssignedIdentityRoleAssignment(
 # ----------------------------------------------------------------------------------------------------------------------
 
 log_diagnostic_settings(
-    platform_config, log_analytics_workspace.id,
-    key_vault.type, key_vault.id, key_vault_name,
+    platform_config,
+    log_analytics_workspace.id,
+    key_vault.type,
+    key_vault.id,
+    key_vault_name,
     logs_config=key_vault_config.get("logs", {}),
-    metrics_config=key_vault_config.get("metrics", {})
+    metrics_config=key_vault_config.get("metrics", {}),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------

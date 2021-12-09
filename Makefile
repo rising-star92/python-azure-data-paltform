@@ -78,17 +78,17 @@ show-reset-banner:
 remove-dev-dir:
 	$(info Removing the Development directory at: ${DEV_DIR})
 	$(info Please make a copy of your .env file if you wish to retain your credentials.)
-	@rm -r -I ${DEV_DIR}
+	@rm -r -I ${DEV_DIR} || true
 
 remove-venv-dir:
 	$(info Removing the Python Virtual Environment directory at: ${VENV_DIR})
-	@rm -r -I ${VENV_DIR}
+	@rm -r -I ${VENV_DIR} || true
 
 remove-pulumi-project-configs:
 	$(info Removing the Pulumi project configuration files)
-	@rm  ${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
-	@rm  ${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml
-	@rm  ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
+	@rm  ${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml || true
+	@rm  ${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml || true
+	@rm  ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml || true
 
 set-pulumi-version:
 	@if test -z "${VERSION}"; then echo "VERSION variable not set. Try 'make set-pulumi-version VERSION=<pulumi version>'"; exit 1; fi

@@ -1,7 +1,7 @@
 import pulumi_azure_native as azure_native
 from ingenii_azure_data_platform.utils import generate_resource_name
-from project_config import platform_config, platform_outputs
 from management import resource_groups
+from project_config import platform_config, platform_outputs
 
 outputs = platform_outputs["network"]["route_tables"] = {}
 

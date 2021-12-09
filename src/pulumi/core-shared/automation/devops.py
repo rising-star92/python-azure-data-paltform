@@ -1,5 +1,7 @@
 import pulumi_azuredevops as ado
 
+from pulumi import ResourceOptions
+
 from ingenii_azure_data_platform.utils import generate_resource_name, generate_hash
 from project_config import platform_config
 from management import user_groups
@@ -25,6 +27,7 @@ ado_project = ado.Project(
     version_control=ado_configs["project"]["version_control"],
     visibility=ado_configs["project"]["visibility"],
     work_item_template=ado_configs["project"]["work_item_template"],
+    opts=ResourceOptions(protect=platform_config.resource_protection),
 )
 
 # Azure DevOps Project Permissions
@@ -81,6 +84,7 @@ for repo in ado_repo_configs:
         )
         if repo.get("import_url") is not None
         else ado.GitInitializationArgs(init_type="Clean"),
+        opts=ResourceOptions(protect=platform_config.resource_protection),
     )
 
     for pipeline in repo.get("pipelines", []):

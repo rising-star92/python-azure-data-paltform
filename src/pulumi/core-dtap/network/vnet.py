@@ -1,13 +1,10 @@
-import pulumi
 import pulumi_azure_native as azure_native
-from ingenii_azure_data_platform.utils import generate_resource_name, generate_cidr
-
-from project_config import platform_config, platform_outputs
+from ingenii_azure_data_platform.utils import generate_cidr, generate_resource_name
 from management import resource_groups
+from project_config import platform_config, platform_outputs
+from pulumi import ResourceOptions
 
-from . import nat
-from . import routing
-from . import nsg
+from . import nat, nsg, routing
 
 outputs = platform_outputs["network"]
 
@@ -33,7 +30,10 @@ vnet = azure_native.network.VirtualNetwork(
     tags=platform_config.tags,
     # Tags are added in the ignore_changes list because of:
     # https://github.com/ingenii-solutions/azure-data-platform/issues/71
-    opts=pulumi.ResourceOptions(ignore_changes=["subnets", "tags"]),
+    opts=ResourceOptions(
+        protect=platform_config.resource_protection,
+        ignore_changes=["subnets", "tags"],
+    ),
 )
 
 # Export VNET metadata
@@ -82,7 +82,7 @@ privatelink_subnet = azure_native.network.Subnet(
     address_prefix=generate_cidr(vnet_address_space, 24, 1),
     private_endpoint_network_policies=azure_native.network.VirtualNetworkPrivateEndpointNetworkPolicies.DISABLED,
     route_table=azure_native.network.RouteTableArgs(id=routing.main_route_table.id),
-    opts=pulumi.ResourceOptions(depends_on=[gateway_subnet]),
+    opts=ResourceOptions(depends_on=[gateway_subnet]),
 )
 
 # Export subnet metadata
@@ -114,7 +114,7 @@ hosted_services_subnet = azure_native.network.Subnet(
             service="Microsoft.KeyVault",
         ),
     ],
-    opts=pulumi.ResourceOptions(depends_on=[privatelink_subnet]),
+    opts=ResourceOptions(depends_on=[privatelink_subnet]),
 )
 
 # Export subnet metadata
@@ -154,7 +154,7 @@ dbw_engineering_hosts_subnet = azure_native.network.Subnet(
             name="databricks", service_name="Microsoft.Databricks/workspaces"
         )
     ],
-    opts=pulumi.ResourceOptions(depends_on=[hosted_services_subnet]),
+    opts=ResourceOptions(depends_on=[hosted_services_subnet]),
 )
 
 # Export subnet metadata
@@ -194,7 +194,7 @@ dbw_engineering_containers_subnet = azure_native.network.Subnet(
             name="databricks", service_name="Microsoft.Databricks/workspaces"
         )
     ],
-    opts=pulumi.ResourceOptions(depends_on=[dbw_engineering_hosts_subnet]),
+    opts=ResourceOptions(depends_on=[dbw_engineering_hosts_subnet]),
 )
 
 # Export subnet metadata
@@ -234,7 +234,7 @@ dbw_analytics_hosts_subnet = azure_native.network.Subnet(
             name="databricks", service_name="Microsoft.Databricks/workspaces"
         )
     ],
-    opts=pulumi.ResourceOptions(depends_on=[dbw_engineering_containers_subnet]),
+    opts=ResourceOptions(depends_on=[dbw_engineering_containers_subnet]),
 )
 
 # Export subnet metadata
@@ -274,7 +274,7 @@ dbw_analytics_containers_subnet = azure_native.network.Subnet(
             name="databricks", service_name="Microsoft.Databricks/workspaces"
         )
     ],
-    opts=pulumi.ResourceOptions(depends_on=[dbw_analytics_hosts_subnet]),
+    opts=ResourceOptions(depends_on=[dbw_analytics_hosts_subnet]),
 )
 
 subnet_outputs["databricks_analytics_containers"] = {

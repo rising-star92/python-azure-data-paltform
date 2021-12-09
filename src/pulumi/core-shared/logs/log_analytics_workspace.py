@@ -1,8 +1,8 @@
-from pulumi_azure_native import operationalinsights
 from ingenii_azure_data_platform.utils import generate_resource_name
-
-from project_config import platform_config, platform_outputs
 from management import resource_groups
+from project_config import platform_config, platform_outputs
+from pulumi import ResourceOptions
+from pulumi_azure_native import operationalinsights
 
 outputs = platform_outputs["logs"] = {}
 
@@ -18,7 +18,8 @@ log_analytics_workspace = operationalinsights.Workspace(
     retention_in_days=platform_config["logs"]["retention"],
     sku=operationalinsights.WorkspaceSkuArgs(name="PerGB2018"),
     workspace_name=workspace_name,
-    tags=platform_config.tags
+    tags=platform_config.tags,
+    opts=ResourceOptions(protect=platform_config.resource_protection),
 )
 
 outputs["name"] = log_analytics_workspace.name

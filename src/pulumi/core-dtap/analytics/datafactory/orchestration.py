@@ -1,6 +1,4 @@
-from pulumi import ResourceOptions
-from pulumi_azure_native import datafactory as adf
-
+from analytics.databricks.workspaces import engineering as databricks_engineering
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
@@ -9,16 +7,15 @@ from ingenii_azure_data_platform.iam import (
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.orchestration import AdfSelfHostedIntegrationRuntime
 from ingenii_azure_data_platform.utils import generate_resource_name
-
-from analytics.databricks.workspaces import engineering as databricks_engineering
-from platform_shared import add_config_registry_secret, get_devops_principal_id
 from logs import log_analytics_workspace
-from project_config import platform_config, platform_outputs
 from management import resource_groups
 from management.user_groups import user_groups
-from storage.datalake import datalake
+from platform_shared import add_config_registry_secret, get_devops_principal_id
+from project_config import platform_config, platform_outputs
+from pulumi import ResourceOptions
+from pulumi_azure_native import datafactory as adf
 from security import credentials_store
-
+from storage.datalake import datalake
 
 outputs = platform_outputs["analytics"]["datafactory"]["factories"][
     "orchestration"
@@ -48,6 +45,9 @@ datafactory = adf.Factory(
             type="String", value=datalake.name
         )
     },
+    opts=ResourceOptions(
+        protect=platform_config.resource_protection,
+    ),
 )
 
 outputs["id"] = datafactory.id
@@ -262,8 +262,11 @@ add_config_registry_secret("data-factory-name", datafactory.name)
 # ----------------------------------------------------------------------------------------------------------------------
 
 log_diagnostic_settings(
-    platform_config, log_analytics_workspace.id,
-    datafactory.type, datafactory.id, datafactory_name,
+    platform_config,
+    log_analytics_workspace.id,
+    datafactory.type,
+    datafactory.id,
+    datafactory_name,
     logs_config=datafactory_config.get("logs", {}),
     metrics_config=datafactory_config.get("metrics", {}),
 )

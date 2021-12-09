@@ -1,11 +1,10 @@
 import pulumi_azure_native as azure_native
-from pulumi.resource import ResourceOptions
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.utils import generate_resource_name
-
 from logs import log_analytics_workspace
-from project_config import platform_config, platform_outputs
 from management import resource_groups
+from project_config import platform_config, platform_outputs
+from pulumi import ResourceOptions
 
 gateway_config = platform_config.from_yml["network"]["nat_gateway"]
 
@@ -29,7 +28,10 @@ if is_gateway_enabled:
         public_ip_allocation_method="Static",
         resource_group_name=resource_groups["infra"].name,
         sku=azure_native.network.PublicIPAddressSkuArgs(name="Standard"),
-        opts=ResourceOptions(ignore_changes=["nat_gateway"]),
+        opts=ResourceOptions(
+            protect=platform_config.resource_protection,
+            ignore_changes=["nat_gateway"],
+        ),
     )
 
     outputs["public_ip_address"] = gateway_public_ip.ip_address

@@ -1,9 +1,7 @@
-import pulumi_azure_native as azure_native
 import pulumi_azure as azure_classic
-from pulumi import ResourceOptions, Output
-
+import pulumi_azure_native as azure_native
+from pulumi import Output
 from ingenii_azure_data_platform.defaults import STORAGE_ACCOUNT_DEFAULT_FIREWALL
-
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     UserAssignedIdentityRoleAssignment,
@@ -13,13 +11,13 @@ from ingenii_azure_data_platform.logs import (
     log_network_interfaces,
 )
 from ingenii_azure_data_platform.utils import generate_resource_name
-
 from logs import log_analytics_workspace
-from project_config import platform_config, platform_outputs
-from platform_shared import add_config_registry_secret, get_devops_principal_id
 from management import resource_groups
 from management.user_groups import user_groups
-from network import vnet, dns
+from network import dns, vnet
+from platform_shared import add_config_registry_secret, get_devops_principal_id
+from project_config import platform_config, platform_outputs
+from pulumi import ResourceOptions
 from security import credentials_store
 
 outputs = platform_outputs["storage"]["datalake"] = {}
@@ -82,6 +80,9 @@ datalake = azure_native.storage.StorageAccount(
         name="Standard_GRS",
     ),
     tags=platform_config.tags,
+    opts=ResourceOptions(
+        protect=platform_config.resource_protection,
+    ),
 )
 
 outputs["id"] = datalake.id
@@ -265,11 +266,12 @@ for ref_key, container_config in datalake_config.get("containers", {}).items():
         container_name=container_config["display_name"],
         resource_group_name=resource_groups["data"].name,
         opts=ResourceOptions(
+            protect=platform_config.resource_protection,
             ignore_changes=[
                 "public_access",
                 "default_encryption_scope",
                 "deny_encryption_scope_override",
-            ]
+            ],
         ),
     )
     # Container Role Assignments
