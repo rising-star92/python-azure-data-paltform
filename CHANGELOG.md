@@ -2,6 +2,9 @@
 
 ## 0.1.25 (TBD)
 
+### New Features
+- [platform/cicd] - DevOps configuration registry has the environment subscription IDs
+
 ### Bugfixes
 - [cookiecutter/makefile] - Updating the 'set-platform-version' target to make sure all Github workflows are updated to the latest Docker image.
 - [databricks] - Handle issue when workspace and cluster tags conflict

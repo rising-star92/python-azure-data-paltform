@@ -2,7 +2,7 @@ from os import getenv
 from pulumi import ResourceOptions
 from pulumi_azure_native import Provider, keyvault
 
-from project_config import platform_config, SHARED_OUTPUTS
+from project_config import azure_client, platform_config, SHARED_OUTPUTS
 
 shared_services_provider = Provider(
     resource_name="shared-services",
@@ -38,3 +38,5 @@ def add_config_registry_secret(secret_name, secret_value, resource_name=None):
         properties=keyvault.SecretPropertiesArgs(value=secret_value),
         opts=ResourceOptions(provider=shared_services_provider),
     )
+
+add_config_registry_secret("subscription-id", azure_client.subscription_id)
