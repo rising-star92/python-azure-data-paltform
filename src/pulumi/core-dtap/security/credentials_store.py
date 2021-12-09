@@ -1,14 +1,17 @@
-import pulumi_azure_native as azure_native
+from pulumi import ResourceOptions
+from pulumi_azure_native import keyvault, network
 from ingenii_azure_data_platform.defaults import KEY_VAULT_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
+    UserAssignedIdentityRoleAssignment,
 )
 from ingenii_azure_data_platform.logs import log_diagnostic_settings, log_network_interfaces
 from ingenii_azure_data_platform.utils import generate_resource_name
 
 from logs import log_analytics_workspace
 from project_config import platform_config, azure_client, platform_outputs
+from platform_shared import add_config_registry_secret, get_devops_principal_id, shared_services_provider, SHARED_OUTPUTS
 from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet, dns
@@ -21,7 +24,7 @@ outputs = platform_outputs["security"]["credentials_store"] = {}
 # ----------------------------------------------------------------------------------------------------------------------
 firewall = platform_config.from_yml["network"]["firewall"]
 firewall_ip_access_list = [
-    azure_native.keyvault.IPRuleArgs(value=ip_address)
+    keyvault.IPRuleArgs(value=ip_address)
     for ip_address in firewall.get("ip_access_list", [])
 ]
 
@@ -33,15 +36,15 @@ key_vault_name = generate_resource_name(
     resource_type="key_vault", resource_name="cred", platform_config=platform_config
 )
 
-key_vault = azure_native.keyvault.Vault(
+key_vault = keyvault.Vault(
     resource_name=key_vault_name,
     vault_name=key_vault_name,
     resource_group_name=resource_groups["security"].name,
     location=platform_config.region.long_name,
-    properties=azure_native.keyvault.VaultPropertiesArgs(
+    properties=keyvault.VaultPropertiesArgs(
         enable_rbac_authorization=True,
         network_acls=(
-            azure_native.keyvault.NetworkRuleSetArgs(
+            keyvault.NetworkRuleSetArgs(
                 bypass="AzureServices",
                 default_action="Deny",
                 ip_rules=(
@@ -50,7 +53,7 @@ key_vault = azure_native.keyvault.Vault(
                     else None
                 ),
                 virtual_network_rules=[
-                    azure_native.keyvault.VirtualNetworkRuleArgs(id=subnet.id)
+                    keyvault.VirtualNetworkRuleArgs(id=subnet.id)
                     for subnet in (
                         vnet.dbw_engineering_hosts_subnet,
                         vnet.dbw_engineering_containers_subnet,
@@ -63,8 +66,8 @@ key_vault = azure_native.keyvault.Vault(
             else KEY_VAULT_DEFAULT_FIREWALL
         ),
         tenant_id=azure_client.tenant_id,
-        sku=azure_native.keyvault.SkuArgs(
-            family="A", name=azure_native.keyvault.SkuName("standard")
+        sku=keyvault.SkuArgs(
+            family="A", name=keyvault.SkuName("standard")
         ),
     ),
     tags=platform_config.tags,
@@ -84,12 +87,12 @@ private_endpoint_name = generate_resource_name(
     resource_name="for-cred-store",
     platform_config=platform_config,
 )
-private_endpoint = azure_native.network.PrivateEndpoint(
+private_endpoint = network.PrivateEndpoint(
     resource_name=private_endpoint_name,
     private_endpoint_name=private_endpoint_name,
     location=platform_config.region.long_name,
     private_link_service_connections=[
-        azure_native.network.PrivateLinkServiceConnectionArgs(
+        network.PrivateLinkServiceConnectionArgs(
             name=vnet.vnet.name,
             group_ids=["vault"],
             private_link_service_id=key_vault.id,
@@ -98,7 +101,7 @@ private_endpoint = azure_native.network.PrivateEndpoint(
     ],
     resource_group_name=resource_groups["infra"].name,
     custom_dns_configs=[],
-    subnet=azure_native.network.SubnetArgs(id=vnet.privatelink_subnet.id),
+    subnet=network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
 
 # To Log Analytics Workspace
@@ -117,10 +120,10 @@ private_endpoint_dns_zone_group_name = generate_resource_name(
     resource_name="for-cred-store",
     platform_config=platform_config,
 )
-private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
+private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
     resource_name=private_endpoint_dns_zone_group_name,
     private_dns_zone_configs=[
-        azure_native.network.PrivateDnsZoneConfigArgs(
+        network.PrivateDnsZoneConfigArgs(
             name=private_endpoint_name,
             private_dns_zone_id=dns.key_vault_private_dns_zone.id,
         )
@@ -128,6 +131,68 @@ private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
     private_dns_zone_group_name="privatelink",
     private_endpoint_name=private_endpoint.name,
     resource_group_name=resource_groups["infra"].name,
+)
+
+# ----------------------------------------------------------------------------------------------------------------------
+# KEY VAULT -> PRIVATE ENDPOINT FOR DEVOPS
+# ----------------------------------------------------------------------------------------------------------------------
+
+shared_vnet = SHARED_OUTPUTS["network"]["virtual_network"]
+
+# PRIVATE ENDPOINT
+private_endpoint_name_devops = generate_resource_name(
+    resource_type="private_endpoint",
+    resource_name="for-cred-store-devops",
+    platform_config=platform_config,
+)
+private_endpoint_devops = network.PrivateEndpoint(
+    resource_name=private_endpoint_name_devops,
+    private_endpoint_name=private_endpoint_name_devops,
+    location=shared_vnet["location"],
+    private_link_service_connections=[
+        network.PrivateLinkServiceConnectionArgs(
+            name=shared_vnet["name"],
+            group_ids=["vault"],
+            private_link_service_id=key_vault.id,
+            request_message="none",
+        )
+    ],
+    resource_group_name=resource_groups["infra"].name,
+    custom_dns_configs=[],
+    subnet=network.SubnetArgs(
+        id=shared_vnet["subnets"]["privatelink"]["id"]
+    ),
+    opts=ResourceOptions(provider=shared_services_provider)
+)
+
+# To Log Analytics Workspace
+private_endpoint_logs_and_metrics = key_vault_config.get("network", {}) \
+                                                    .get("private_endpoint", {})
+log_network_interfaces(
+    platform_config, log_analytics_workspace.id,
+    private_endpoint_name_devops, private_endpoint_devops.network_interfaces,
+    logs_config=private_endpoint_logs_and_metrics.get("logs", {}),
+    metrics_config=private_endpoint_logs_and_metrics.get("metrics", {})
+)
+
+# PRIVATE DNS ZONE GROUP
+private_endpoint_dns_zone_group_name_devops = generate_resource_name(
+    resource_type="private_dns_zone",
+    resource_name="for-cred-store-devops",
+    platform_config=platform_config,
+)
+private_endpoint_dns_zone_group_devops = network.PrivateDnsZoneGroup(
+    resource_name=private_endpoint_dns_zone_group_name_devops,
+    private_dns_zone_configs=[
+        network.PrivateDnsZoneConfigArgs(
+            name=private_endpoint_name_devops,
+            private_dns_zone_id=SHARED_OUTPUTS["network"]["dns"]["private_zones"]["key_vault"]["id"],
+        )
+    ],
+    private_dns_zone_group_name="privatelink",
+    private_endpoint_name=private_endpoint_devops.name,
+    resource_group_name=resource_groups["infra"].name,
+    opts=ResourceOptions(provider=shared_services_provider)
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -153,6 +218,12 @@ ServicePrincipalRoleAssignment(
     scope=key_vault.id,
 )
 
+UserAssignedIdentityRoleAssignment(
+    principal_id=get_devops_principal_id(),
+    role_name="Key Vault Secrets User",
+    scope=key_vault.id,
+)
+
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> LOGGING
 # ----------------------------------------------------------------------------------------------------------------------
@@ -163,3 +234,9 @@ log_diagnostic_settings(
     logs_config=key_vault_config.get("logs", {}),
     metrics_config=key_vault_config.get("metrics", {})
 )
+
+# ----------------------------------------------------------------------------------------------------------------------
+# DEVOPS ACCESS
+# ----------------------------------------------------------------------------------------------------------------------
+
+add_config_registry_secret("credential-key-vault-name", key_vault_name)

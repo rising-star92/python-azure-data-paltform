@@ -1,6 +1,6 @@
 from os import getenv
-
-from pulumi_azure_native import Provider
+from pulumi import ResourceOptions
+from pulumi_azure_native import Provider, keyvault
 
 from project_config import platform_config, SHARED_OUTPUTS
 
@@ -26,4 +26,15 @@ def get_devops_config_registry():
 def get_devops_config_registry_resource_group():
     return get_devops_config_registry()["key_vault_id"].apply(
         lambda id_str: id_str.split("/")[4]
+    )
+
+
+def add_config_registry_secret(secret_name, secret_value, resource_name=None):
+    keyvault.Secret(
+        resource_name=resource_name or f"devops-{secret_name}",
+        resource_group_name=get_devops_config_registry_resource_group(),
+        vault_name=get_devops_config_registry()["key_vault_name"],
+        secret_name=f"{secret_name}-{platform_config.stack}",
+        properties=keyvault.SecretPropertiesArgs(value=secret_value),
+        opts=ResourceOptions(provider=shared_services_provider),
     )

@@ -39,6 +39,7 @@ vnet = azure_native.network.VirtualNetwork(
 # Export VNET metadata
 outputs["virtual_network"] = {
     "name": vnet.name,
+    "location": vnet.location,
     "address_space": vnet.address_space,
     "id": vnet.id,
 }

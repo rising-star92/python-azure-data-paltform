@@ -1,9 +1,11 @@
 import pulumi_azure_native as azure_native
 
-from project_config import platform_config
+from project_config import platform_config, platform_outputs
 from management import resource_groups
 
 from .vnet import vnet
+
+outputs = platform_outputs["network"]["dns"] = {"private_zones": {}}
 
 # ----------------------------------------------------------------------------------------------------------------------
 # KEYVAULT PRIVATE DNS ZONE
@@ -15,6 +17,11 @@ key_vault_private_dns_zone = azure_native.network.PrivateZone(
     resource_group_name=resource_groups["infra"].name,
     tags=platform_config.tags,
 )
+
+outputs["private_zones"]["key_vault"] = {
+    "id": key_vault_private_dns_zone.id,
+    "name": key_vault_private_dns_zone.name
+}
 
 key_vault_private_dns_zone_link = azure_native.network.VirtualNetworkLink(
     resource_name="privatelink-vaultcore-azure-net",

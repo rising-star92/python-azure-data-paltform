@@ -142,6 +142,7 @@ _credentials_store:
 analytics_services:
   databricks: include('_databricks')
   datafactory: include('_datafactory')
+  dbt: include('_dbt', required=False)
 
 _databricks:
   workspaces: map(include('_databricks_workspace'),key=str())
@@ -213,6 +214,20 @@ _datafactory_integration_runtime:
   type: enum("self-hosted","self-hosted-azure-vnet-integrated")
   name: str()
   description: str(required=False)
+
+_dbt:
+  documentation: include('_dbt_documentation', required=False)
+
+_dbt_documentation:
+  enabled: bool()
+  custom_domains: list(include('_dbt_documentation_custom_domain'), required=False)
+  location: str(required=False)
+  sku_name: str(required=False)
+  sku_tier: str(required=False)
+
+_dbt_documentation_custom_domain:
+  domain: str()
+  validation: enum("cname-delegation", "dns-txt-token", required=False)
 
 #----------------------------------------------------------------------------------------------------------------------
 # PACKAGES

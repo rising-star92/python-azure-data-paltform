@@ -255,3 +255,6 @@ analytics_services:
           role_assignments:
             - user_group_ref_key: engineers
               role_definition_name: Data Factory Contributor
+  dbt:
+    documentation:
+      enabled: false

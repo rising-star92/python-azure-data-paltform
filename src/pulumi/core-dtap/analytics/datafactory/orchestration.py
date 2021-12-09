@@ -1,5 +1,5 @@
 from pulumi import ResourceOptions
-from pulumi_azure_native import datafactory as adf, keyvault
+from pulumi_azure_native import datafactory as adf
 
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
@@ -11,12 +11,7 @@ from ingenii_azure_data_platform.orchestration import AdfSelfHostedIntegrationRu
 from ingenii_azure_data_platform.utils import generate_resource_name
 
 from analytics.databricks.workspaces import engineering as databricks_engineering
-from platform_shared import (
-    shared_services_provider,
-    get_devops_principal_id,
-    get_devops_config_registry,
-    get_devops_config_registry_resource_group,
-)
+from platform_shared import add_config_registry_secret, get_devops_principal_id
 from logs import log_analytics_workspace
 from project_config import platform_config, platform_outputs
 from management import resource_groups
@@ -260,14 +255,7 @@ UserAssignedIdentityRoleAssignment(
     scope=datafactory.id,
 )
 
-keyvault.Secret(
-    resource_name="devops-data-factory-name",
-    resource_group_name=get_devops_config_registry_resource_group(),
-    vault_name=get_devops_config_registry()["key_vault_name"],
-    secret_name=f"data-factory-name-{platform_config.stack}",
-    properties=keyvault.SecretPropertiesArgs(value=datafactory.name),
-    opts=ResourceOptions(provider=shared_services_provider),
-)
+add_config_registry_secret("data-factory-name", datafactory.name)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # LOGGING

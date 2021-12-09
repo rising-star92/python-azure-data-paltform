@@ -10,6 +10,7 @@
 
 ### New Features
 - [platform/cicd] - Introduce a new "Preview Only" scheduled CICD pipeline. The pipeline will notify Teams channel, whenever a drift between Pulumi state and infrastructure is detected.
+- [dbt] - Static Site to host dbt documentation
 
 ### Bugfixes
 - [logging] - Diagnostic settings handles when the resource does not yet exist

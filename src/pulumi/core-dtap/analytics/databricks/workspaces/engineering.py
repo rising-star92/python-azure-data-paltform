@@ -1,6 +1,5 @@
 import os
 import pulumi
-from pulumi.resource import ResourceOptions
 import pulumi_azure_native as azure_native
 import pulumi_azuread as azuread
 
@@ -16,6 +15,7 @@ from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.utils import generate_hash, generate_resource_name
 
 from project_config import azure_client, platform_config, platform_outputs, DTAP_ROOT
+from platform_shared import add_config_registry_secret
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
@@ -67,7 +67,6 @@ workspace = azure_native.databricks.Workspace(
     ),
     sku=azure_native.databricks.SkuArgs(name="Premium"),
     resource_group_name=resource_groups["infra"].name,
-    tags=platform_config.tags,
 )
 
 outputs["name"] = workspace.name
@@ -110,11 +109,10 @@ for assignment in workspace_config.get("iam", {}).get("role_assignments", []):
 databricks_provider = DatabricksProvider(
     resource_name=workspace_name,
     args=DatabricksProviderArgs(
-        azure_client_id=os.getenv("ARM_CLIENT_ID") or azure_client.client_id,
+        azure_client_id=os.getenv("ARM_CLIENT_ID", azure_client.client_id),
         azure_client_secret=os.getenv("ARM_CLIENT_SECRET"),
-        azure_subscription_id=os.getenv("ARM_SUBSCRIPTION_ID")
-        or azure_client.subscription_id,
-        azure_tenant_id=os.getenv("ARM_TENANT_ID") or azure_client.tenant_id,
+        azure_subscription_id=os.getenv("ARM_SUBSCRIPTION_ID", azure_client.subscription_id),
+        azure_tenant_id=os.getenv("ARM_TENANT_ID", azure_client.tenant_id),
         azure_workspace_resource_id=workspace.id,
     ),
 )
@@ -125,10 +123,8 @@ databricks_provider = DatabricksProvider(
 databricks.WorkspaceConf(
     resource_name=workspace_name,
     custom_config={
-        "enableDcs": workspace_config["config"].get("enable_container_services")
-        or "false",
-        "enableIpAccessLists": workspace_config["config"].get("enable_ip_access_lists")
-        or "false",
+        "enableDcs": workspace_config["config"].get("enable_container_services", "false"),
+        "enableIpAccessLists": workspace_config["config"].get("enable_ip_access_lists", "false"),
     },
     opts=pulumi.ResourceOptions(provider=databricks_provider),
 )
@@ -148,6 +144,7 @@ secret_scope = databricks.SecretScope(
 dbt_token_name = f"{workspace_short_name}-token-for-dbt"
 dbt_token_resource_name = f"{workspace_name}-token-for-dbt"
 
+# Also used to generate the DBT documentation by the DevOps pipeline
 dbt_token = databricks.Token(
     resource_name=dbt_token_resource_name,
     comment="Data Build Tool Token - Used for DBT automation",
@@ -211,7 +208,7 @@ system_cluster = databricks.Cluster(
         **system_cluster_config.get("spark_conf", {}),
     },
     custom_tags={"ResourceClass": "SingleNode", **cluster_default_tags},
-    opts=ResourceOptions(provider=databricks_provider),
+    opts=pulumi.ResourceOptions(provider=databricks_provider),
 )
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> STORAGE MOUNTS
@@ -358,7 +355,7 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
             "DBT_LOGS_FOLDER": "/dbfs/mnt/dbt-logs",
             **cluster_config.get("spark_env_vars", {}),
         },
-        "opts": ResourceOptions(
+        "opts": pulumi.ResourceOptions(
             provider=databricks_provider, depends_on=[pre_processing_blob]
         ),
     }
@@ -422,3 +419,12 @@ for ref_key, cluster_config in clusters.items():
         ],
         opts=pulumi.ResourceOptions(provider=databricks_provider),
     )
+
+# ----------------------------------------------------------------------------------------------------------------------
+# DEVOPS ASSIGNMENT
+# ----------------------------------------------------------------------------------------------------------------------
+
+add_config_registry_secret(
+    "databricks-engineering-workspace-hostname", workspace.workspace_url)
+add_config_registry_secret(
+    "databricks-engineering-cluster-name", clusters["default"].cluster_name)

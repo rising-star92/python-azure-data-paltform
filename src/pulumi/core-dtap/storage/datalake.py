@@ -16,12 +16,7 @@ from ingenii_azure_data_platform.utils import generate_resource_name
 
 from logs import log_analytics_workspace
 from project_config import platform_config, platform_outputs
-from platform_shared import (
-    shared_services_provider,
-    get_devops_principal_id,
-    get_devops_config_registry,
-    get_devops_config_registry_resource_group,
-)
+from platform_shared import add_config_registry_secret, get_devops_principal_id
 from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet, dns
@@ -373,14 +368,7 @@ for container in ["dbt", "utilities"]:
         scope=datalake_containers[container].id,
     )
 
-azure_native.keyvault.Secret(
-    resource_name="devops-datalake-name",
-    resource_group_name=get_devops_config_registry_resource_group(),
-    vault_name=get_devops_config_registry()["key_vault_name"],
-    secret_name=f"data-lake-name-{platform_config.stack}",
-    properties=azure_native.keyvault.SecretPropertiesArgs(value=datalake.name),
-    opts=ResourceOptions(provider=shared_services_provider),
-)
+add_config_registry_secret("data-lake-name", datalake.name)
 
 # Required while the Azure CLI command 'sync' does not support MSI authentication
 # https://docs.microsoft.com/en-us/cli/azure/storage/blob?view=azure-cli-latest#az_storage_blob_sync
