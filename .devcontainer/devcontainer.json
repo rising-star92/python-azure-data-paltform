@@ -6,8 +6,8 @@
     "dockerfile": "Dockerfile",
     "context": "..",
     "args": {
-      "VARIANT": "3.9",
-      "PULUMI_VERSION": "3.18.0"
+      "VARIANT": "3.10",
+      "PULUMI_VERSION": "3.19.0"
     }
   },
 

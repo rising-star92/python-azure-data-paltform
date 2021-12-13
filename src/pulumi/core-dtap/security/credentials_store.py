@@ -18,6 +18,7 @@ from platform_shared import (
     shared_services_provider,
     SHARED_OUTPUTS,
 )
+from platform_shared import azure_client as shared_azure_client
 from management import resource_groups
 from management.user_groups import user_groups
 from network import dns, vnet
@@ -84,6 +85,43 @@ key_vault = keyvault.Vault(
 outputs["key_vault_id"] = key_vault.id
 outputs["key_vault_name"] = key_vault.name
 
+# ----------------------------------------------------------------------------------------------------------------------
+# KEY VAULT -> IAM -> ROLE ASSIGNMENTS
+# ----------------------------------------------------------------------------------------------------------------------
+
+# Create role assignments defined in the YAML files
+for assignment in key_vault_config.get("iam", {}).get("role_assignments", []):
+    # User Group Assignment
+    user_group_ref_key = assignment.get("user_group_ref_key")
+    if user_group_ref_key is not None:
+        GroupRoleAssignment(
+            role_name=assignment["role_definition_name"],
+            group_object_id=user_groups[user_group_ref_key]["object_id"],
+            scope=key_vault.id,
+        )
+
+# Grant access to the Automation Service Principal to manage the key vault.
+# We are going to be creating secrets in the key vault later on, so we need the access.
+ServicePrincipalRoleAssignment(
+    service_principal_object_id=azure_client.object_id,
+    role_name="Key Vault Administrator",
+    scope=key_vault.id,
+)
+
+# Only grant access to Shared Services principal to manage the key vault,
+# if the Shared Services and DTAP principals are different.
+if azure_client.object_id != shared_azure_client.object_id:
+    ServicePrincipalRoleAssignment(
+        service_principal_object_id=shared_azure_client.object_id,
+        role_name="Key Vault Contributor",
+        scope=key_vault.id,
+    )
+
+UserAssignedIdentityRoleAssignment(
+    principal_id=get_devops_principal_id(),
+    role_name="Key Vault Secrets User",
+    scope=key_vault.id,
+)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> PRIVATE ENDPOINT
@@ -110,6 +148,7 @@ private_endpoint = network.PrivateEndpoint(
     resource_group_name=resource_groups["infra"].name,
     custom_dns_configs=[],
     subnet=network.SubnetArgs(id=vnet.privatelink_subnet.id),
+    tags=platform_config.tags,
 )
 
 # To Log Analytics Workspace
@@ -149,6 +188,7 @@ private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
 # ----------------------------------------------------------------------------------------------------------------------
 
 shared_vnet = SHARED_OUTPUTS["network"]["virtual_network"]
+shared_infra_resource_group = SHARED_OUTPUTS["management"]["resource_groups"]["infra"]
 
 # PRIVATE ENDPOINT
 private_endpoint_name_devops = generate_resource_name(
@@ -168,10 +208,11 @@ private_endpoint_devops = network.PrivateEndpoint(
             request_message="none",
         )
     ],
-    resource_group_name=resource_groups["infra"].name,
+    resource_group_name=shared_infra_resource_group["name"],
     custom_dns_configs=[],
     subnet=network.SubnetArgs(id=shared_vnet["subnets"]["privatelink"]["id"]),
     opts=ResourceOptions(provider=shared_services_provider),
+    tags=platform_config.tags,
 )
 
 # To Log Analytics Workspace
@@ -205,37 +246,8 @@ private_endpoint_dns_zone_group_devops = network.PrivateDnsZoneGroup(
     ],
     private_dns_zone_group_name="privatelink",
     private_endpoint_name=private_endpoint_devops.name,
-    resource_group_name=resource_groups["infra"].name,
+    resource_group_name=shared_infra_resource_group["name"],
     opts=ResourceOptions(provider=shared_services_provider),
-)
-
-# ----------------------------------------------------------------------------------------------------------------------
-# KEY VAULT -> IAM -> ROLE ASSIGNMENTS
-# ----------------------------------------------------------------------------------------------------------------------
-
-# Create role assignments defined in the YAML files
-for assignment in key_vault_config.get("iam", {}).get("role_assignments", []):
-    # User Group Assignment
-    user_group_ref_key = assignment.get("user_group_ref_key")
-    if user_group_ref_key is not None:
-        GroupRoleAssignment(
-            role_name=assignment["role_definition_name"],
-            group_object_id=user_groups[user_group_ref_key]["object_id"],
-            scope=key_vault.id,
-        )
-
-# Grant access to the Automation Service Principal to manage the key vault.
-# We are going to be creating secrets in the key vault later on, so we need the access.
-ServicePrincipalRoleAssignment(
-    service_principal_object_id=azure_client.object_id,
-    role_name="Key Vault Administrator",
-    scope=key_vault.id,
-)
-
-UserAssignedIdentityRoleAssignment(
-    principal_id=get_devops_principal_id(),
-    role_name="Key Vault Secrets User",
-    scope=key_vault.id,
 )
 
 # ----------------------------------------------------------------------------------------------------------------------

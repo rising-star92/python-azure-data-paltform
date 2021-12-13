@@ -2,11 +2,12 @@ from os import getenv
 
 import pulumi_azure_native as azure_native
 import pulumi_azuread as azuread
-from ingenii_azure_data_platform.iam import (GroupRoleAssignment,
-                                             ServicePrincipalRoleAssignment)
+from ingenii_azure_data_platform.iam import (
+    GroupRoleAssignment,
+    ServicePrincipalRoleAssignment,
+)
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
-from ingenii_azure_data_platform.utils import (generate_hash,
-                                               generate_resource_name)
+from ingenii_azure_data_platform.utils import generate_hash, generate_resource_name
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
@@ -108,8 +109,6 @@ databricks_provider = DatabricksProvider(
     args=DatabricksProviderArgs(
         azure_client_id=getenv("ARM_CLIENT_ID") or azure_client.client_id,
         azure_client_secret=getenv("ARM_CLIENT_SECRET"),
-        azure_subscription_id=getenv("ARM_SUBSCRIPTION_ID")
-        or azure_client.subscription_id,
         azure_tenant_id=getenv("ARM_TENANT_ID") or azure_client.tenant_id,
         azure_workspace_resource_id=workspace.id,
     ),

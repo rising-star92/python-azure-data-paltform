@@ -1,8 +1,10 @@
 from os import getenv
-from pulumi import ResourceOptions
+from pulumi import ResourceOptions, InvokeOptions
 from pulumi_azure_native import Provider, keyvault
+from pulumi_azure_native.authorization import get_client_config
 
-from project_config import azure_client, platform_config, SHARED_OUTPUTS
+from project_config import platform_config, SHARED_OUTPUTS
+from project_config import azure_client as dtap_azure_client
 
 shared_services_provider = Provider(
     resource_name="shared-services",
@@ -11,6 +13,8 @@ shared_services_provider = Provider(
     tenant_id=getenv("SHARED_ARM_TENANT_ID"),
     subscription_id=getenv("SHARED_ARM_SUBSCRIPTION_ID"),
 )
+
+azure_client = get_client_config(opts=InvokeOptions(provider=shared_services_provider))
 
 
 def get_devops_principal_id():
@@ -39,4 +43,5 @@ def add_config_registry_secret(secret_name, secret_value, resource_name=None):
         opts=ResourceOptions(provider=shared_services_provider),
     )
 
-add_config_registry_secret("subscription-id", azure_client.subscription_id)
+
+add_config_registry_secret("subscription-id", dtap_azure_client.subscription_id)

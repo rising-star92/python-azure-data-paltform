@@ -113,9 +113,6 @@ databricks_provider = DatabricksProvider(
     args=DatabricksProviderArgs(
         azure_client_id=getenv("ARM_CLIENT_ID", azure_client.client_id),
         azure_client_secret=getenv("ARM_CLIENT_SECRET"),
-        azure_subscription_id=getenv(
-            "ARM_SUBSCRIPTION_ID", azure_client.subscription_id
-        ),
         azure_tenant_id=getenv("ARM_TENANT_ID", azure_client.tenant_id),
         azure_workspace_resource_id=workspace.id,
     ),

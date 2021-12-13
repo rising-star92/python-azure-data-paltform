@@ -2,8 +2,8 @@ SHELL := /bin/bash
 
 REGION := EastUS
 
-TEMP_DIR		:= /tmp
 PROJECT_ROOT	:= $(realpath .)
+TEMP_DIR		:= ${PROJECT_ROOT}/tmp
 
 VENV_DIR 			:= ${PROJECT_ROOT}/venv
 SOURCE_DIR			:= ${PROJECT_ROOT}/src
@@ -22,8 +22,10 @@ RANDOM_STR_LEN_4	:= $(shell python -c "print('${RANDOM_STR}'[:4])")
 #####################################################################################################################
 COOKIECUTTER_CUSTOMER_REPO_DIR				:= ${SOURCE_DIR}/cookiecutters/customer-repo
 COOKIECUTTER_CUSTOMER_REPO_CONFIG_TPL_FILE	:= ${COOKIECUTTER_CUSTOMER_REPO_DIR}/cookiecutter.tpl
-setup-cruft-config:
-	$(info [INFO] Configuring the Cookiecutter template...)
+setup-cruft-project:
+	$(info [INFO] Setting up the Cookiecutter project in ${DEV_DIR})
+	@mkdir -p ${TEMP_DIR}
+	@echo ${TEMP_DIR}
 	@cp ${COOKIECUTTER_CUSTOMER_REPO_CONFIG_TPL_FILE} ${TEMP_DIR}/${RANDOM_STR}.yml
 	@sed -i 's|customer_code_replace_me.*|${RANDOM_STR_LEN_3}|g' ${TEMP_DIR}/${RANDOM_STR}.yml;
 	@sed -i 's|region_replace_me.*|${REGION}|g' ${TEMP_DIR}/${RANDOM_STR}.yml;
@@ -31,15 +33,13 @@ setup-cruft-config:
 	@sed -i 's|unique_id_replace_me.*|${RANDOM_STR_LEN_4}|g' ${TEMP_DIR}/${RANDOM_STR}.yml;
 	@sed -i 's|platform_version_replace_me.*|development|g' ${TEMP_DIR}/${RANDOM_STR}.yml;
 	@sed -i 's|project_dir_replace_me.*|${DEV_DIR_NAME}|g' ${TEMP_DIR}/${RANDOM_STR}.yml;
-
-setup-cruft-project:
-	$(info [INFO] Setting up the Cookiecutter project in ${DEV_DIR})
 	@cruft create ${PROJECT_ROOT} --directory src/cookiecutters/customer-repo --config-file ${TEMP_DIR}/${RANDOM_STR}.yml --no-input
 	@echo "" >> ${DEV_DIR}/configs/shared.yml
 	@echo "automation:" >> ${DEV_DIR}/configs/shared.yml
 	@echo "  devops:" >> ${DEV_DIR}/configs/shared.yml
 	@echo "    project:" >> ${DEV_DIR}/configs/shared.yml
 	@echo "      name: Ingenii Data Platform ${RANDOM_STR_LEN_3}" >> ${DEV_DIR}/configs/shared.yml
+	@rm -rf ${TEMP_DIR}
 
 setup-dir-links:
 	@ln -s ${SOURCE_DIR} ${DEV_DIR}/src
@@ -70,26 +70,6 @@ show-setup-banner:
 	@$(info ${DEV_DIR}/src directory.)
 	@$(info ####################################################################################)
 
-show-reset-banner:
-	@$(info ####################################################################################)
-	@$(info PLEASE READ CAREFULLY)
-	@$(info ####################################################################################)
-
-remove-dev-dir:
-	$(info Removing the Development directory at: ${DEV_DIR})
-	$(info Please make a copy of your .env file if you wish to retain your credentials.)
-	@rm -r -I ${DEV_DIR} || true
-
-remove-venv-dir:
-	$(info Removing the Python Virtual Environment directory at: ${VENV_DIR})
-	@rm -r -I ${VENV_DIR} || true
-
-remove-pulumi-project-configs:
-	$(info Removing the Pulumi project configuration files)
-	@rm  ${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml || true
-	@rm  ${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml || true
-	@rm  ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml || true
-
 set-pulumi-version:
 	@if test -z "${VERSION}"; then echo "VERSION variable not set. Try 'make set-pulumi-version VERSION=<pulumi version>'"; exit 1; fi
 	$(info Setting the Pulumi version to ${VERSION})
@@ -105,12 +85,29 @@ set-python-version:
 	@sed -i 's|python:.*|python:${VERSION}|g'	${SOURCE_DIR}/docker-images/iac-runtime/Dockerfile
 	$(info Rebuild the VSCode dev container for the changes to take an effect.)
 
+remove-dev-dir:
+	$(info Removing the Development directory at: ${DEV_DIR})
+	@rm -r ${DEV_DIR} || true
+
+remove-venv-dir:
+	$(info Removing the Python Virtual Environment directory at: ${VENV_DIR})
+	@rm -r ${VENV_DIR} || true
+
+remove-pulumi-project-configs:
+	$(info Removing the Pulumi project configuration files)
+	@rm  ${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml || true
+	@rm  ${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml || true
+	@rm  ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml || true
+
+remove-tmp-dir:
+	$(info Removing the temporary directory at: ${TEMP_DIR})
+	@rm -r ${TEMP_DIR} || true
 
 #####################################################################################################################
 # API
 #####################################################################################################################
-setup: setup-cruft-config setup-cruft-project setup-dir-links setup-env-file setup-python-venv show-setup-banner
+setup: setup-cruft-project setup-dir-links setup-env-file setup-python-venv show-setup-banner
 
-project-reset: show-reset-banner remove-dev-dir remove-pulumi-project-configs
+project-reset: remove-dev-dir remove-pulumi-project-configs
 
-reset: project-reset remove-venv-dir
+reset: project-reset remove-venv-dir remove-tmp-dir
