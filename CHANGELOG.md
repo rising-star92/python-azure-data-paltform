@@ -1,6 +1,8 @@
 # CHANGELOG
 
-## 0.2.1 
+## 0.2.2 (Unreleased)
+
+## 0.2.1 (2021-12-15)
 
 ### Bugfixes
 - [databricks/provider] - Removing the "subscription_id" attribute from the provider resource. It is no longer needed with the latest 0.4.0 version.
