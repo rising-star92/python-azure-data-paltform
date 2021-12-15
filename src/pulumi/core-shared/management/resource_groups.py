@@ -30,7 +30,9 @@ for ref_key, config in resource_groups_config.items():
 
         if user_group_ref_key is not None:
             GroupRoleAssignment(
+                principal_name=user_group_ref_key,
+                principal_id=user_groups[user_group_ref_key]["object_id"],
                 role_name=assignment["role_definition_name"],
-                group_object_id=user_groups[user_group_ref_key]["object_id"],
                 scope=resource_groups[ref_key].id,
-            )
+                scope_description=f"resource-group-{ref_key}",
+            ),

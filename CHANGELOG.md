@@ -4,6 +4,7 @@
 
 ### Bugfixes
 - [databricks/provider] - Removing the "subscription_id" attribute from the provider resource. It is no longer needed with the latest 0.4.0 version.
+- [platform/role_assignments] - Changing how role assignment resources are created. This will allow other resources to depend on them.
 
 ## 0.2.0 (2021-12-09)
 

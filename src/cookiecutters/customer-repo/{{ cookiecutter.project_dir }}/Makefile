@@ -69,6 +69,16 @@ define pulumi_import_stack
 	@pulumi --cwd $(1) stack import --stack $(2) --file $(4) $(3) 
 endef
 
+define pulumi_destroy_role_assignments
+	$(shell ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA_FILE} \
+	ADP_DEFAULT_CONFIG_FILE_PATH=$(4) \
+	ADP_CUSTOM_CONFIGS_FILE_PATH=$(5) \
+	pulumi --cwd $(1) preview --stack $(2) --json --non-interactive $(3) > output.json)
+	$(shell python scripts/filter_resources.py output.json delete "azure-native:authorization:RoleAssignment" > output.filtered)
+	pulumi --cwd $(1) destroy --stack $(2) $(shell cat output.filtered)
+	$(shell rm -rf output.json output.filtered)
+endef
+
 _check-for-stack-var:
 	@if test -z "${STACK}"; then echo "STACK variable not set. Try 'make <your command> STACK=<stack-name>'"; exit 1; fi
 
@@ -133,6 +143,10 @@ import-stack-core-shared:
 	@$(info Importing stack file ${CORE_SHARED_STACK_OUTPUT_FILE})
 	@$(call pulumi_import_stack,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${CORE_SHARED_STACK_OUTPUT_FILE})
 
+destroy-tainted-role-assignments-core-shared:
+	@$(info Deleting all role assignments for ${CORE_SHARED_STACK})
+	@$(call pulumi_destroy_role_assignments,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+
 # Shared Stack Extensions
 CORE_SHARED_EXTENSIONS_STACK	:= ${PULUMI_ORGANIZATION}/shared
 init-core-shared-extensions: _check-for-cust-code-var
@@ -160,6 +174,10 @@ export-stack-core-shared-extensions:
 import-stack-core-shared-extensions: 
 	@$(info Importing stack file ${CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE})
 	@$(call pulumi_import_stack,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE})
+
+destroy-tainted-role-assignments-core-shared-extensions: _check-for-stack-var
+	@$(info Deleting all role assignments for ${CORE_SHARED_EXTENSIONS_STACK})
+	@$(call pulumi_destroy_role_assignments,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
 
 # DTAP Stack
 init-core-dtap: _check-for-stack-var _check-for-cust-code-var
@@ -192,6 +210,10 @@ import-stack-core-dtap:
 	@$(info Importing stack file ${CORE_DTAP_STACK_OUTPUT_FILE})
 	@$(call pulumi_import_stack,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${CORE_DTAP_STACK_OUTPUT_FILE})
 
+destroy-tainted-role-assignments-core-dtap: _check-for-stack-var
+	@$(info Deleting all role assignments for ${PULUMI_ORGANIZATION}/${STACK})
+	@$(call pulumi_destroy_role_assignments,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
+
 # DTAP Stack Extensions
 init-core-dtap-extensions: _check-for-stack-var _check-for-cust-code-var
 	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-extensions/Pulumi.yaml ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
@@ -218,6 +240,10 @@ export-stack-core-dtap-extensions:
 import-stack-core-dtap-extensions: 
 	@$(info Importing stack file ${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
 	@$(call pulumi_import_stack,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
+
+destroy-tainted-role-assignments-core-dtap-extensions: _check-for-stack-var
+	@$(info Deleting all role assignments for ${PULUMI_ORGANIZATION}/${STACK})
+	@$(call pulumi_destroy_role_assignments,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
 #####################################################################################################################
 # SETUP

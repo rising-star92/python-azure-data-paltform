@@ -5,13 +5,17 @@ from ingenii_azure_data_platform.utils import generate_resource_name
 
 from management import resource_groups
 from project_config import platform_config, platform_outputs
-from platform_shared import add_config_registry_secret, get_devops_principal_id
+from platform_shared import (
+    add_config_registry_secret,
+    get_devops_principal_id,
+)
 
 outputs = platform_outputs["analytics"]["dbt"]["documentation"] = {}
 
-dbt_docs_config = \
-    platform_config["analytics_services"].get("dbt", {}) \
-                                         .get("documentation", {})
+# fmt: off
+dbt_docs_config = platform_config["analytics_services"].get("dbt", {}).get("documentation", {})
+# fmt: on
+
 docs_enabled = dbt_docs_config.get("enabled", False)
 
 add_config_registry_secret("dbt-docs-enabled", str(docs_enabled))
@@ -26,8 +30,8 @@ add_config_registry_secret("dbt-docs-name", site_resource_name)
 
 if docs_enabled:
 
-    # Note: While this is a global resource, we do need to specify a location for 
-    # the Functions API and staging environments. At time of writing there are 5 
+    # Note: While this is a global resource, we do need to specify a location for
+    # the Functions API and staging environments. At time of writing there are 5
     # choices: Central US, East US 2, East Asia, West Europe, and West US 2
 
     static_site = web.StaticSite(
@@ -41,8 +45,8 @@ if docs_enabled:
         name=site_resource_name,
         resource_group_name=resource_groups["infra"].name,
         sku=web.SkuDescriptionArgs(
-            name=dbt_docs_config.get("sku_name", "Standard"), 
-            tier=dbt_docs_config.get("sku_tier", "Standard"), 
+            name=dbt_docs_config.get("sku_name", "Standard"),
+            tier=dbt_docs_config.get("sku_tier", "Standard"),
         ),
         tags=platform_config.tags,
     )
@@ -55,9 +59,11 @@ if docs_enabled:
     # ----------------------------------------------------------------------------------------------------------------------
 
     UserAssignedIdentityRoleAssignment(
-        role_name="Contributor",
         principal_id=get_devops_principal_id(),
+        principal_name="deployment-user-identity",
+        role_name="Contributor",
         scope=static_site.id,
+        scope_description="dbt-documentation",
     )
 
     # ----------------------------------------------------------------------------------------------------------------------
@@ -75,5 +81,5 @@ if docs_enabled:
             domain_name=custom_domain["domain"],
             name=static_site.name,
             resource_group_name=resource_groups["infra"].name,
-            validation_method=custom_domain.get("validation", "cname-delegation")
+            validation_method=custom_domain.get("validation", "cname-delegation"),
         )

@@ -42,10 +42,12 @@ class RoleAssignment(azure_native.authorization.RoleAssignment):
 
     def __init__(
         self,
-        role_name: str,
+        principal_name: str,
         principal_type: str,
         principal_id: Union[str, Output[str]],
+        role_name: str,
         scope: Union[str, Output[str]],
+        scope_description: str,
     ) -> None:
 
         if role_name not in self._role_definitions:
@@ -53,17 +55,17 @@ class RoleAssignment(azure_native.authorization.RoleAssignment):
                 f"The role name {role_name} is not yet supported by this class or not a valid Azure role name."
             )
 
-        super_init = super().__init__
+        resource_name = f"principal-[{principal_name}]-type-[{principal_type}]-role-[{role_name}]-to-[{scope_description}]".lower().replace(
+            " ", "-"
+        )
 
-        Output.all(principal_id, scope, role_name).apply(
-            lambda args: super_init(
-                resource_name=generate_hash(*args),
-                principal_id=args[0],
-                scope=args[1],
-                role_definition_id=self._role_definitions[args[2]],
-                principal_type=principal_type,
-                opts=pulumi.ResourceOptions(delete_before_replace=True),
-            )
+        super().__init__(
+            resource_name=resource_name,
+            principal_id=principal_id,
+            scope=scope,
+            role_definition_id=self._role_definitions[role_name],
+            principal_type=principal_type,
+            opts=pulumi.ResourceOptions(delete_before_replace=True),
         )
 
 
@@ -75,14 +77,18 @@ class UserRoleAssignment(RoleAssignment):
     def __init__(
         self,
         role_name: str,
-        user_object_id: Union[str, Output[str]],
         scope: Union[str, Output[str]],
+        scope_description: str,
+        principal_name: str,
+        principal_id: Union[str, Output[str]],
     ) -> None:
         super().__init__(
-            role_name=role_name,
-            principal_id=user_object_id,
-            scope=scope,
+            principal_name=principal_name,
+            principal_id=principal_id,
             principal_type="User",
+            role_name=role_name,
+            scope=scope,
+            scope_description=scope_description,
         )
 
 
@@ -94,14 +100,18 @@ class GroupRoleAssignment(RoleAssignment):
     def __init__(
         self,
         role_name: str,
-        group_object_id: Union[str, Output[str]],
+        principal_name: str,
+        principal_id: Union[str, Output[str]],
         scope: Union[str, Output[str]],
+        scope_description: str,
     ) -> None:
         super().__init__(
-            role_name=role_name,
-            principal_id=group_object_id,
-            scope=scope,
+            principal_id=principal_id,
+            principal_name=principal_name,
             principal_type="Group",
+            role_name=role_name,
+            scope=scope,
+            scope_description=scope_description,
         )
 
 
@@ -113,14 +123,18 @@ class ServicePrincipalRoleAssignment(RoleAssignment):
     def __init__(
         self,
         role_name: str,
-        service_principal_object_id: Union[str, Output[str]],
+        principal_name: str,
+        principal_id: Union[str, Output[str]],
         scope: Union[str, Output[str]],
+        scope_description: str,
     ) -> None:
         super().__init__(
-            role_name=role_name,
-            principal_id=service_principal_object_id,
-            scope=scope,
+            principal_name=principal_name,
+            principal_id=principal_id,
             principal_type="ServicePrincipal",
+            role_name=role_name,
+            scope=scope,
+            scope_description=scope_description,
         )
 
 
@@ -132,12 +146,16 @@ class UserAssignedIdentityRoleAssignment(RoleAssignment):
     def __init__(
         self,
         role_name: str,
+        principal_name: str,
         principal_id: Union[str, Output[str]],
         scope: Union[str, Output[str]],
+        scope_description: str,
     ) -> None:
         super().__init__(
             role_name=role_name,
+            principal_name=principal_name,
             principal_id=principal_id,
-            scope=scope,
             principal_type="ServicePrincipal",
+            scope=scope,
+            scope_description=scope_description,
         )

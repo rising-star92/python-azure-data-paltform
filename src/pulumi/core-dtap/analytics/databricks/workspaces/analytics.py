@@ -96,9 +96,11 @@ for assignment in workspace_config.get("iam", {}).get("role_assignments", []):
     user_group_ref_key = assignment.get("user_group_ref_key")
     if user_group_ref_key is not None:
         GroupRoleAssignment(
+            principal_id=user_groups[user_group_ref_key]["object_id"],
+            principal_name=user_group_ref_key,
             role_name=assignment["role_definition_name"],
-            group_object_id=user_groups[user_group_ref_key]["object_id"],
             scope=workspace.id,
+            scope_description="analytics-workspace",
         )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -293,9 +295,11 @@ storage_mounts_dbw_password = databricks.Secret(
 # IAM ROLE ASSIGNMENT
 # Allow the Storage Mounts service principal to access the Datalake.
 storage_mounts_datalake_role_assignment = ServicePrincipalRoleAssignment(
+    principal_id=storage_mounts_sp.object_id,
+    principal_name="analytics-storage-mounts-service-principal",
     role_name="Storage Blob Data Contributor",
-    service_principal_object_id=storage_mounts_sp.object_id,
     scope=datalake.id,
+    scope_description="datalake",
 )
 
 # STORAGE MOUNTS

@@ -5,5 +5,5 @@
   "region": "The Azure region where the resources will be deployed. (e.g. EastUS)",
   "unique_id": "Up to 3 characters string that will be used as a unique id for resource names that require global uniqueness.",
   "project_dir": "adp-{{ cookiecutter.customer_code.lower() }}",
-  "_copy_without_render": ["Makefile"]
+  "_copy_without_render": ["Makefile","filter_resources.py"]
 }

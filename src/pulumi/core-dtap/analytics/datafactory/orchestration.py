@@ -10,7 +10,10 @@ from ingenii_azure_data_platform.utils import generate_resource_name
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
-from platform_shared import add_config_registry_secret, get_devops_principal_id
+from platform_shared import (
+    add_config_registry_secret,
+    get_devops_principal_id,
+)
 from project_config import platform_config, platform_outputs
 from pulumi import ResourceOptions
 from pulumi_azure_native import datafactory as adf
@@ -64,9 +67,11 @@ for assignment in iam_role_assignments:
     user_group_ref_key = assignment.get("user_group_ref_key")
     if user_group_ref_key is not None:
         GroupRoleAssignment(
+            principal_id=user_groups[user_group_ref_key]["object_id"],
+            principal_name=user_group_ref_key,
             role_name=assignment["role_definition_name"],
-            group_object_id=user_groups[user_group_ref_key]["object_id"],
             scope=datafactory.id,
+            scope_description="orchestration-datafactory",
         )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -94,9 +99,11 @@ for config in integration_runtimes_config:
 # DATALAKE
 # Datafactory Access to Data Lake
 datafactory_acccess_to_datalake = ServicePrincipalRoleAssignment(
+    principal_id=datafactory.identity.principal_id,
+    principal_name="orchestration-datafactory-identity",
     role_name="Storage Blob Data Contributor",
-    service_principal_object_id=datafactory.identity.principal_id,
     scope=datalake.id,
+    scope_description="datalake",
 )
 
 datalake_linked_service = adf.LinkedService(
@@ -115,8 +122,10 @@ datalake_linked_service = adf.LinkedService(
 # Datafactory Access to Credentials Store (Key Vault)
 datafactory_acccess_to_credentials_store = ServicePrincipalRoleAssignment(
     role_name="Key Vault Secrets User",
-    service_principal_object_id=datafactory.identity.principal_id,
+    principal_id=datafactory.identity.principal_id,
+    principal_name="orchestration-datafactory-identity",
     scope=credentials_store.key_vault.id,
+    scope_description="cred-store",
 )
 
 credentials_store_linked_service = adf.LinkedService(
@@ -250,9 +259,11 @@ databricks_file_ingestion_trigger = adf.Trigger(
 # ----------------------------------------------------------------------------------------------------------------------
 
 UserAssignedIdentityRoleAssignment(
-    role_name="Data Factory Contributor",
+    principal_name="deployment-user-identity",
     principal_id=get_devops_principal_id(),
+    role_name="Data Factory Contributor",
     scope=datafactory.id,
+    scope_description="orchestration-datafactory",
 )
 
 add_config_registry_secret("data-factory-name", datafactory.name)

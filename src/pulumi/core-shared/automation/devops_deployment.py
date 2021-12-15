@@ -23,11 +23,9 @@ resource_group_name = generate_resource_name(
 
 
 def generate_user_assigned_identity_name(environment):
-    return "-".join([
-        platform_config.prefix, 
-        "devops-deployment-managed-identity", 
-        environment
-    ])
+    return "-".join(
+        [platform_config.prefix, "devops-deployment-managed-identity", environment]
+    )
 
 
 def generate_user_assigned_identity_id(environment):
@@ -134,8 +132,9 @@ devops_virtual_machine_scale_set = compute.VirtualMachineScaleSet(
             for env in user_assigned_identities
         },
     ),
-    vm_scale_set_name=platform_config.prefix + "-" + 
-                      devops_virtual_machine_scale_set_name,
+    vm_scale_set_name=platform_config.prefix
+    + "-"
+    + devops_virtual_machine_scale_set_name,
     tags=platform_config.tags,
 )
 
@@ -180,9 +179,11 @@ variable_group_config_registry = ado.VariableGroup(
 
 # Grant access to configuration registry
 
-for _, identity in user_assigned_identities.items():
+for env, identity in user_assigned_identities.items():
     UserAssignedIdentityRoleAssignment(
-        role_name="Key Vault Secrets User",
         principal_id=identity.principal_id,
+        principal_name=f"deployment-user-identity-{env}",
+        role_name="Key Vault Secrets User",
         scope=key_vault.id,
+        scope_description="config-registry",
     )

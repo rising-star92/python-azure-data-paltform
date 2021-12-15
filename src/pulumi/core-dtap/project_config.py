@@ -12,7 +12,7 @@ platform_config = PlatformConfiguration(
     default_config_file_path=getenv(
         "ADP_DEFAULT_CONFIG_FILE_PATH", "../../platform-config/defaults.yml"
     ),
-    custom_config_file_path=getenv("ADP_CUSTOM_CONFIGS_FILE_PATH")
+    custom_config_file_path=getenv("ADP_CUSTOM_CONFIGS_FILE_PATH"),
 )
 
 # Load the current Azure auth session metadata
@@ -22,11 +22,11 @@ PULUMI_ORG_NAME = "ingenii"
 CURRENT_STACK_NAME = pulumi.get_stack()
 CURRENT_PROJECT_NAME = pulumi.get_project()
 
-SHARED_OUTPUTS = pulumi.StackReference("/".join([
-    PULUMI_ORG_NAME, 
-    CURRENT_PROJECT_NAME.replace("dtap", "shared"), 
-    "shared"
-])).get_output("root")
+SHARED_OUTPUTS = pulumi.StackReference(
+    "/".join(
+        [PULUMI_ORG_NAME, CURRENT_PROJECT_NAME.replace("dtap", "shared"), "shared"]
+    )
+).get_output("root")
 
 DTAP_ROOT = getcwd()
 

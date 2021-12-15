@@ -96,31 +96,39 @@ for assignment in key_vault_config.get("iam", {}).get("role_assignments", []):
     if user_group_ref_key is not None:
         GroupRoleAssignment(
             role_name=assignment["role_definition_name"],
-            group_object_id=user_groups[user_group_ref_key]["object_id"],
+            principal_name=user_group_ref_key,
+            principal_id=user_groups[user_group_ref_key]["object_id"],
             scope=key_vault.id,
+            scope_description="cred-store",
         )
 
 # Grant access to the Automation Service Principal to manage the key vault.
 # We are going to be creating secrets in the key vault later on, so we need the access.
 ServicePrincipalRoleAssignment(
-    service_principal_object_id=azure_client.object_id,
+    principal_id=azure_client.object_id,
+    principal_name="automation-service-principal",
     role_name="Key Vault Administrator",
     scope=key_vault.id,
+    scope_description="cred-store",
 )
 
 # Only grant access to Shared Services principal to manage the key vault,
 # if the Shared Services and DTAP principals are different.
 if azure_client.object_id != shared_azure_client.object_id:
     ServicePrincipalRoleAssignment(
-        service_principal_object_id=shared_azure_client.object_id,
+        principal_id=shared_azure_client.object_id,
+        principal_name="shared-automation-service-principal",
         role_name="Key Vault Contributor",
         scope=key_vault.id,
+        scope_description="cred-store",
     )
 
 UserAssignedIdentityRoleAssignment(
     principal_id=get_devops_principal_id(),
+    principal_name="deployment-user-identity",
     role_name="Key Vault Secrets User",
     scope=key_vault.id,
+    scope_description="cred-store",
 )
 
 # ----------------------------------------------------------------------------------------------------------------------

@@ -15,7 +15,10 @@ from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
 from network import dns, vnet
-from platform_shared import add_config_registry_secret, get_devops_principal_id
+from platform_shared import (
+    add_config_registry_secret,
+    get_devops_principal_id,
+)
 from project_config import platform_config, platform_outputs
 from pulumi import ResourceOptions
 from security import credentials_store
@@ -241,9 +244,11 @@ for assignment in datalake_config["iam"].get("role_assignments", {}):
     user_group_ref_key = assignment.get("user_group_ref_key")
     if user_group_ref_key is not None:
         GroupRoleAssignment(
+            principal_id=user_groups[user_group_ref_key]["object_id"],
+            principal_name=user_group_ref_key,
             role_name=assignment["role_definition_name"],
-            group_object_id=user_groups[user_group_ref_key]["object_id"],
             scope=datalake.id,
+            scope_description="datalake",
         )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -281,9 +286,11 @@ for ref_key, container_config in datalake_config.get("containers", {}).items():
         if assignment.get("user_group_ref_key") is not None:
             user_group_ref_key = assignment.get("user_group_ref_key")
             GroupRoleAssignment(
+                principal_id=user_groups[user_group_ref_key]["object_id"],
+                principal_name=user_group_ref_key,
                 role_name=assignment["role_definition_name"],
-                group_object_id=user_groups[user_group_ref_key]["object_id"],
                 scope=datalake_containers[ref_key].id,
+                scope_description=f"datalake-container-{ref_key}",
             )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -363,11 +370,14 @@ azure_native.keyvault.Secret(
 # ----------------------------------------------------------------------------------------------------------------------
 
 devops_principal_id = get_devops_principal_id()
+devops_principal_name = "deployment-user-identity"
 for container in ["dbt", "utilities"]:
     UserAssignedIdentityRoleAssignment(
-        role_name="Storage Blob Data Contributor",
         principal_id=devops_principal_id,
+        principal_name=devops_principal_name,
+        role_name="Storage Blob Data Contributor",
         scope=datalake_containers[container].id,
+        scope_description=f"datalake-container-{container}",
     )
 
 add_config_registry_secret("data-lake-name", datalake.name)
@@ -375,7 +385,9 @@ add_config_registry_secret("data-lake-name", datalake.name)
 # Required while the Azure CLI command 'sync' does not support MSI authentication
 # https://docs.microsoft.com/en-us/cli/azure/storage/blob?view=azure-cli-latest#az_storage_blob_sync
 UserAssignedIdentityRoleAssignment(
-    role_name="Reader and Data Access",
     principal_id=devops_principal_id,
+    principal_name=devops_principal_name,
+    role_name="Reader and Data Access",
     scope=datalake.id,
+    scope_description="datalake",
 )
