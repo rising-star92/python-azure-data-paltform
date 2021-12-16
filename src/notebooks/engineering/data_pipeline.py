@@ -5,7 +5,6 @@ from py4j.protocol import Py4JJavaError
 from typing import Union
 
 from ingenii_data_engineering.dbt_schema import get_source
-from ingenii_data_engineering.validation import check_source_schema
 
 from ingenii_databricks.enums import Stage
 from ingenii_databricks.pipeline import add_to_source_table, archive_file, \
@@ -14,7 +13,7 @@ from ingenii_databricks.pipeline import add_to_source_table, archive_file, \
     test_file_table
 from ingenii_databricks.orchestration import ImportFileEntry
 from ingenii_databricks.validation import check_parameters, \
-    compare_schema_and_table
+    check_source_schema, compare_schema_and_table
 
 # COMMAND ----------
 

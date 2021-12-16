@@ -200,7 +200,7 @@ analytics_services:
             node_type_id: "Standard_F4s"
             is_pinned: true
             autotermination_minutes: 15
-            docker_image_url: "ingeniisolutions/databricks-runtime:0.5.1"
+            docker_image_url: "ingeniisolutions/databricks-runtime:0.5.2"
         storage_mounts:
           - type: datalake
             container_name: utilities
