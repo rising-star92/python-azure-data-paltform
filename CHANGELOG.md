@@ -2,6 +2,9 @@
 
 ## 0.2.2 (Unreleased)
 
+### Improvments
+- [databricks] - Boost Databricks engineering runtime to 0.5.1  
+
 ## 0.2.1 (2021-12-15)
 
 ### Improvments

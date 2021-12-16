@@ -39,3 +39,9 @@ display(filtered_import_table(spark, dbutils))
 #       "file_name": row.file_name,
 #       "increment": row.increment
 #   })
+
+# COMMAND ----------
+
+# Script to abandon incomplete file
+# from ingenii_databricks.pipeline_utils import abandon_file
+# abandon_file(spark=spark, dbutils=dbutils, row_hash=123456789, increment=0)
