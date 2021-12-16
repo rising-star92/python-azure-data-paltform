@@ -1,10 +1,13 @@
 from os import getenv
-from pulumi import ResourceOptions, InvokeOptions
+from pulumi import InvokeOptions, ResourceOptions
 from pulumi_azure_native import Provider, keyvault
 from pulumi_azure_native.authorization import get_client_config
 
 from project_config import platform_config, SHARED_OUTPUTS
 from project_config import azure_client as dtap_azure_client
+
+from ingenii_azure_data_platform.config import PlatformConfiguration
+
 
 shared_services_provider = Provider(
     resource_name="shared-services",
@@ -14,8 +17,19 @@ shared_services_provider = Provider(
     subscription_id=getenv("SHARED_ARM_SUBSCRIPTION_ID"),
 )
 
-azure_client = get_client_config(opts=InvokeOptions(provider=shared_services_provider))
+shared_platform_config = PlatformConfiguration(
+    stack="shared",
+    config_schema_file_path=getenv(
+        "ADP_CONFIG_SCHEMA_FILE_PATH", "../../platform-config/schema.yml"
+    ),
+    default_config_file_path=getenv(
+        "ADP_DEFAULT_CONFIG_FILE_PATH", "../../platform-config/defaults.yml"
+    ).replace("defaults.yml", "defaults.shared.yml"),
+    custom_config_file_path=getenv("ADP_CUSTOM_CONFIGS_FILE_PATH").replace(
+        f"{platform_config.stack}.yml", "shared.yml"),
+)
 
+azure_client = get_client_config(opts=InvokeOptions(provider=shared_services_provider))
 
 def get_devops_principal_id():
     return SHARED_OUTPUTS["automation"]["deployment_user_assigned_identities"][

@@ -37,6 +37,7 @@ def generate_resource_name(
         "devops_repo": "adorepo",
         "devops_variable_group": "adovg",
         "dns_zone": "dz",
+        "kubernetes_cluster": "kc",
         "log_analytics_workspace": "law",
         "nat_gateway": "ngw",
         "network_security_group": "nsg",

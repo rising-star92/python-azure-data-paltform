@@ -201,7 +201,8 @@ _databricks_cluster_library_pypi:
   repo: str(required=False)
 
 _datafactory:
-  factories: map(include('_datafactory_factory'),key=str())
+  factories: map(include('_datafactory_factory'),key=str(), required=False)
+  integrated_self_hosted_runtime: include('_integrated_self_hosted_runtime', required=False)
 
 _datafactory_factory:
   display_name: str()
@@ -214,6 +215,11 @@ _datafactory_integration_runtime:
   type: enum("self-hosted","self-hosted-azure-vnet-integrated")
   name: str()
   description: str(required=False)
+
+_integrated_self_hosted_runtime:
+  enabled: bool()
+  iam: include('_iam')
+  image: str()
 
 _dbt:
   documentation: include('_dbt_documentation', required=False)

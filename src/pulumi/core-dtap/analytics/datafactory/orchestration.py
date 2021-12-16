@@ -1,4 +1,6 @@
-from analytics.databricks.workspaces import engineering as databricks_engineering
+from pulumi import ResourceOptions
+from pulumi_azure_native import datafactory as adf
+
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
@@ -7,6 +9,8 @@ from ingenii_azure_data_platform.iam import (
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.orchestration import AdfSelfHostedIntegrationRuntime
 from ingenii_azure_data_platform.utils import generate_resource_name
+
+from analytics.databricks.workspaces import engineering as databricks_engineering
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
@@ -15,8 +19,6 @@ from platform_shared import (
     get_devops_principal_id,
 )
 from project_config import platform_config, platform_outputs
-from pulumi import ResourceOptions
-from pulumi_azure_native import datafactory as adf
 from security import credentials_store
 from storage.datalake import datalake
 
@@ -59,10 +61,9 @@ outputs["name"] = datafactory.name
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY -> IAM -> ROLE ASSIGNMENTS
 # ----------------------------------------------------------------------------------------------------------------------
-iam_role_assignments = datafactory_config["iam"].get("role_assignments", {})
 
 # Create role assignments defined in the YAML files
-for assignment in iam_role_assignments:
+for assignment in datafactory_config["iam"].get("role_assignments", []):
     # User Group Assignment
     user_group_ref_key = assignment.get("user_group_ref_key")
     if user_group_ref_key is not None:
@@ -77,9 +78,7 @@ for assignment in iam_role_assignments:
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY -> INTEGRATION RUNTIMES
 # ----------------------------------------------------------------------------------------------------------------------
-integration_runtimes_config = datafactory_config.get("integration_runtimes", [])
-
-for config in integration_runtimes_config:
+for config in datafactory_config.get("integration_runtimes", []):
     if config["type"] == "self-hosted":
         runtime = AdfSelfHostedIntegrationRuntime(
             name=config["name"],

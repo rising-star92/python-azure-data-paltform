@@ -7,6 +7,9 @@
 ### Improvments
 - [databricks/provider] - Bumping the version to 0.4.0.
 
+### New Features
+- [data_factory] - Add a vNet-integrated self-hosted integration runtime on a Kubernetes cluster
+
 ### Bugfixes
 - [databricks/provider] - Removing the "subscription_id" attribute from the provider resource. It is no longer needed with the latest 0.4.0 version.
 - [platform/role_assignments] - Changing how role assignment resources are created. This will allow other resources to depend on them.
@@ -37,7 +40,7 @@
 
 ### Bugfixes
 - [devops] - Environment name syncing
-- [datafactory] - Enable our trigger in post-deployment script
+- [data_factory] - Enable our trigger in post-deployment script
 
 ## 0.1.22 (2021-11-25)
 
@@ -58,7 +61,7 @@
 - [shared_services] - Export outputs
 - [docs] - Update documentation
 - [core/makefile] - Updating makefile
-- [datafactory] - Increase timeout, add base annotation, defaults for better Pulumi comparison
+- [data_factory] - Increase timeout, add base annotation, defaults for better Pulumi comparison
 - [databricks] - Add the ability to install Python packages from custom repos on the Databricks clusters.
 
 ## 0.1.20 (2021-10-29)
@@ -109,28 +112,28 @@
 
 ### Bug Fixes
 
-- [datalake] - Update Table storage permissions
-- [datafactory] - Fix ingestion pipeline parameters
+- [data_factory] - Update Table storage permissions
+- [data_factory] - Fix ingestion pipeline parameters
 
 ## 0.1.14 (2021-09-22)
 
 ### Improvements
 
-- [datalake] - Update the name of the Table storage SAS token when stored in Azure Key Vault.
-- [datalake] - Append the Data Lake Table storage endpoint to the SAS token when stored in the Azure Key Vault.
+- [data_lake] - Update the name of the Table storage SAS token when stored in Azure Key Vault.
+- [data_lake] - Append the Data Lake Table storage endpoint to the SAS token when stored in the Azure Key Vault.
 
 ## 0.1.13 (2021-09-22)
 
 ### New Features
 
-- [datafactory] - Create self-hosted integration runtimes using the YAML config.
+- [data_factory] - Create self-hosted integration runtimes using the YAML config.
 
 ## 0.1.12 (2021-09-16)
 
 ### Improvements
 
 - [general] - Update to Pulumi version 3.12.0
-- [datafactory] - Adding 'Data Factory Contributor' access for the 'Engineers' group.
+- [data_factory] - Adding 'Data Factory Contributor' access for the 'Engineers' group.
 
 ### Bug Fixes
 

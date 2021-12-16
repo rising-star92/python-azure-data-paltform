@@ -40,6 +40,9 @@ def generate_user_assigned_identity_id(environment):
         ]
     )
 
+# ----------------------------------------------------------------------------------------------------------------------
+# DEVOPS VIRTUAL MACHINE SCALE SET -> USER ASSIGNED MANAGED IDENTITIES
+# ----------------------------------------------------------------------------------------------------------------------
 
 user_assigned_identities = {
     env: managedidentity.UserAssignedIdentity(
@@ -55,6 +58,10 @@ user_assigned_identities = {
 outputs["deployment_user_assigned_identities"] = {
     env: identity.principal_id for env, identity in user_assigned_identities.items()
 }
+
+# ----------------------------------------------------------------------------------------------------------------------
+# DEVOPS VIRTUAL MACHINE SCALE SET
+# ----------------------------------------------------------------------------------------------------------------------
 
 admin_password = pulumi_random.RandomPassword(
     resource_name=generate_resource_name(
@@ -138,7 +145,9 @@ devops_virtual_machine_scale_set = compute.VirtualMachineScaleSet(
     tags=platform_config.tags,
 )
 
-# Variables required for CI/CD pipelines
+# ----------------------------------------------------------------------------------------------------------------------
+# DEVOPS VIRTUAL MACHINE SCALE SET -> DEVOPS VARIABLE GROUPS
+# ----------------------------------------------------------------------------------------------------------------------
 
 variable_group_managed_identities = ado.VariableGroup(
     resource_name=generate_resource_name(

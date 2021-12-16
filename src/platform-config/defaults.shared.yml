@@ -95,6 +95,25 @@ network:
     address_space: 10.100.0.0/16
 
 # ----------------------------------------------------------------------------------------------------------------------
+# ANALYTICS
+# ----------------------------------------------------------------------------------------------------------------------
+analytics_services:
+  databricks: 
+    workspaces: {}
+  datafactory:
+    integrated_self_hosted_runtime:
+      enabled: false
+      image: ingeniisolutions/adf-self-hosted-integration-runtime:1.0.1 
+      iam:
+        role_assignments:
+          - user_group_ref_key: admins
+            role_definition_name: Azure Kubernetes Service RBAC Cluster Admin
+          - user_group_ref_key: engineers
+            role_definition_name: Azure Kubernetes Service RBAC Reader
+          - user_group_ref_key: analysts
+            role_definition_name: Azure Kubernetes Service RBAC Reader
+
+# ----------------------------------------------------------------------------------------------------------------------
 # AUTOMATION
 # ----------------------------------------------------------------------------------------------------------------------
 automation:

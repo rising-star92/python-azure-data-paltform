@@ -37,6 +37,14 @@ class RoleAssignment(azure_native.authorization.RoleAssignment):
             "Container Registry Push": "8311e382-0749-4cb8-b61a-304f252e45ec",
             "Container Registry Quarantine Reader": "cdda3590-29a3-44f6-95f2-9f980659eb04",
             "Container Registry Quarantine Writer": "c8d4ff99-41c3-41a8-9f60-21dfdad59608",
+            # Kubernetes
+            "Azure Kubernetes Service Cluster Admin Role": "0ab0b1a8-8aac-4efd-b8c2-3ee1fb270be8",
+            "Azure Kubernetes Service Cluster User Role": "4abbcc35-e782-43d8-92c5-2d3f1bd2253f",
+            "Azure Kubernetes Service Contributor Role": "ed7f3fbd-7b88-4dd4-9017-9adb7ce333f8",
+            "Azure Kubernetes Service RBAC Admin": "3498e952-d568-435e-9b2c-8d77e338d7f7",
+            "Azure Kubernetes Service RBAC Cluster Admin": "b1ff04bb-8a4e-4dc4-8eb5-8693973ce19b",
+            "Azure Kubernetes Service RBAC Reader": "7f6c6a51-bcf8-42ba-9220-52d62157d7db",
+            "Azure Kubernetes Service RBAC Writer": "a7ffa36f-339b-4b5c-8bdf-e2c188b2c0eb",
         }.items()
     }
 

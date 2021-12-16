@@ -22,9 +22,7 @@ for ref_key, config in resource_groups_config.items():
     }
 
     # IAM role assignments
-    role_assignments = config.get("iam", {}).get("role_assignments", {})
-
-    for assignment in role_assignments:
+    for assignment in config.get("iam", {}).get("role_assignments", []):
         # User group role assignment
         user_group_ref_key = assignment.get("user_group_ref_key")
 
