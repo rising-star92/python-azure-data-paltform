@@ -5,6 +5,10 @@
 ### Improvments
 - [databricks] - Boost Databricks engineering runtime to 0.5.2  
 
+### Bugfixes
+- [dbt] - Ignoring branch and repository_url attributes on the dbt static web site resource 
+
+
 ## 0.2.1 (2021-12-15)
 
 ### Improvments

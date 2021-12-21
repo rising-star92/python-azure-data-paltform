@@ -1,3 +1,4 @@
+from pulumi import ResourceOptions
 from pulumi_azure_native import web
 
 from ingenii_azure_data_platform.iam import UserAssignedIdentityRoleAssignment
@@ -49,6 +50,7 @@ if docs_enabled:
             tier=dbt_docs_config.get("sku_tier", "Standard"),
         ),
         tags=platform_config.tags,
+        opts=ResourceOptions(ignore_changes=["branch", "repository_url"]),
     )
 
     outputs["name"] = static_site.name
