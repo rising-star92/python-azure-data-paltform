@@ -4,11 +4,13 @@
 
 ### Improvments
 - [databricks] - Boost Databricks engineering runtime to 0.5.2  
+- [databricks/provider] - Bump the version to 0.4.1. Also lock the version to the exact semver.
+- [docker_image/iac_runtime] - Create a new Dockerfile. Use the same IaC runtime for the platform deployment and for the devcontainers.
+- [platform/source] - Publish the source of the platform in the Docker image (/platform/src). Make the Docker image `private` in the dockerhub.
 - [dbt] - Added containers for `models` and `snapshots`
 
 ### Bugfixes
 - [dbt] - Ignoring branch and repository_url attributes on the dbt static web site resource 
-
 
 ## 0.2.1 (2021-12-15)
 

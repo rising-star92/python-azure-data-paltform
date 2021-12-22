@@ -2,15 +2,16 @@ SHELL := /bin/bash
 
 REGION := EastUS
 
-PROJECT_ROOT	:= $(realpath .)
-TEMP_DIR		:= ${PROJECT_ROOT}/tmp
+PROJECT_ROOT    := $(realpath .)
+TEMP_DIR        := ${PROJECT_ROOT}/tmp
+DOCKERFILE      := ${PROJECT_ROOT}/Dockerfile
 
-VENV_DIR 			:= ${PROJECT_ROOT}/venv
-SOURCE_DIR			:= ${PROJECT_ROOT}/src
-PULUMI_SOURCE_DIR	:= ${PROJECT_ROOT}/src/pulumi
+VENV_DIR            := ${PROJECT_ROOT}/venv
+SOURCE_DIR          := ${PROJECT_ROOT}/src
+PULUMI_SOURCE_DIR   := ${PROJECT_ROOT}/src/pulumi
 
-DEV_DIR_NAME	:= dev
-DEV_DIR 		:= ${PROJECT_ROOT}/${DEV_DIR_NAME}
+DEV_DIR_NAME    := dev
+DEV_DIR         := ${PROJECT_ROOT}/${DEV_DIR_NAME}
 
 RANDOM_STR			:= $(shell python -c "import random, string; print(''.join(random.SystemRandom().choice(string.ascii_lowercase) for _ in range(10)))")
 RANDOM_STR_LEN_3	:= $(shell python -c "print('${RANDOM_STR}'[:3])")
@@ -50,7 +51,7 @@ setup-env-file:
 
 setup-python-venv:
 	$(info [INFO] Setting up the Python virtual environment at ${VENV_DIR})
-	@python3 -m venv ${VENV_DIR}
+	@python -m venv ${VENV_DIR}
 	@source ${VENV_DIR}/bin/activate && cd ${SOURCE_DIR} && pip install -r requirements-dev.txt
 
 show-setup-banner:
@@ -74,15 +75,13 @@ set-pulumi-version:
 	@if test -z "${VERSION}"; then echo "VERSION variable not set. Try 'make set-pulumi-version VERSION=<pulumi version>'"; exit 1; fi
 	$(info Setting the Pulumi version to ${VERSION})
 	@sed -i 's|pulumi==.*|pulumi==${VERSION}|g'	${SOURCE_DIR}/requirements-common.txt
-	@sed -i 's|PULUMI_VERSION=.*|PULUMI_VERSION=\"${VERSION}\"|g'	${SOURCE_DIR}/docker-images/iac-runtime/Dockerfile
-	@sed -i 's|\"PULUMI_VERSION\".*|\"PULUMI_VERSION\": \"${VERSION}\"|g'	${PROJECT_ROOT}/.devcontainer/devcontainer.json
+	@sed -i 's|PULUMI_VERSION=.*|PULUMI_VERSION=${VERSION}|g' ${DOCKERFILE}
 	$(info Rebuild the VSCode dev container for the changes to take an effect.)
 
 set-python-version:
-	@if test -z "${VERSION}"; then echo "VERSION variable not set. Try 'make set-pulumi-version VERSION=<pulumi version>'"; exit 1; fi
+	@if test -z "${VERSION}"; then echo "VERSION variable not set. Try 'make set-python-version VERSION=<python version>'"; exit 1; fi
 	$(info Setting the Python version to ${VERSION})
-	@sed -i 's|\"VARIANT\".*|\"VARIANT\": \"${VERSION}\",|g'	${PROJECT_ROOT}/.devcontainer/devcontainer.json
-	@sed -i 's|python:.*|python:${VERSION}|g'	${SOURCE_DIR}/docker-images/iac-runtime/Dockerfile
+	@sed -i 's|PYTHON_VERSION=.*|PYTHON_VERSION=${VERSION}|g' ${DOCKERFILE}
 	$(info Rebuild the VSCode dev container for the changes to take an effect.)
 
 remove-dev-dir:
@@ -106,8 +105,27 @@ remove-tmp-dir:
 #####################################################################################################################
 # API
 #####################################################################################################################
-setup: setup-cruft-project setup-dir-links setup-env-file setup-python-venv show-setup-banner
+
+# Project Setup
+setup-native: setup-cruft-project setup-dir-links setup-env-file setup-python-venv show-setup-banner
+
+setup-devcontainer: setup-cruft-project setup-dir-links setup-env-file
+
+setup:
+	# There is no need to set up a venv for the devcontainer. 
+	@if test -z "${REMOTE_CONTAINERS}"; then "echo make setup-native"; else make setup-devcontainer; fi
 
 project-reset: remove-dev-dir remove-pulumi-project-configs
 
 reset: project-reset remove-venv-dir remove-tmp-dir
+
+# Docker Image Build and Publish
+DOCKER_IMAGE_NAME="ingeniisolutions/azure-data-platform-iac-runtime"
+
+build-docker-image:
+	@docker build . -t ${DOCKER_IMAGE_NAME}
+
+publish-docker-image:
+	@if test -z "${DOCKER_IMAGE_TAG}"; then echo "DOCKER_IMAGE_TAG not set. Try 'make publish-docker-image DOCKER_IMAGE_TAG=xxx"; exit 1; fi
+	@docker tag ${DOCKER_IMAGE_NAME} "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+	@docker push "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"

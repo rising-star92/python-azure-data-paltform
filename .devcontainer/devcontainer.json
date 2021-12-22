@@ -1,32 +1,29 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.191.0/containers/python-3
+/////////////////////////////////////////////////////////////////////////////////////
+// NOTE: You need to be authenticated to DockerHub to use this devcontainer setup.
+// The docker image referred below is private.
+// docker login -u ingeniisolutions -p (in lastpass)
+/////////////////////////////////////////////////////////////////////////////////////
+
 {
   "name": "Ingenii Azure Data Platform",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": "..",
-    "args": {
-      "VARIANT": "3.10",
-      "PULUMI_VERSION": "3.19.0"
-    }
-  },
+  "image": "ingeniisolutions/azure-data-platform-iac-runtime:latest",
 
   // Set *default* container specific settings.json values on container create.
   "settings": {
     "python.pythonPath": "/usr/local/bin/python",
     "python.languageServer": "Pylance",
     "python.formatting.provider": "black",
-    "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
-    "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
-    "python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
+    "python.formatting.autopep8Path": "/home/vscode/.local/bin/autopep8",
+    "python.formatting.blackPath": "/home/vscode/.local/bin/black",
+    "python.formatting.yapfPath": "/home/vscode/.local/bin/yapf",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": true,
-    "python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
-    "python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
-    "python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
-    "python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
-    "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
-    "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint",
+    "python.linting.banditPath": "/home/vscode/.local/bin/bandit",
+    "python.linting.flake8Path": "/home/vscode/.local/bin/flake8",
+    "python.linting.mypyPath": "/home/vscode/.local/bin/mypy",
+    "python.linting.pycodestylePath": "/home/vscode/.local/bin/pycodestyle",
+    "python.linting.pydocstylePath": "/home/vscode/.local/bin/pydocstyle",
+    "python.linting.pylintPath": "/home/vscode/.local/bin/pylint",
     "python.analysis.typeCheckingMode": "basic",
     "python.analysis.completeFunctionParens": true,
     "python.autoComplete.showAdvancedMembers": true,
@@ -58,9 +55,13 @@
   // "forwardPorts": [],
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  // Install the platform requirements
-  // "postCreateCommand": "",
+  
+  // Install the dev requirements on top of the base image
+  "postCreateCommand": "cd src && pip install -r requirements-dev.txt",
 
   // Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-  "remoteUser": "vscode"
+  "remoteUser": "vscode",
+  "features": {
+    "git": "os-provided",
+  }
 }

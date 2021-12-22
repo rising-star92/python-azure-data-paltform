@@ -3,9 +3,6 @@ on:
   push:
   release:
     types: [published]
-env:
-  IMAGE_DIR: src/docker-images/iac-runtime
-  IMAGE_NAME: ingeniisolutions/azure-data-platform-iac-runtime
 jobs:
   push_to_registry:
     name: Push to Docker Hub
@@ -22,21 +19,15 @@ jobs:
           password: ${{ secrets.INGENII_DOCKER_HUB_PASSWORD }}
       # ----------------------------------------
       - name: Build the image
-        working-directory: ${{ env.IMAGE_DIR }}
-        run: |
-          make build IMAGE_NAME=${{ env.IMAGE_NAME }}
+        run: make build-docker-image
       # ----------------------------------------
       - name: Publish 'latest-dev' tag
         if: github.ref != 'refs/heads/main' && github.event_name != 'release'
-        working-directory: ${{ env.IMAGE_DIR }}
-        run: |
-          make publish IMAGE_NAME=${{ env.IMAGE_NAME }} TAG_NAME=latest-dev
+        run: make publish-docker-image DOCKER_IMAGE_TAG=latest-dev
       # ----------------------------------------
       - name: Publish 'latest' tag
         if: github.ref == 'refs/heads/main' || github.event_name == 'release'
-        working-directory: ${{ env.IMAGE_DIR }}
-        run: |
-          make publish IMAGE_NAME=${{ env.IMAGE_NAME }} TAG_NAME=latest
+        run: make publish-docker-image DOCKER_IMAGE_TAG=latest
       # ----------------------------------------
       - name: Get a release version
         if: github.event_name == 'release'
@@ -46,6 +37,4 @@ jobs:
       # ------------------------------------------
       - name: Publish specific version
         if: github.event_name == 'release'
-        working-directory: ${{ env.IMAGE_DIR }}
-        run: |
-          make publish IMAGE_NAME=${{ env.IMAGE_NAME }} TAG_NAME=${{ steps.tag_name.outputs.SOURCE_TAG }}
+        run: make publish-docker-image DOCKER_IMAGE_TAG=${{ steps.tag_name.outputs.SOURCE_TAG }}
