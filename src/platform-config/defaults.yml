@@ -111,6 +111,12 @@ storage:
         - user_group_ref_key: admins
           role_definition_name: "Storage Blob Data Contributor"
     containers:
+      preprocess: # Mount in DBW Engineering(RW)
+        display_name: preprocess
+        iam:
+          role_assignments:
+            - user_group_ref_key: engineers
+              role_definition_name: "Storage Blob Data Contributor"
       utilities: # Mount in DBW Engineering(RW), Analytics(RW)
         display_name: utilities
         iam:
@@ -133,6 +139,22 @@ storage:
               role_definition_name: "Storage Blob Data Contributor"
       source: # Mount in DBW Engineering(RW), Analytics
         display_name: source
+        iam:
+          role_assignments:
+            - user_group_ref_key: engineers
+              role_definition_name: "Storage Blob Data Contributor"
+            - user_group_ref_key: analysts
+              role_definition_name: "Storage Blob Data Reader"
+      models: # Mount in DBW Engineering(RW), Analytics
+        display_name: models
+        iam:
+          role_assignments:
+            - user_group_ref_key: engineers
+              role_definition_name: "Storage Blob Data Contributor"
+            - user_group_ref_key: analysts
+              role_definition_name: "Storage Blob Data Reader"
+      snapshots: # Mount in DBW Engineering(RW), Analytics
+        display_name: snapshots
         iam:
           role_assignments:
             - user_group_ref_key: engineers
@@ -206,6 +228,9 @@ analytics_services:
             container_name: utilities
             mount_name: utilities
           - type: datalake
+            container_name: preprocess
+            mount_name: preprocess
+          - type: datalake
             container_name: dbt
             mount_name: dbt
           - type: datalake
@@ -220,6 +245,12 @@ analytics_services:
           - type: datalake
             container_name: source
             mount_name: source
+          - type: datalake
+            container_name: models
+            mount_name: models
+          - type: datalake
+            container_name: snapshots
+            mount_name: snapshots
           - type: datalake
             container_name: orchestration
             mount_name: orchestration

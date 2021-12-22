@@ -297,12 +297,13 @@ pre_processing_package = FileAsset(f"{DTAP_ROOT}/assets/{blob_name}")
 pre_processing_blob = azure_native.storage.Blob(
     resource_name=f"{workspace_name}-pre_processing_package",
     account_name=datalake.name,
-    blob_name="pre_process/" + blob_name,
-    container_name=datalake_containers["utilities"].name,
+    blob_name=blob_name,
+    container_name=datalake_containers["preprocess"].name,
     resource_group_name=resource_groups["data"].name,
     source=pre_processing_package,
     opts=ResourceOptions(
-        ignore_changes=["content_md5"], depends_on=[storage_mounts["utilities"]]
+        ignore_changes=["content_md5"],
+        depends_on=[storage_mounts["preprocess"]]
     ),
 )
 
@@ -338,7 +339,7 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
 
     if ref_key == "default":
         whl_libraries_str.append(
-            "dbfs:/mnt/utilities/pre_process/pre_process-1.0.0-py3-none-any.whl"
+            "dbfs:/mnt/preprocess/pre_process-1.0.0-py3-none-any.whl"
         )
 
     whl_libraries = [

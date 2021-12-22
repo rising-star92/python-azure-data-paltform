@@ -371,7 +371,7 @@ azure_native.keyvault.Secret(
 
 devops_principal_id = get_devops_principal_id()
 devops_principal_name = "deployment-user-identity"
-for container in ["dbt", "utilities"]:
+for container in ["dbt", "preprocess"]:
     UserAssignedIdentityRoleAssignment(
         principal_id=devops_principal_id,
         principal_name=devops_principal_name,

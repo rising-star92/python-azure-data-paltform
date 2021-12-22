@@ -4,6 +4,7 @@
 
 ### Improvments
 - [databricks] - Boost Databricks engineering runtime to 0.5.2  
+- [dbt] - Added containers for `models` and `snapshots`
 
 ### Bugfixes
 - [dbt] - Ignoring branch and repository_url attributes on the dbt static web site resource 
