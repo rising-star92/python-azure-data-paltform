@@ -4,13 +4,13 @@ from os import environ
 from py4j.protocol import Py4JJavaError
 from typing import Union
 
-from ingenii_data_engineering.dbt_schema import get_source
+from ingenii_data_engineering.dbt_schema import get_project_config, get_source
 
 from ingenii_databricks.enums import Stage
 from ingenii_databricks.pipeline import add_to_source_table, archive_file, \
     create_file_table, move_rows_to_review, prepare_individual_table_yml, \
-    pre_process_file, remove_file_table, revert_individual_table_yml, \
-    test_file_table
+    pre_process_file, propagate_source_data, remove_file_table, \
+    revert_individual_table_yml, test_file_table
 from ingenii_databricks.orchestration import ImportFileEntry
 from ingenii_databricks.validation import check_parameters, \
     check_source_schema, compare_schema_and_table
@@ -58,6 +58,9 @@ check_parameters(source, table_name, file_path, file_name, increment)
 
 # Passed from widget as a string
 increment = int(increment)
+
+# Will get populated later in the pipeline
+databricks_dbt_token = None
 
 # COMMAND ----------
 
@@ -161,3 +164,16 @@ if final_stage != Stage.COMPLETED:
         f"Pipeline didn't make it to completion! "
         f"Only made it to the '{final_stage}' stage!"
     )
+
+# COMMAND ----------
+
+# Propagate this source data to downstream models and snapshots
+if databricks_dbt_token is None:
+    databricks_dbt_token = \
+        dbutils.secrets.get(scope=environ["DBT_TOKEN_SCOPE"],
+                            key=environ["DBT_TOKEN_NAME"])
+
+project_name = get_project_config(dbt_root_folder)["name"]
+propagate_source_data(
+    databricks_dbt_token, project_name,
+    import_entry.source, import_entry.table)
