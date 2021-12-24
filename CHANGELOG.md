@@ -9,6 +9,7 @@
 - [platform/source] - Publish the source of the platform in the Docker image (/platform/src). Make the Docker image `private` in the dockerhub.
 - [platform/source] - Add Docker image build support for ARM architecture.
 - [dbt] - Added containers for `models` and `snapshots`
+- [secrets] - Better default access for administrators and engineers
 
 ### Bugfixes
 - [dbt] - Ignoring branch and repository_url attributes on the dbt static web site resource 

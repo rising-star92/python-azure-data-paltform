@@ -20,6 +20,7 @@ class RoleAssignment(azure_native.authorization.RoleAssignment):
             # Key Vault
             "Key Vault Administrator": "00482a5a-887f-4fb3-b363-3b7fe8e74483",
             "Key Vault Contributor": "f25e0fa2-a7c8-4377-a976-54943a77a395",
+            "Key Vault Secrets Officer": "b86a8fe4-44ce-4948-aee5-eccb2c155cd7",
             "Key Vault Secrets User": "4633458b-17de-408a-b874-0445c86b69e6",
             # Storage
             "Reader and Data Access": "c12c1c16-33a1-487b-954d-41c89c60f349",
