@@ -143,6 +143,47 @@ secret_scope = databricks.SecretScope(
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
+# ANALYTICS DATABRICKS WORKSPACE -> INSTANCE POOLS
+# ----------------------------------------------------------------------------------------------------------------------
+instance_pools = {}
+for ref_key, config in workspace_config.get("instance_pools", {}).items():
+
+    instance_pool_resource_name = generate_resource_name(
+        resource_type="databricks_instance_pool",
+        resource_name=f"{workspace_short_name}-{ref_key}",
+        platform_config=platform_config,
+    )
+
+    instance_pools[ref_key] = databricks.InstancePool(
+        resource_name=instance_pool_resource_name,
+        instance_pool_name=config["display_name"],
+        node_type_id=config["node_type_id"],
+        min_idle_instances=config.get("min_idle_instances", 0),
+        max_capacity=config.get("max_capacity", 5),
+        enable_elastic_disk=config.get("enable_elastic_disk", True),
+        azure_attributes=databricks.InstancePoolAzureAttributesArgs(
+            availability=config.get("availability", "ON_DEMAND_AZURE"),
+            spot_bid_max_price=config.get("spot_bid_max_price", 0),
+        ),
+        disk_spec=databricks.InstancePoolDiskSpecArgs(
+            disk_type=databricks.InstancePoolDiskSpecDiskTypeArgs(
+                azure_disk_volume_type=config.get("disk_type", "STANDARD_LRS")
+            ),
+            disk_count=config.get("disk_count", 1),
+            disk_size=config.get("disk_size", 30),
+        ),
+        idle_instance_autotermination_minutes=config.get(
+            "idle_instance_auto_termination_minutes", 0
+        ),
+        custom_tags=config.get("custom_tags", None),
+        opts=ResourceOptions(
+            provider=databricks_provider,
+            delete_before_replace=True,
+        ),
+    )
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS DATABRICKS WORKSPACE -> CLUSTER TAGS
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -178,7 +219,7 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
         "resource_name": cluster_resource_name,
         "cluster_name": cluster_config["display_name"],
         "spark_version": cluster_config["spark_version"],
-        "node_type_id": cluster_config["node_type_id"],
+        "node_type_id": cluster_config.get("node_type_id"),
         "is_pinned": cluster_config["is_pinned"],
         "autotermination_minutes": cluster_config["autotermination_minutes"],
         "libraries": cluster_libraries or None,
@@ -192,9 +233,16 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
         "opts": ResourceOptions(provider=databricks_provider),
     }
     if cluster_config.get("docker_image_url"):
-        base_cluster_configuration["docker_image"] = databricks.ClusterDockerImageArgs(
-            url=cluster_config["docker_image_url"]
-        )
+        base_cluster_configuration["docker_image"] = \
+            databricks.ClusterDockerImageArgs(
+                url=cluster_config["docker_image_url"]
+            )
+    if cluster_config.get("instance_pool_ref_key"):
+        base_cluster_configuration["instance_pool_id"] = \
+            instance_pools[cluster_config["instance_pool_ref_key"]].id
+    if cluster_config.get("driver_instance_pool_ref_key"):
+        base_cluster_configuration["driver_instance_pool_id"] = \
+            instance_pools[cluster_config["driver_instance_pool_ref_key"]].id
 
     # Single Node Cluster Type
     if cluster_config["type"] == "single_node":

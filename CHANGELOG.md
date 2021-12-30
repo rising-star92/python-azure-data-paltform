@@ -2,6 +2,9 @@
 
 ## 0.2.2 (Unreleased)
 
+### New Features
+- [databricks] - Allowing for instance pools to be created
+
 ### Improvments
 - [databricks] - Boost Databricks engineering runtime to 0.6.0  
 - [databricks/provider] - Bump the version to 0.4.1. Also lock the version to the exact semver.

@@ -31,6 +31,7 @@ def generate_resource_name(
     """
     resource_names = {
         "databricks_cluster": "dbwc",
+        "databricks_instance_pool": "dbwip",
         "databricks_workspace": "dbw",
         "devops_pipeline": "adopipe",
         "devops_project": "adoproj",
