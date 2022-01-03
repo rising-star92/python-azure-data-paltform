@@ -4,7 +4,7 @@ PULUMI_ORGANIZATION := ingenii
 PULUMI_PARALLELISM  := 2
 
 SOURCE_DIR      := /platform/src
-PROJECT_ROOR    := $(realpath .)
+PROJECT_ROOT    := $(realpath .)
 CONFIGS_DIR     := ${PROJECT_ROOT}/configs
 VENV_DIR        := ${PROJECT_ROOT}/venv
 RUNTIME_DIR     := ${PROJECT_ROOT}/runtime
