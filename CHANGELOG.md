@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 0.2.2 (Unreleased)
+## 0.2.2 (2022-01-03)
 
 ### New Features
 - [databricks] - Allowing for instance pools to be created
