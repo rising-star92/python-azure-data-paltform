@@ -1,26 +1,26 @@
 SHELL := /bin/bash
 
-PULUMI_ORGANIZATION	:= ingenii
-PULUMI_PARALLELISM	:= 2
+PULUMI_ORGANIZATION := ingenii
+PULUMI_PARALLELISM  := 2
 
-PROJECT_ROOT 	:= $(realpath .)
-CONFIGS_DIR 	:= ${PROJECT_ROOT}/configs
-VENV_DIR 		:= ${PROJECT_ROOT}/venv
-SOURCE_DIR 		:= ${PROJECT_ROOT}/src
-RUNTIME_DIR 	:= ${PROJECT_ROOT}/runtime
+SOURCE_DIR      := /platform/src
+PROJECT_ROOR    := $(realpath .)
+CONFIGS_DIR     := ${PROJECT_ROOT}/configs
+VENV_DIR        := ${PROJECT_ROOT}/venv
+RUNTIME_DIR     := ${PROJECT_ROOT}/runtime
 
-PULUMI_SOURCE_DIR 				:= ${SOURCE_DIR}/pulumi
-PULUMI_CORE_SHARED_SRC_DIR 		:= ${PULUMI_SOURCE_DIR}/core-shared
-PULUMI_CORE_DTAP_SRC_DIR 		:= ${PULUMI_SOURCE_DIR}/core-dtap
-PULUMI_CORE_EXTENSIONS_SRC_DIR 	:= ${PULUMI_SOURCE_DIR}/core-extensions
-PULUMI_PRJ_CONF_TEMPLATES_DIR	:= ${PULUMI_SOURCE_DIR}/templates/pulumi-project-conf
+PULUMI_SOURCE_DIR               := ${SOURCE_DIR}/pulumi
+PULUMI_CORE_SHARED_SRC_DIR      := ${PULUMI_SOURCE_DIR}/core-shared
+PULUMI_CORE_DTAP_SRC_DIR        := ${PULUMI_SOURCE_DIR}/core-dtap
+PULUMI_CORE_EXTENSIONS_SRC_DIR  := ${PULUMI_SOURCE_DIR}/core-extensions
+PULUMI_PRJ_CONF_TEMPLATES_DIR   := ${PULUMI_SOURCE_DIR}/templates/pulumi-project-conf
 
-PLATFORM_CONF_SCHEMA_FILE			:= ${SOURCE_DIR}/platform-config/schema.yml
-PLATFORM_CONF_DEFAULTS_FILE 		:= ${SOURCE_DIR}/platform-config/defaults.yml
-PLATFORM_CONF_SHARED_DEFAULTS_FILE 	:= ${SOURCE_DIR}/platform-config/defaults.shared.yml
+PLATFORM_CONF_SCHEMA_FILE           := ${SOURCE_DIR}/platform-config/schema.yml
+PLATFORM_CONF_DEFAULTS_FILE         := ${SOURCE_DIR}/platform-config/defaults.yml
+PLATFORM_CONF_SHARED_DEFAULTS_FILE  := ${SOURCE_DIR}/platform-config/defaults.shared.yml
 
 # This variable is intentionally left empty.
-EXTRA_ARGS 		:=
+EXTRA_ARGS :=
 
 #####################################################################################################################
 # Imports
@@ -116,7 +116,7 @@ endef
 #####################################################################################################################
 
 # Shared Stack
-CORE_SHARED_STACK	:= ${PULUMI_ORGANIZATION}/shared
+CORE_SHARED_STACK := ${PULUMI_ORGANIZATION}/shared
 init-core-shared: _check-for-cust-code-var
 	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-shared/Pulumi.yaml	${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
 	@sed -i 's|ingenii-|${CUSTOMER_CODE}-|g'		${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
@@ -148,7 +148,7 @@ destroy-tainted-role-assignments-core-shared:
 	@$(call pulumi_destroy_role_assignments,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
 
 # Shared Stack Extensions
-CORE_SHARED_EXTENSIONS_STACK	:= ${PULUMI_ORGANIZATION}/shared
+CORE_SHARED_EXTENSIONS_STACK := ${PULUMI_ORGANIZATION}/shared
 init-core-shared-extensions: _check-for-cust-code-var
 	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-extensions/Pulumi.yaml ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
 	@sed -i 's|ingenii-|${CUSTOMER_CODE}-|g' ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
