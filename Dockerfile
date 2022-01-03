@@ -23,5 +23,8 @@ RUN /home/vscode/.pulumi/bin/pulumi plugin install resource databricks 0.0.8 --s
 # Copy the platform source code to the container
 COPY --chown=vscode:vscode src /platform/src
 
+# This is required to make sure the vscode user can write to the GitHub workspace
+RUN sudo mkdir __w && sudo chown vscode:vscode __w
+
 # Install all platform Python packages
 RUN cd /platform/src && pip install -r requirements.txt
