@@ -41,7 +41,8 @@
     "streetsidesoftware.code-spell-checker",
     "yzhang.markdown-all-in-one",
     "hitode909.zentabs",
-    "github.copilot"
+    "github.copilot",
+    "github.vscode-pull-request-github",
   ],
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.

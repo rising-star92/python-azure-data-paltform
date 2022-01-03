@@ -13,6 +13,7 @@
 - [platform/source] - Add Docker image build support for ARM architecture.
 - [dbt] - Added containers for `models` and `snapshots`
 - [secrets] - Better default access for administrators and engineers
+- [devcontainer] - Additional extensions to improve the dev experience
 
 ### Bugfixes
 - [dbt] - Ignoring branch and repository_url attributes on the dbt static web site resource 
