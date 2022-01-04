@@ -18,6 +18,7 @@
 
 ### Bugfixes
 - [dbt] - Ignoring branch and repository_url attributes on the dbt static web site resource 
+- [data_factory] - Correct group assignment for access to Kubernetes cluster
 
 ## 0.2.1 (2021-12-15)
 

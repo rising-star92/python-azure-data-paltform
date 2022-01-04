@@ -64,9 +64,16 @@ class RoleAssignment(azure_native.authorization.RoleAssignment):
                 f"The role name {role_name} is not yet supported by this class or not a valid Azure role name."
             )
 
-        resource_name = f"principal-[{principal_name}]-type-[{principal_type}]-role-[{role_name}]-to-[{scope_description}]".lower().replace(
-            " ", "-"
-        )
+        resource_name = "-".join([
+            f"{title}-[{name}]"
+            for title, name in
+            (
+                ("principal", principal_name),
+                ("type", principal_type),
+                ("role", role_name),
+                ("to", scope_description)
+            )
+        ]).lower().replace(" ", "-")
 
         super().__init__(
             resource_name=resource_name,

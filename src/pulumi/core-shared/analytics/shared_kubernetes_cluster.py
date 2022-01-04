@@ -121,7 +121,9 @@ if runtime_config["enabled"]:
         user_group_ref_key = assignment.get("user_group_ref_key")
         if user_group_ref_key is not None:
             GroupRoleAssignment(
+                principal_id=user_groups[user_group_ref_key]["object_id"],
+                principal_name=user_group_ref_key,
                 role_name=assignment["role_definition_name"],
-                group_object_id=user_groups[user_group_ref_key]["object_id"],
                 scope=kubernetes_cluster.id,
+                scope_description="kubernetes-cluster"
             )
