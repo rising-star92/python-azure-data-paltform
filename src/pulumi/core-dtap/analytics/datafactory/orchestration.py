@@ -52,6 +52,7 @@ datafactory = adf.Factory(
     },
     opts=ResourceOptions(
         protect=platform_config.resource_protection,
+        ignore_changes=["repo_configuration"],
     ),
 )
 
