@@ -51,7 +51,9 @@ if datalake_config["network"]["firewall"]["enabled"] == True:
         default_action=storage.DefaultAction.DENY,
         ip_rules=firewall_ip_access_list,
         virtual_network_rules=[
-            storage.VirtualNetworkRuleArgs(id=subnet.id)
+            storage.VirtualNetworkRuleArgs(
+                virtual_network_resource_id=subnet.id,
+            )
             for subnet in (
                 vnet.dbw_engineering_hosts_subnet,
                 vnet.dbw_engineering_containers_subnet,

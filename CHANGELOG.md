@@ -18,7 +18,7 @@
 - [secrets] - Better default access for administrators and engineers
 
 ### Bugfixes
-- [datalake] - Use the correct VirtualNetworkRuleArgs
+- [datalake] - Use the correct VirtualNetworkRuleArgs, correct the argument used
 - [dbt] - Ignoring branch and repository_url attributes on the dbt static web site resource 
 - [data_factory] - Correct group assignment for access to Kubernetes cluster
 
