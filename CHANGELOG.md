@@ -4,6 +4,7 @@
 
 ### New Features
 - [databricks] - Allowing for instance pools to be created
+- [data_factory] - Pipeline to keep the Analytics workspace tables in sync
 
 ### Improvments
 - [databricks] - Boost Databricks engineering runtime to 0.6.0  

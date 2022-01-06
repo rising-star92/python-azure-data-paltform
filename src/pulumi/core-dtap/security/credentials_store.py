@@ -65,8 +65,6 @@ key_vault = keyvault.Vault(
                     for subnet in (
                         vnet.dbw_engineering_hosts_subnet,
                         vnet.dbw_engineering_containers_subnet,
-                        vnet.dbw_analytics_hosts_subnet,
-                        vnet.dbw_analytics_containers_subnet,
                     )
                 ],
             )

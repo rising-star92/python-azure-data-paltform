@@ -1,13 +1,14 @@
 from os import getenv
-
 import pulumi_azure_native as azure_native
 import pulumi_azuread as azuread
+
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
 )
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.utils import generate_hash, generate_resource_name
+
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
@@ -109,9 +110,9 @@ for assignment in workspace_config.get("iam", {}).get("role_assignments", []):
 databricks_provider = DatabricksProvider(
     resource_name=workspace_name,
     args=DatabricksProviderArgs(
-        azure_client_id=getenv("ARM_CLIENT_ID") or azure_client.client_id,
+        azure_client_id=getenv("ARM_CLIENT_ID", azure_client.client_id),
         azure_client_secret=getenv("ARM_CLIENT_SECRET"),
-        azure_tenant_id=getenv("ARM_TENANT_ID") or azure_client.tenant_id,
+        azure_tenant_id=getenv("ARM_TENANT_ID", azure_client.tenant_id),
         azure_workspace_resource_id=workspace.id,
     ),
 )
@@ -122,10 +123,8 @@ databricks_provider = DatabricksProvider(
 databricks.WorkspaceConf(
     resource_name=workspace_name,
     custom_config={
-        "enableDcs": workspace_config["config"].get("enable_container_services")
-        or "false",
-        "enableIpAccessLists": workspace_config["config"].get("enable_ip_access_lists")
-        or "false",
+        "enableDcs": workspace_config["config"].get("enable_container_services", "false"),
+        "enableIpAccessLists": workspace_config["config"].get("enable_ip_access_lists", "false"),
     },
     opts=ResourceOptions(provider=databricks_provider),
 )
@@ -139,13 +138,6 @@ secret_scope_name = "main"
 secret_scope = databricks.SecretScope(
     resource_name=f"{workspace_name}-secret-scope-main",
     name=secret_scope_name,
-    opts=ResourceOptions(provider=databricks_provider),
-)
-
-# DATAFACTORY TOKEN
-datafactory_token = databricks.Token(
-    resource_name=f"{workspace_name}-token-for-datafactory",
-    comment="Data Factory Token - Used for Data Factory integration",
     opts=ResourceOptions(provider=databricks_provider),
 )
 
@@ -188,7 +180,6 @@ for ref_key, config in workspace_config.get("instance_pools", {}).items():
             delete_before_replace=True,
         ),
     )
-
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS DATABRICKS WORKSPACE -> CLUSTER TAGS

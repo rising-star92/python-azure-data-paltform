@@ -90,25 +90,30 @@ _check-for-cust-code-var:
 #####################################################################################################################
 
 az_login:
+	@$(info Logging into Azure . . .)
 	@az login --service-principal -t ${ARM_TENANT_ID} -u ${ARM_CLIENT_ID} -p ${ARM_CLIENT_SECRET} > /dev/null
 
 define upload_notebooks
+	@$(info Uploading Databricks notebooks . . .)
 	@$(eval DATABRICKS_AAD_TOKEN=$(shell az account get-access-token  --subscription ${ARM_SUBSCRIPTION_ID} --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d | jq '.accessToken' --raw-output))
+
+	@$(eval ENGINEERING_HOST=$(shell pulumi stack output --cwd $(1) --stack $(2) --json $(3) | jq '.root.analytics.databricks.workspaces.engineering.url' | sed 's/"//g'))
+	@DATABRICKS_AAD_TOKEN=${DATABRICKS_AAD_TOKEN} databricks configure --aad-token --host https://${ENGINEERING_HOST}
+	@databricks workspace mkdirs '/Shared/Ingenii Engineering'
+	@ls ${SOURCE_DIR}/notebooks/engineering | awk -F '.' '{ print $$1 }' | xargs -I {} databricks workspace import -l PYTHON ${SOURCE_DIR}/notebooks/engineering/{}.py '/Shared/Ingenii Engineering/{}' --overwrite
 
 	@$(eval ANALYTICS_HOST=$(shell pulumi stack output --cwd $(1) --stack $(2) --json $(3) | jq '.root.analytics.databricks.workspaces.analytics.url' | sed 's/"//g'))
 	@DATABRICKS_AAD_TOKEN=${DATABRICKS_AAD_TOKEN} databricks configure --aad-token --host https://${ANALYTICS_HOST}
 	@databricks workspace mkdirs '/Shared/Ingenii Engineering'
 	@ls ${SOURCE_DIR}/notebooks/analytics | awk -F '.' '{ print $$1 }' | xargs -I {} databricks workspace import -l PYTHON ${SOURCE_DIR}/notebooks/analytics/{}.py '/Shared/Ingenii Engineering/{}' --overwrite
 
-	@$(eval ENGINEERING_HOST=$(shell pulumi stack output --cwd $(1) --stack $(2) --json $(3) | jq '.root.analytics.databricks.workspaces.engineering.url' | sed 's/"//g'))
-	@DATABRICKS_AAD_TOKEN=${DATABRICKS_AAD_TOKEN} databricks configure --aad-token --host https://${ENGINEERING_HOST}
-	@databricks workspace mkdirs '/Shared/Ingenii Engineering'
-	@ls ${SOURCE_DIR}/notebooks/engineering | awk -F '.' '{ print $$1 }' | xargs -I {} databricks workspace import -l PYTHON ${SOURCE_DIR}/notebooks/engineering/{}.py '/Shared/Ingenii Engineering/{}' --overwrite
 endef
 
 define enable_trigger
+	@$(info Enabling Data Factory triggers . . .)
 	@$(eval DATAFACTORY_ID=$(shell pulumi stack output --cwd $(1) --stack $(2) --json $(3) | jq '.root.analytics.datafactory.factories.orchestration.id' | sed 's/"//g'))
 	@az datafactory trigger start --ids "${DATAFACTORY_ID}/triggers/Raw file created"
+	@az datafactory trigger start --ids "${DATAFACTORY_ID}/triggers/Daily sync"
 endef
 
 #####################################################################################################################

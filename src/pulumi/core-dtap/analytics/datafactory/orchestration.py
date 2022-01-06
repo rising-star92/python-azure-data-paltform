@@ -4,14 +4,11 @@ from pulumi_azure_native import datafactory as adf
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
-    UserAssignedIdentityRoleAssignment,
 )
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.orchestration import AdfSelfHostedIntegrationRuntime
 from ingenii_azure_data_platform.utils import generate_resource_name
 
-from analytics.databricks.workspaces import analytics as databricks_analytics, \
-    engineering as databricks_engineering
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
@@ -20,7 +17,6 @@ from platform_shared import (
     get_devops_principal_id,
 )
 from project_config import platform_config, platform_outputs
-from security import credentials_store
 from storage.datalake import datalake
 
 outputs = platform_outputs["analytics"]["datafactory"]["factories"][
@@ -39,12 +35,13 @@ datafactory_name = generate_resource_name(
     resource_name=datafactory_config["display_name"],
     platform_config=platform_config,
 )
+datafactory_resource_group = resource_groups["infra"].name
 
 datafactory = adf.Factory(
     resource_name=datafactory_name,
     factory_name=datafactory_name,
     location=platform_config.region.long_name,
-    resource_group_name=resource_groups["infra"].name,
+    resource_group_name=datafactory_resource_group,
     identity=adf.FactoryIdentityArgs(type=adf.FactoryIdentityType.SYSTEM_ASSIGNED),
     global_parameters={
         "DataLakeName": adf.GlobalParameterSpecificationArgs(
@@ -89,285 +86,15 @@ for config in datafactory_config.get("integration_runtimes", []):
                 "Managed by the Ingenii's deployment process. Manual changes are discouraged as they will be overridden.",
             ),
             factory_name=datafactory.name,
-            resource_group_name=resource_groups["infra"].name,
+            resource_group_name=datafactory_resource_group,
             platform_config=platform_config,
         )
-
-# ----------------------------------------------------------------------------------------------------------------------
-# DATA FACTORY -> LINKED SERVICES
-# ----------------------------------------------------------------------------------------------------------------------
-
-# DATALAKE
-# Datafactory Access to Data Lake
-datafactory_acccess_to_datalake = ServicePrincipalRoleAssignment(
-    principal_id=datafactory.identity.principal_id,
-    principal_name="orchestration-datafactory-identity",
-    role_name="Storage Blob Data Contributor",
-    scope=datalake.id,
-    scope_description="datalake",
-)
-
-datalake_linked_service = adf.LinkedService(
-    resource_name=f"{datafactory_name}-link-to-datalake",
-    factory_name=datafactory.name,
-    linked_service_name="DataLake",
-    properties=adf.AzureBlobFSLinkedServiceArgs(
-        url=datalake.primary_endpoints.dfs,
-        description="Managed by Ingenii Data Platform",
-        type="AzureBlobFS",
-    ),
-    resource_group_name=resource_groups["infra"].name,
-)
-
-# CREDENTIALS STORE
-# Datafactory Access to Credentials Store (Key Vault)
-datafactory_acccess_to_credentials_store = ServicePrincipalRoleAssignment(
-    role_name="Key Vault Secrets User",
-    principal_id=datafactory.identity.principal_id,
-    principal_name="orchestration-datafactory-identity",
-    scope=credentials_store.key_vault.id,
-    scope_description="cred-store",
-)
-
-credentials_store_linked_service = adf.LinkedService(
-    resource_name=f"{datafactory_name}-link-to-credentials-store",
-    factory_name=datafactory.name,
-    linked_service_name="Credentials Store",
-    properties=adf.AzureKeyVaultLinkedServiceArgs(
-        base_url=f"https://{credentials_store.key_vault_name}.vault.azure.net",
-        description="Managed by Ingenii Data Platform",
-        type="AzureKeyVault",
-    ),
-    resource_group_name=resource_groups["infra"].name,
-)  # type: ignore
-
-# DATABRICKS ENGINEERING - DELTA LAKE
-databricks_engineering_delta_linked_service = adf.LinkedService(
-    resource_name=f"{datafactory_name}-link-to-databricks-engineering-delta",
-    factory_name=datafactory.name,
-    linked_service_name="Databricks Engineering Delta",
-    properties=adf.AzureDatabricksDeltaLakeLinkedServiceArgs(
-        domain=databricks_engineering.workspace.workspace_url.apply(
-            lambda url: f"https://{url}"
-        ),
-        access_token=databricks_engineering.datafactory_token.token_value,  # type: ignore
-        cluster_id=databricks_engineering.clusters["default"].id,
-        description="Managed by Ingenii Data Platform",
-        type="AzureDatabricksDeltaLake",
-    ),
-    resource_group_name=resource_groups["infra"].name,
-)  # type: ignore
-
-
-# DATABRICKS ENGINEERING - COMPUTE
-databricks_engineering_compute_linked_service = adf.LinkedService(
-    resource_name=f"{datafactory_name}-link-to-databricks-engineering-compute",
-    factory_name=datafactory.name,
-    linked_service_name="Databricks Engineering Compute",
-    properties=adf.AzureDatabricksLinkedServiceArgs(
-        domain=databricks_engineering.workspace.workspace_url.apply(
-            lambda url: f"https://{url}"
-        ),
-        access_token=databricks_engineering.datafactory_token.token_value,  # type: ignore
-        existing_cluster_id=databricks_engineering.clusters["default"].id,
-        workspace_resource_id=databricks_engineering.workspace.id,
-        description="Managed by Ingenii Data Platform",
-        type="AzureDatabricks",
-    ),
-    resource_group_name=resource_groups["infra"].name,
-)  # type: ignore
-
-# Other clusters and instance pools to be linked
-engineering_config = platform_config.from_yml["analytics_services"]["databricks"][
-    "workspaces"
-]["engineering"]
-for ref_key, cluster_config in engineering_config.get("clusters", {}).items():
-
-    if ref_key == "system":
-        continue
-
-    if not cluster_config.get("data_factory_linked_service_name"):
-        continue
-
-    ls_name = cluster_config["data_factory_linked_service_name"]
-
-    adf.LinkedService(
-        resource_name=f"{datafactory_name}-link-to-engineering-{ls_name.replace(' ', '-').lower()}",
-        factory_name=datafactory.name,
-        linked_service_name=ls_name,
-        properties=adf.AzureDatabricksLinkedServiceArgs(
-            domain=databricks_engineering.workspace.workspace_url.apply(
-                lambda url: f"https://{url}"
-            ),
-            access_token=databricks_engineering.datafactory_token.token_value,  # type: ignore
-            existing_cluster_id=databricks_engineering.clusters[ref_key].id,
-            workspace_resource_id=databricks_engineering.workspace.id,
-            description="Managed by Ingenii Data Platform",
-            type="AzureDatabricks",
-        ),
-        resource_group_name=resource_groups["infra"].name,
-    )  # type: ignore
-
-for ref_key, pool_config in engineering_config.get("instance_pools", {}).items():
-
-    if not pool_config.get("data_factory_linked_service_name"):
-        continue
-
-    ls_name = pool_config["data_factory_linked_service_name"]
-
-    adf.LinkedService(
-        resource_name=f"{datafactory_name}-link-to-engineering-{ls_name.replace(' ', '-').lower()}",
-        factory_name=datafactory.name,
-        linked_service_name=ls_name,
-        properties=adf.AzureDatabricksLinkedServiceArgs(
-            domain=databricks_engineering.workspace.workspace_url.apply(
-                lambda url: f"https://{url}"
-            ),
-            access_token=databricks_engineering.datafactory_token.token_value,  # type: ignore
-            instance_pool_id=databricks_engineering.instance_pools[ref_key].id,
-            workspace_resource_id=databricks_engineering.workspace.id,
-            description="Managed by Ingenii Data Platform",
-            type="AzureDatabricks",
-        ),
-        resource_group_name=resource_groups["infra"].name,
-    )  # type: ignore
-
-
-analytics_config = platform_config.from_yml["analytics_services"]["databricks"][
-    "workspaces"
-]["analytics"]
-for ref_key, cluster_config in analytics_config.get("clusters", {}).items():
-
-    if not cluster_config.get("data_factory_linked_service_name"):
-        continue
-
-    ls_name = cluster_config["data_factory_linked_service_name"]
-
-    adf.LinkedService(
-        resource_name=f"{datafactory_name}-link-to-analytics-{ls_name.replace(' ', '-').lower()}",
-        factory_name=datafactory.name,
-        linked_service_name=ls_name,
-        properties=adf.AzureDatabricksLinkedServiceArgs(
-            domain=databricks_analytics.workspace.workspace_url.apply(
-                lambda url: f"https://{url}"
-            ),
-            access_token=databricks_analytics.datafactory_token.token_value,  # type: ignore
-            existing_cluster_id=databricks_analytics.clusters[ref_key].id,
-            workspace_resource_id=databricks_analytics.workspace.id,
-            description="Managed by Ingenii Data Platform",
-            type="AzureDatabricks",
-        ),
-        resource_group_name=resource_groups["infra"].name,
-    )  # type: ignore
-
-for ref_key, pool_config in analytics_config.get("instance_pools", {}).items():
-
-    if not pool_config.get("data_factory_linked_service_name"):
-        continue
-
-    ls_name = pool_config["data_factory_linked_service_name"]
-
-    adf.LinkedService(
-        resource_name=f"{datafactory_name}-link-to-analytics-{ls_name.replace(' ', '-').lower()}",
-        factory_name=datafactory.name,
-        linked_service_name=ls_name,
-        properties=adf.AzureDatabricksLinkedServiceArgs(
-            domain=databricks_analytics.workspace.workspace_url.apply(
-                lambda url: f"https://{url}"
-            ),
-            access_token=databricks_analytics.datafactory_token.token_value,  # type: ignore
-            instance_pool_id=databricks_analytics.instance_pools[ref_key].id,
-            workspace_resource_id=databricks_analytics.workspace.id,
-            description="Managed by Ingenii Data Platform",
-            type="AzureDatabricks",
-        ),
-        resource_group_name=resource_groups["infra"].name,
-    )  # type: ignore
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# DATA FACTORY -> INGESTION PIPELINE AND TRIGGER
-# ----------------------------------------------------------------------------------------------------------------------
-databricks_file_ingestion_pipeline = adf.Pipeline(
-    resource_name=f"{datafactory_name}-raw-databricks-file-ingestion",
-    factory_name=datafactory.name,
-    pipeline_name="Trigger ingest file notebook",
-    description="Managed by Ingenii Data Platform",
-    concurrency=1,
-    parameters={
-        "fileName": adf.ParameterSpecificationArgs(type="String"),
-        "filePath": adf.ParameterSpecificationArgs(type="String"),
-    },
-    activities=[
-        adf.DatabricksNotebookActivityArgs(
-            name="Trigger ingest file notebook",
-            notebook_path="/Shared/Ingenii Engineering/data_pipeline",
-            type="DatabricksNotebook",
-            linked_service_name=adf.LinkedServiceReferenceArgs(
-                reference_name=databricks_engineering_compute_linked_service.name,
-                type="LinkedServiceReference",
-            ),
-            depends_on=[],
-            base_parameters={
-                "file_path": {
-                    "value": "@pipeline().parameters.filePath",
-                    "type": "Expression",
-                },
-                "file_name": {
-                    "value": "@pipeline().parameters.fileName",
-                    "type": "Expression",
-                },
-                "increment": "0",
-            },
-            policy=adf.ActivityPolicyArgs(
-                timeout="0.00:20:00",
-                retry=0,
-                retry_interval_in_seconds=30,
-                secure_output=False,
-                secure_input=False,
-            ),
-            user_properties=[],
-        )
-    ],
-    policy=adf.PipelinePolicyArgs(),
-    annotations=["Created by Ingenii"],
-    opts=ResourceOptions(ignore_changes=["annotations"]),
-    resource_group_name=resource_groups["infra"].name,
-)
-
-databricks_file_ingestion_trigger = adf.Trigger(
-    resource_name=f"{datafactory_name}-raw-databricks-file-ingestion",
-    factory_name=datafactory.name,
-    trigger_name="Raw file created",
-    properties=adf.BlobEventsTriggerArgs(
-        type="BlobEventsTrigger",
-        scope=datalake.id,
-        events=[adf.BlobEventTypes.MICROSOFT_STORAGE_BLOB_CREATED],
-        blob_path_begins_with="/raw/blobs/",
-        ignore_empty_blobs=True,
-        pipelines=[
-            adf.TriggerPipelineReferenceArgs(
-                pipeline_reference=adf.PipelineReferenceArgs(
-                    reference_name=databricks_file_ingestion_pipeline.name,
-                    type="PipelineReference",
-                ),
-                parameters={
-                    "fileName": "@trigger().outputs.body.fileName",
-                    "filePath": "@trigger().outputs.body.folderPath",
-                },
-            )
-        ],
-        annotations=["Created by Ingenii"],
-    ),
-    opts=ResourceOptions(ignore_changes=["properties.annotations"]),
-    resource_group_name=resource_groups["infra"].name,
-)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DEVOPS ASSIGNMENT
 # ----------------------------------------------------------------------------------------------------------------------
 
-UserAssignedIdentityRoleAssignment(
+ServicePrincipalRoleAssignment(
     principal_name="deployment-user-identity",
     principal_id=get_devops_principal_id(),
     role_name="Data Factory Contributor",

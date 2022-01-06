@@ -1,14 +1,15 @@
 from os import getenv
-
 import pulumi
 import pulumi_azure_native as azure_native
 import pulumi_azuread as azuread
+
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
 )
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.utils import generate_hash, generate_resource_name
+
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
