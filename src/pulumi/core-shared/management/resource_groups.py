@@ -1,3 +1,5 @@
+from os import getenv
+
 from ingenii_azure_data_platform.iam import GroupRoleAssignment
 from ingenii_azure_data_platform.management import ResourceGroup
 from project_config import platform_config, platform_outputs
@@ -11,7 +13,14 @@ outputs = platform_outputs["management"]["resource_groups"] = {}
 resource_groups = {}
 
 for ref_key, config in resource_groups_config.items():
-    resource = ResourceGroup(config["display_name"], platform_config)
+    resource = ResourceGroup(
+        resource_group_name=config["display_name"],
+        enable_delete_protection=config.get(
+            "enable_delete_protection",
+            platform_config.resource_protection,
+        ),
+        platform_config=platform_config,
+    )
     resource_groups[ref_key] = resource
 
     # Export resource group metadata

@@ -39,6 +39,7 @@ user_group:
 # management.resource_groups
 resource_group:
   display_name: str()
+  enable_delete_protection: bool(required=False)
   iam: include('_iam', required=False)
 
 #----------------------------------------------------------------------------------------------------------------------

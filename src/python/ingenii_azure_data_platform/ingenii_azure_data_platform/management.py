@@ -1,5 +1,9 @@
 from pulumi import ResourceOptions
 from pulumi_azure_native.resources import ResourceGroup
+from pulumi_azure_native.authorization import (
+    ManagementLockAtResourceGroupLevel,
+    LockLevel,
+)
 from pulumi_azuread import Group
 
 from ingenii_azure_data_platform.config import PlatformConfiguration
@@ -12,7 +16,10 @@ class ResourceGroup(ResourceGroup):
     """
 
     def __init__(
-        self, resource_group_name: str, platform_config: PlatformConfiguration
+        self,
+        resource_group_name: str,
+        enable_delete_protection: bool,
+        platform_config: PlatformConfiguration,
     ):
         name = generate_resource_name(
             resource_type="resource_group",
@@ -26,6 +33,15 @@ class ResourceGroup(ResourceGroup):
             tags=platform_config.tags,
             opts=ResourceOptions(protect=platform_config.resource_protection),
         )
+
+        if enable_delete_protection:
+            ManagementLockAtResourceGroupLevel(
+                resource_name=name,
+                lock_name="Managed by Ingenii",
+                level=LockLevel.CAN_NOT_DELETE,
+                resource_group_name=name,
+                opts=ResourceOptions(depends_on=[self]),
+            )
 
 
 class UserGroup(Group):
