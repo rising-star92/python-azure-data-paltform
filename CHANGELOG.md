@@ -8,13 +8,14 @@
 ### Improvments
 - [databricks] - Boost Databricks engineering runtime to 0.6.0  
 - [databricks/provider] - Bump the version to 0.4.1. Also lock the version to the exact semver.
-- [docker_image/iac_runtime] - Create a new Dockerfile. Use the same IaC runtime for the platform deployment and for the devcontainers.
-- [platform/source] - Publish the source of the platform in the Docker image (/platform/src). Make the Docker image `private` in the dockerhub.
-- [platform/cicd] - Making use of the built in source code in the Docker image (/platform/src).
-- [platform/source] - Add Docker image build support for ARM architecture.
+- [datafactory] - Databricks clusters and instance pools can be configured to be added as linked services
 - [dbt] - Added containers for `models` and `snapshots`
-- [secrets] - Better default access for administrators and engineers
 - [devcontainer] - Additional extensions to improve the dev experience
+- [docker_image/iac_runtime] - Create a new Dockerfile. Use the same IaC runtime for the platform deployment and for the devcontainers.
+- [platform/cicd] - Making use of the built in source code in the Docker image (/platform/src).
+- [platform/source] - Publish the source of the platform in the Docker image (/platform/src). Make the Docker image `private` in the dockerhub.
+- [platform/source] - Add Docker image build support for ARM architecture.
+- [secrets] - Better default access for administrators and engineers
 
 ### Bugfixes
 - [dbt] - Ignoring branch and repository_url attributes on the dbt static web site resource 

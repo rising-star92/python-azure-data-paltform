@@ -142,6 +142,13 @@ secret_scope = databricks.SecretScope(
     opts=ResourceOptions(provider=databricks_provider),
 )
 
+# DATAFACTORY TOKEN
+datafactory_token = databricks.Token(
+    resource_name=f"{workspace_name}-token-for-datafactory",
+    comment="Data Factory Token - Used for Data Factory integration",
+    opts=ResourceOptions(provider=databricks_provider),
+)
+
 # ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS DATABRICKS WORKSPACE -> INSTANCE POOLS
 # ----------------------------------------------------------------------------------------------------------------------
@@ -221,7 +228,7 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
         "spark_version": cluster_config["spark_version"],
         "node_type_id": cluster_config.get("node_type_id"),
         "is_pinned": cluster_config["is_pinned"],
-        "autotermination_minutes": cluster_config["autotermination_minutes"],
+        "autotermination_minutes": cluster_config.get("autotermination_minutes", 0),
         "libraries": cluster_libraries or None,
         "spark_env_vars": {
             "PYSPARK_PYTHON": "/databricks/python3/bin/python3",
@@ -240,9 +247,13 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
     if cluster_config.get("instance_pool_ref_key"):
         base_cluster_configuration["instance_pool_id"] = \
             instance_pools[cluster_config["instance_pool_ref_key"]].id
+        if base_cluster_configuration.get("node_type_id") is not None:
+            del base_cluster_configuration["node_type_id"]
     if cluster_config.get("driver_instance_pool_ref_key"):
         base_cluster_configuration["driver_instance_pool_id"] = \
             instance_pools[cluster_config["driver_instance_pool_ref_key"]].id
+        if base_cluster_configuration.get("node_type_id") is not None:
+            del base_cluster_configuration["node_type_id"]
 
     # Single Node Cluster Type
     if cluster_config["type"] == "single_node":

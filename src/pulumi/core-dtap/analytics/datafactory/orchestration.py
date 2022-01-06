@@ -10,7 +10,8 @@ from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.orchestration import AdfSelfHostedIntegrationRuntime
 from ingenii_azure_data_platform.utils import generate_resource_name
 
-from analytics.databricks.workspaces import engineering as databricks_engineering
+from analytics.databricks.workspaces import analytics as databricks_analytics, \
+    engineering as databricks_engineering
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
@@ -175,6 +176,114 @@ databricks_engineering_compute_linked_service = adf.LinkedService(
     ),
     resource_group_name=resource_groups["infra"].name,
 )  # type: ignore
+
+# Other clusters and instance pools to be linked
+engineering_config = platform_config.from_yml["analytics_services"]["databricks"][
+    "workspaces"
+]["engineering"]
+for ref_key, cluster_config in engineering_config.get("clusters", {}).items():
+
+    if ref_key == "system":
+        continue
+
+    if not cluster_config.get("data_factory_linked_service_name"):
+        continue
+
+    ls_name = cluster_config["data_factory_linked_service_name"]
+
+    adf.LinkedService(
+        resource_name=f"{datafactory_name}-link-to-engineering-{ls_name.replace(' ', '-').lower()}",
+        factory_name=datafactory.name,
+        linked_service_name=ls_name,
+        properties=adf.AzureDatabricksLinkedServiceArgs(
+            domain=databricks_engineering.workspace.workspace_url.apply(
+                lambda url: f"https://{url}"
+            ),
+            access_token=databricks_engineering.datafactory_token.token_value,  # type: ignore
+            existing_cluster_id=databricks_engineering.clusters[ref_key].id,
+            workspace_resource_id=databricks_engineering.workspace.id,
+            description="Managed by Ingenii Data Platform",
+            type="AzureDatabricks",
+        ),
+        resource_group_name=resource_groups["infra"].name,
+    )  # type: ignore
+
+for ref_key, pool_config in engineering_config.get("instance_pools", {}).items():
+
+    if not pool_config.get("data_factory_linked_service_name"):
+        continue
+
+    ls_name = pool_config["data_factory_linked_service_name"]
+
+    adf.LinkedService(
+        resource_name=f"{datafactory_name}-link-to-engineering-{ls_name.replace(' ', '-').lower()}",
+        factory_name=datafactory.name,
+        linked_service_name=ls_name,
+        properties=adf.AzureDatabricksLinkedServiceArgs(
+            domain=databricks_engineering.workspace.workspace_url.apply(
+                lambda url: f"https://{url}"
+            ),
+            access_token=databricks_engineering.datafactory_token.token_value,  # type: ignore
+            instance_pool_id=databricks_engineering.instance_pools[ref_key].id,
+            workspace_resource_id=databricks_engineering.workspace.id,
+            description="Managed by Ingenii Data Platform",
+            type="AzureDatabricks",
+        ),
+        resource_group_name=resource_groups["infra"].name,
+    )  # type: ignore
+
+
+analytics_config = platform_config.from_yml["analytics_services"]["databricks"][
+    "workspaces"
+]["analytics"]
+for ref_key, cluster_config in analytics_config.get("clusters", {}).items():
+
+    if not cluster_config.get("data_factory_linked_service_name"):
+        continue
+
+    ls_name = cluster_config["data_factory_linked_service_name"]
+
+    adf.LinkedService(
+        resource_name=f"{datafactory_name}-link-to-analytics-{ls_name.replace(' ', '-').lower()}",
+        factory_name=datafactory.name,
+        linked_service_name=ls_name,
+        properties=adf.AzureDatabricksLinkedServiceArgs(
+            domain=databricks_analytics.workspace.workspace_url.apply(
+                lambda url: f"https://{url}"
+            ),
+            access_token=databricks_analytics.datafactory_token.token_value,  # type: ignore
+            existing_cluster_id=databricks_analytics.clusters[ref_key].id,
+            workspace_resource_id=databricks_analytics.workspace.id,
+            description="Managed by Ingenii Data Platform",
+            type="AzureDatabricks",
+        ),
+        resource_group_name=resource_groups["infra"].name,
+    )  # type: ignore
+
+for ref_key, pool_config in analytics_config.get("instance_pools", {}).items():
+
+    if not pool_config.get("data_factory_linked_service_name"):
+        continue
+
+    ls_name = pool_config["data_factory_linked_service_name"]
+
+    adf.LinkedService(
+        resource_name=f"{datafactory_name}-link-to-analytics-{ls_name.replace(' ', '-').lower()}",
+        factory_name=datafactory.name,
+        linked_service_name=ls_name,
+        properties=adf.AzureDatabricksLinkedServiceArgs(
+            domain=databricks_analytics.workspace.workspace_url.apply(
+                lambda url: f"https://{url}"
+            ),
+            access_token=databricks_analytics.datafactory_token.token_value,  # type: ignore
+            instance_pool_id=databricks_analytics.instance_pools[ref_key].id,
+            workspace_resource_id=databricks_analytics.workspace.id,
+            description="Managed by Ingenii Data Platform",
+            type="AzureDatabricks",
+        ),
+        resource_group_name=resource_groups["infra"].name,
+    )  # type: ignore
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY -> INGESTION PIPELINE AND TRIGGER

@@ -247,7 +247,7 @@ system_cluster = databricks.Cluster(
     spark_version=system_cluster_config["spark_version"],
     node_type_id=system_cluster_config["node_type_id"],
     is_pinned=system_cluster_config["is_pinned"],
-    autotermination_minutes=system_cluster_config["autotermination_minutes"],
+    autotermination_minutes=system_cluster_config.get("autotermination_minutes", 0),
     spark_conf={
         "spark.databricks.cluster.profile": "singleNode",
         "spark.master": "local[*]",
@@ -393,7 +393,7 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
         "spark_version": cluster_config["spark_version"],
         "node_type_id": cluster_config.get("node_type_id"),
         "is_pinned": cluster_config["is_pinned"],
-        "autotermination_minutes": cluster_config["autotermination_minutes"],
+        "autotermination_minutes": cluster_config.get("autotermination_minutes", 0),
         "libraries": cluster_libraries or None,
         "spark_env_vars": {
             "PYSPARK_PYTHON": "/databricks/python3/bin/python3",
@@ -423,9 +423,13 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
     if cluster_config.get("instance_pool_ref_key"):
         base_cluster_configuration["instance_pool_id"] = \
             instance_pools[cluster_config["instance_pool_ref_key"]].id
+        if base_cluster_configuration.get("node_type_id") is not None:
+            del base_cluster_configuration["node_type_id"]
     if cluster_config.get("driver_instance_pool_ref_key"):
         base_cluster_configuration["driver_instance_pool_id"] = \
             instance_pools[cluster_config["driver_instance_pool_ref_key"]].id
+        if base_cluster_configuration.get("node_type_id") is not None:
+            del base_cluster_configuration["node_type_id"]
 
     # Single Node Cluster Type
     if cluster_config["type"] == "single_node":
