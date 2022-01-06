@@ -1,9 +1,5 @@
-from base64 import b64decode
-import hiyapyco as hco
-from pulumi import ResourceOptions
 from pulumi_azure_native import containerservice
 import pulumi_random
-from pulumi_kubernetes import Provider, core
 
 from ingenii_azure_data_platform.iam import GroupRoleAssignment
 from ingenii_azure_data_platform.utils import generate_resource_name
@@ -30,8 +26,11 @@ if runtime_config["enabled"]:
             resource_name=cluster_resource_name,
             platform_config=platform_config,
         ),
-        length=16,
-        special=True,
+        length=32,
+        min_lower=1,
+        min_numeric=1,
+        min_special=1,
+        min_upper=1,
         override_special="_%@",
     )
 

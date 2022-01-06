@@ -89,15 +89,22 @@ devops_virtual_machine_scale_set = compute.VirtualMachineScaleSet(
         name="Standard_F2s_v2",
         tier="Standard",
     ),
-    upgrade_policy=compute.UpgradePolicyArgs(mode="Manual"),
+    upgrade_policy=compute.UpgradePolicyArgs(
+        mode=compute.UpgradeMode.MANUAL
+    ),
     virtual_machine_profile=compute.VirtualMachineScaleSetVMProfileArgs(
         network_profile=compute.VirtualMachineScaleSetNetworkProfileArgs(
             network_interface_configurations=[
                 compute.VirtualMachineScaleSetNetworkConfigurationArgs(
+                    dns_settings=compute.VirtualMachineScaleSetNetworkConfigurationDnsSettingsArgs(
+                        dns_servers=[],
+                    ),
+                    enable_accelerated_networking=False,
                     enable_ip_forwarding=True,
                     ip_configurations=[
                         compute.VirtualMachineScaleSetIPConfigurationArgs(
                             name=devops_virtual_machine_scale_set_name,
+                            private_ip_address_version=compute.IPVersion.I_PV4,
                             subnet=compute.ApiEntityReferenceArgs(
                                 id=devops_deployment_subnet.id,
                             ),
@@ -112,6 +119,11 @@ devops_virtual_machine_scale_set = compute.VirtualMachineScaleSet(
             computer_name_prefix=devops_virtual_machine_scale_set_name,
             admin_username="azuredevopsdeploymentadmin",
             admin_password=admin_password.result,
+            linux_configuration=compute.LinuxConfigurationArgs(
+                disable_password_authentication=False,
+                provision_vm_agent=True,
+            ),
+            secrets=[],
         ),
         storage_profile=compute.VirtualMachineScaleSetStorageProfileArgs(
             image_reference=compute.ImageReferenceArgs(
@@ -121,14 +133,17 @@ devops_virtual_machine_scale_set = compute.VirtualMachineScaleSet(
                 version="latest",
             ),
             os_disk=compute.VirtualMachineScaleSetOSDiskArgs(
-                caching="ReadOnly",
-                create_option="FromImage",
+                caching=compute.CachingTypes.READ_ONLY,
+                create_option=compute.DiskCreateOptionTypes.FROM_IMAGE,
+                disk_size_gb=30,
                 diff_disk_settings=compute.DiffDiskSettingsArgs(
-                    option="Local",
+                    option=compute.DiffDiskOptions.LOCAL,
+                    placement=compute.DiffDiskPlacement.CACHE_DISK,
                 ),
                 managed_disk=compute.VirtualMachineScaleSetManagedDiskParametersArgs(
-                    storage_account_type="Standard_LRS",
+                    storage_account_type=compute.StorageAccountType.STANDARD_LRS,
                 ),
+                os_type=compute.OperatingSystemTypes.LINUX,
             ),
         ),
     ),

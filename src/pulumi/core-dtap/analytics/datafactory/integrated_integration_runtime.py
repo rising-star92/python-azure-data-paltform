@@ -25,7 +25,7 @@ if runtime_config["enabled"]:
 
     integrated_integration_runtime = adf.IntegrationRuntimeSelfHosted(
         resource_name=f"datafactory_integrated_runtime_{platform_config.stack}",
-        data_factory_name=datafactory.name,
+        data_factory_id=datafactory.id,
         name="integratedIntegrationRuntime",
         description="Integrated integration runtime provided by Ingenii",
         resource_group_name=resource_groups["infra"].name,
