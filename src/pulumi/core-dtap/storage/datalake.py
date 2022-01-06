@@ -1,5 +1,5 @@
 import pulumi_azure as azure_classic
-import pulumi_azure_native as azure_native
+from pulumi_azure_native import keyvault, network, storage
 from pulumi import Output
 from ingenii_azure_data_platform.defaults import STORAGE_ACCOUNT_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import (
@@ -31,7 +31,7 @@ outputs = platform_outputs["storage"]["datalake"] = {}
 # ----------------------------------------------------------------------------------------------------------------------
 firewall = platform_config.from_yml["network"]["firewall"]
 firewall_ip_access_list = [
-    azure_native.storage.IPRuleArgs(i_p_address_or_range=ip_address)
+    storage.IPRuleArgs(i_p_address_or_range=ip_address)
     for ip_address in firewall.get("ip_access_list", [])
 ]
 
@@ -45,43 +45,35 @@ datalake_name = generate_resource_name(
     platform_config=platform_config,
 )
 
-datalake = azure_native.storage.StorageAccount(
+if datalake_config["network"]["firewall"]["enabled"] == True:
+    network_rule_set = storage.NetworkRuleSetArgs(
+        bypass=storage.Bypass.AZURE_SERVICES,
+        default_action=storage.DefaultAction.DENY,
+        ip_rules=firewall_ip_access_list,
+        virtual_network_rules=[
+            storage.VirtualNetworkRuleArgs(id=subnet.id)
+            for subnet in (
+                vnet.dbw_engineering_hosts_subnet,
+                vnet.dbw_engineering_containers_subnet,
+                vnet.dbw_analytics_hosts_subnet,
+                vnet.dbw_analytics_containers_subnet,
+            )
+        ],
+    )
+else:
+    network_rule_set = STORAGE_ACCOUNT_DEFAULT_FIREWALL
+
+datalake = storage.StorageAccount(
     resource_name=datalake_name,
     account_name=datalake_name,
     allow_blob_public_access=False,
-    network_rule_set=(
-        azure_native.storage.NetworkRuleSetArgs(
-            bypass="AzureServices",
-            default_action="Deny",
-            ip_rules=(
-                firewall_ip_access_list if len(firewall_ip_access_list) > 0 else None
-            ),
-            virtual_network_rules=[
-                azure_native.keyvault.VirtualNetworkRuleArgs(
-                    id=vnet.dbw_engineering_hosts_subnet.id,
-                ),
-                azure_native.keyvault.VirtualNetworkRuleArgs(
-                    id=vnet.dbw_engineering_containers_subnet.id,
-                ),
-                azure_native.keyvault.VirtualNetworkRuleArgs(
-                    id=vnet.dbw_analytics_hosts_subnet.id,
-                ),
-                azure_native.keyvault.VirtualNetworkRuleArgs(
-                    id=vnet.dbw_analytics_containers_subnet.id,
-                ),
-            ],
-        )
-        if datalake_config["network"]["firewall"]["enabled"] == True
-        else STORAGE_ACCOUNT_DEFAULT_FIREWALL
-    ),
+    network_rule_set=network_rule_set,
     is_hns_enabled=True,
-    kind="StorageV2",
+    kind=storage.Kind.STORAGE_V2,
     location=platform_config.region.long_name,
-    minimum_tls_version="TLS1_2",
+    minimum_tls_version=storage.MinimumTlsVersion.TLS1_2,
     resource_group_name=resource_groups["data"].name,
-    sku=azure_native.storage.SkuArgs(
-        name="Standard_GRS",
-    ),
+    sku=storage.SkuArgs(name=storage.SkuName.STANDARD_GRS),
     tags=platform_config.tags,
     opts=ResourceOptions(
         protect=platform_config.resource_protection,
@@ -139,12 +131,12 @@ blob_private_endpoint_name = generate_resource_name(
     resource_name="for-datalake-blob",
     platform_config=platform_config,
 )
-blob_private_endpoint = azure_native.network.PrivateEndpoint(
+blob_private_endpoint = network.PrivateEndpoint(
     resource_name=blob_private_endpoint_name,
     location=platform_config.region.long_name,
     private_endpoint_name=blob_private_endpoint_name,
     private_link_service_connections=[
-        azure_native.network.PrivateLinkServiceConnectionArgs(
+        network.PrivateLinkServiceConnectionArgs(
             name=vnet.vnet.name,
             group_ids=["blob"],
             private_link_service_id=datalake.id,
@@ -153,7 +145,7 @@ blob_private_endpoint = azure_native.network.PrivateEndpoint(
     ],
     custom_dns_configs=[],
     resource_group_name=resource_groups["infra"].name,
-    subnet=azure_native.network.SubnetArgs(id=vnet.privatelink_subnet.id),
+    subnet=network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
 
 # To Log Analytics Workspace
@@ -170,10 +162,10 @@ log_network_interfaces(
 )
 
 # BLOB PRIVATE DNS ZONE GROUP
-blob_private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
+blob_private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
     resource_name=f"{blob_private_endpoint_name}-dns-zone-group",
     private_dns_zone_configs=[
-        azure_native.network.PrivateDnsZoneConfigArgs(
+        network.PrivateDnsZoneConfigArgs(
             name=blob_private_endpoint_name,
             private_dns_zone_id=dns.storage_blob_private_dns_zone.id,
         )
@@ -190,12 +182,12 @@ dfs_private_endpoint_name = generate_resource_name(
     platform_config=platform_config,
 )
 
-dfs_private_endpoint = azure_native.network.PrivateEndpoint(
+dfs_private_endpoint = network.PrivateEndpoint(
     resource_name=dfs_private_endpoint_name,
     location=platform_config.region.long_name,
     private_endpoint_name=dfs_private_endpoint_name,
     private_link_service_connections=[
-        azure_native.network.PrivateLinkServiceConnectionArgs(
+        network.PrivateLinkServiceConnectionArgs(
             name=vnet.vnet.name,
             group_ids=["dfs"],
             private_link_service_id=datalake.id,
@@ -204,7 +196,7 @@ dfs_private_endpoint = azure_native.network.PrivateEndpoint(
     ],
     resource_group_name=resource_groups["infra"].name,
     custom_dns_configs=[],
-    subnet=azure_native.network.SubnetArgs(id=vnet.privatelink_subnet.id),
+    subnet=network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
 
 # To Log Analytics Workspace
@@ -221,10 +213,10 @@ log_network_interfaces(
 )
 
 # DFS PRIVATE DNS ZONE GROUP
-dfs_private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
+dfs_private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
     resource_name=f"{dfs_private_endpoint_name}-dns-zone-group",
     private_dns_zone_configs=[
-        azure_native.network.PrivateDnsZoneConfigArgs(
+        network.PrivateDnsZoneConfigArgs(
             name=dfs_private_endpoint_name,
             private_dns_zone_id=dns.storage_dfs_private_dns_zone.id,
         )
@@ -265,7 +257,7 @@ for ref_key, container_config in datalake_config.get("containers", {}).items():
         resource_name=ref_key,
         platform_config=platform_config,
     )
-    datalake_containers[ref_key] = azure_native.storage.BlobContainer(
+    datalake_containers[ref_key] = storage.BlobContainer(
         resource_name=datalake_container_name,
         account_name=datalake.name,
         container_name=container_config["display_name"],
@@ -305,7 +297,7 @@ for ref_key, table_config in datalake_config.get("tables", {}).items():
 
     table_name = table_config["display_name"]
 
-    datalake_tables[ref_key] = azure_native.storage.Table(
+    datalake_tables[ref_key] = storage.Table(
         resource_name=f"{datalake_name}-{table_config['display_name']}".lower(),
         resource_group_name=resource_groups["data"].name,
         account_name=datalake.name,
@@ -330,22 +322,22 @@ for ref_key, table_config in datalake_config.get("tables", {}).items():
 # ----------------------------------------------------------------------------------------------------------------------
 
 table_storage_sas = datalake.name.apply(
-    lambda account_name: azure_native.storage.list_storage_account_sas(
+    lambda account_name: storage.list_storage_account_sas(
         account_name=account_name,
-        protocols=azure_native.storage.HttpProtocol.HTTPS,
-        resource_types=azure_native.storage.SignedResourceTypes.O,
-        services=azure_native.storage.Services.T,
+        protocols=storage.HttpProtocol.HTTPS,
+        resource_types=storage.SignedResourceTypes.O,
+        services=storage.Services.T,
         shared_access_start_time="2021-08-31T00:00:00Z",
         shared_access_expiry_time="2041-08-31T00:00:00Z",
         permissions="".join(
             [
-                azure_native.storage.Permissions.R,
-                azure_native.storage.Permissions.W,
-                azure_native.storage.Permissions.D,
-                azure_native.storage.Permissions.L,
-                azure_native.storage.Permissions.A,
-                azure_native.storage.Permissions.C,
-                azure_native.storage.Permissions.U,
+                storage.Permissions.R,
+                storage.Permissions.W,
+                storage.Permissions.D,
+                storage.Permissions.L,
+                storage.Permissions.A,
+                storage.Permissions.C,
+                storage.Permissions.U,
             ]
         ),
         resource_group_name=resource_groups["data"].name,
@@ -353,12 +345,12 @@ table_storage_sas = datalake.name.apply(
 )
 
 # Save to Key Vault
-azure_native.keyvault.Secret(
+keyvault.Secret(
     resource_name="datalake-table-storage-sas-uri-secret",
     resource_group_name=resource_groups["security"].name,
     vault_name=credentials_store.key_vault.name,
     secret_name="datalake-table-storage-sas-uri",
-    properties=azure_native.keyvault.SecretPropertiesArgs(
+    properties=keyvault.SecretPropertiesArgs(
         value=Output.concat(
             datalake.primary_endpoints.table, "?", table_storage_sas.account_sas_token
         ),
