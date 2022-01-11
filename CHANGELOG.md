@@ -6,6 +6,7 @@
 - [data_factory] - Add Factory to obtain data integrated with a corresponding DevOps repository
 
 ### Improvements
+- [preprocess] - Better initial preprocessing package
 - [resource_protection] - Enabling Azure locks to protect resource groups from accidental deletion.
 
 ## 0.2.2 (2022-01-03)
