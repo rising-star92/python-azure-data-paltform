@@ -233,6 +233,12 @@ _datafactory_factory:
   integration_runtimes: list(include('_datafactory_integration_runtime'), required=False)
   logs: include('_logs', required=False)
   metrics: include('_metrics', required=False)
+  repository: include('_datafactory_repository', required=False)
+
+_datafactory_repository:
+  devops_integrated: bool(required=False)
+  collaboration_branch: str(required=False)
+  root_folder: str(required=False)
 
 _datafactory_integration_runtime:
   type: enum("self-hosted","self-hosted-azure-vnet-integrated")

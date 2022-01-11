@@ -1,4 +1,4 @@
-from os import getenv
+from os import getenv, path
 
 import hiyapyco as hco
 import yamale
@@ -125,14 +125,21 @@ class PlatformConfiguration:
         # If no custom config file path is provided, we'll use the default config.
         custom_config_file_path = custom_config_file_path or default_config_file_path
 
+        stack_default_config_file_path = default_config_file_path.replace(
+            "defaults.yml", f"defaults.{stack}.yml"
+        )
+
         # Merge the default + custom configs. The custom configs will override any defaults.
-        self._from_yml = dict(
-            hco.load(
-                [default_config_file_path, custom_config_file_path],
-                method=hco.METHOD_MERGE,
-                mergelists=False,
-            )
-        )  # type: ignore
+        if path.isfile(stack_default_config_file_path):
+            merge_files = [default_config_file_path,
+                           stack_default_config_file_path,
+                           custom_config_file_path]
+        else:
+            merge_files = [default_config_file_path,
+                           custom_config_file_path]
+        self._from_yml = dict(hco.load(
+            merge_files, method=hco.METHOD_MERGE, mergelists=False,
+        ))  # type: ignore
 
         # Validate the schema
         self._validate_schema(config_schema_file_path, self._from_yml)

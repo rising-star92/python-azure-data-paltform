@@ -3,10 +3,12 @@ import pulumi_azuredevops as ado
 from pulumi import ResourceOptions
 
 from ingenii_azure_data_platform.utils import generate_resource_name, generate_hash
-from project_config import platform_config
+from project_config import platform_config, platform_outputs
 from management import user_groups
 
 ado_configs = platform_config.from_yml["automation"]["devops"]
+
+outputs = platform_outputs["devops"] = {"project": {}}
 
 # Azure DevOps Project
 PROJECT_FEATURES = ["boards", "repositories", "pipelines", "testplans", "artifacts"]
@@ -29,6 +31,9 @@ ado_project = ado.Project(
     work_item_template=ado_configs["project"]["work_item_template"],
     opts=ResourceOptions(protect=platform_config.resource_protection),
 )
+
+outputs["project"]["id"] = ado_project.id
+outputs["project"]["name"] = ado_project.name
 
 # Azure DevOps Project Permissions
 ado_project_iam_role_assignments = (
@@ -68,6 +73,16 @@ ado_repo_configs = ado_configs.get("repositories", [])
 ado_repos = {}
 
 for repo in ado_repo_configs:
+
+    if repo.get("import_url"):
+        initialization = ado.GitInitializationArgs(
+            init_type="Import",
+            source_type="Git",
+            source_url=repo["import_url"],
+        )
+    else:
+        initialization = ado.GitInitializationArgs(init_type="Clean")
+    
     ado_repos[repo["name"]] = ado.Git(
         resource_name=generate_resource_name(
             resource_type="devops_repo",
@@ -77,13 +92,7 @@ for repo in ado_repo_configs:
         name=repo["name"],
         project_id=ado_project.id,
         default_branch=f"refs/heads/{repo.get('default_branch', 'main')}",
-        initialization=ado.GitInitializationArgs(
-            init_type="Import",
-            source_type="Git",
-            source_url=repo["import_url"],
-        )
-        if repo.get("import_url") is not None
-        else ado.GitInitializationArgs(init_type="Clean"),
+        initialization=initialization,
         opts=ResourceOptions(protect=platform_config.resource_protection),
     )
 

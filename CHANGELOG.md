@@ -2,6 +2,9 @@
 
 # 0.2.3 (Unreleased)
 
+### New Features
+- [data_factory] - Add Factory to obtain data integrated with a corresponding DevOps repository
+
 ### Improvements
 - [resource_protection] - Enabling Azure locks to protect resource groups from accidental deletion.
 

@@ -63,7 +63,7 @@ security:
     iam:
       role_assignments:
         - user_group_ref_key: admins
-          role_definition_name: "Key Vault Secrets User"
+          role_definition_name: "Key Vault Administrator"
 
 # ----------------------------------------------------------------------------------------------------------------------
 # LOGS

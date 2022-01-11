@@ -91,7 +91,7 @@ for config in datafactory_config.get("integration_runtimes", []):
         )
 
 # ----------------------------------------------------------------------------------------------------------------------
-# DEVOPS ASSIGNMENT
+# DATA FACTORY -> DEVOPS ASSIGNMENT
 # ----------------------------------------------------------------------------------------------------------------------
 
 ServicePrincipalRoleAssignment(
@@ -105,7 +105,7 @@ ServicePrincipalRoleAssignment(
 add_config_registry_secret("data-factory-name", datafactory.name)
 
 # ----------------------------------------------------------------------------------------------------------------------
-# LOGGING
+# DATA FACTORY -> LOGGING
 # ----------------------------------------------------------------------------------------------------------------------
 
 log_diagnostic_settings(
