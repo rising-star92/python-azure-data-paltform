@@ -30,6 +30,7 @@ def generate_resource_name(
         The generated resource name.
     """
     resource_names = {
+        "container_registry": "cr",
         "databricks_cluster": "dbwc",
         "databricks_instance_pool": "dbwip",
         "databricks_workspace": "dbw",

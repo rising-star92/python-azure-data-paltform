@@ -1,6 +1,7 @@
 import pulumi_azure as azure_classic
+from pulumi import Output, ResourceOptions
 from pulumi_azure_native import keyvault, network, storage
-from pulumi import Output
+
 from ingenii_azure_data_platform.defaults import STORAGE_ACCOUNT_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
@@ -11,6 +12,7 @@ from ingenii_azure_data_platform.logs import (
     log_network_interfaces,
 )
 from ingenii_azure_data_platform.utils import generate_resource_name
+
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
@@ -20,7 +22,6 @@ from platform_shared import (
     get_devops_principal_id,
 )
 from project_config import platform_config, platform_outputs
-from pulumi import ResourceOptions
 from security import credentials_store
 
 outputs = platform_outputs["storage"]["datalake"] = {}

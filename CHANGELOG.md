@@ -3,6 +3,7 @@
 # 0.2.3 (Unreleased)
 
 ### New Features
+- [container_registry] - Deploy and manage Azure Container Registry as a shared service to all DTAP environments.
 - [data_factory] - Add Factory to obtain data integrated with a corresponding DevOps repository
 
 ### Improvements

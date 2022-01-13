@@ -1,4 +1,6 @@
 from os import getenv
+from typing import Any, Dict
+
 from pulumi import InvokeOptions, ResourceOptions
 from pulumi_azure_native import Provider, keyvault
 from pulumi_azure_native.authorization import get_client_config
@@ -26,10 +28,12 @@ shared_platform_config = PlatformConfiguration(
         "ADP_DEFAULT_CONFIG_FILE_PATH", "../../platform-config/defaults.yml"
     ).replace("defaults.yml", "defaults.shared.yml"),
     custom_config_file_path=getenv("ADP_CUSTOM_CONFIGS_FILE_PATH").replace(
-        f"{platform_config.stack}.yml", "shared.yml"),
+        f"{platform_config.stack}.yml", "shared.yml"
+    ),
 )
 
 azure_client = get_client_config(opts=InvokeOptions(provider=shared_services_provider))
+
 
 def get_devops_principal_id():
     return SHARED_OUTPUTS["automation"]["deployment_user_assigned_identities"][
@@ -59,3 +63,15 @@ def add_config_registry_secret(secret_name, secret_value, resource_name=None):
 
 
 add_config_registry_secret("subscription-id", dtap_azure_client.subscription_id)
+
+
+container_registry_configs = shared_platform_config.from_yml.get("storage", {}).get(
+    "container_registry", {}
+)
+
+container_registry_private_endpoint_configs = {
+    ref_key: config
+    for ref_key, config in container_registry_configs.items()
+    if platform_config.stack
+    in config.get("network", {}).get("private_endpoint", {}).get("enabled_in", [])
+}

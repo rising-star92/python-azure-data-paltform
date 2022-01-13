@@ -59,11 +59,6 @@ network:
     public_ip: include('_logs_and_metrics', required=False)
   virtual_network: include('_network_virtual_network')
 
-# network.firewall
-_network_firewall:
-  enabled: bool()
-  ip_access_list: list(ip(), required=False)
-
 # network.virtual_networks
 _network_virtual_network:
   display_name: str()
@@ -73,18 +68,22 @@ _network_virtual_network:
 # STORAGE
 #----------------------------------------------------------------------------------------------------------------------
 storage:
-  datalake:
-    display_name: str(max=9)
-    containers: map(include('storage_datalake_container'), key=str())
-    tables: map(include('storage_datalake_table'), key=str())
-    network:
-      firewall:
-        enabled: bool()
-      private_endpoint: include('storage_datalake_network_private_endpoint', required=False)
-    iam: include('_iam', required=False)
-    logs: include('_logs', required=False)
-    metrics: include('_metrics', required=False)
-    storage_type_logging: include('storage_datalake_storage_type_logging', required=False)
+  datalake: include('storage_datalake', required=False)
+  container_registry: map(include('storage_container_registry'),key=str(), required=False)
+
+# storage.datalake
+storage_datalake:
+  display_name: str(max=9)
+  containers: map(include('storage_datalake_container'), key=str())
+  tables: map(include('storage_datalake_table'), key=str())
+  network:
+    firewall:
+      enabled: bool()
+    private_endpoint: include('storage_datalake_network_private_endpoint', required=False)
+  iam: include('_iam', required=False)
+  logs: include('_logs', required=False)
+  metrics: include('_metrics', required=False)
+  storage_type_logging: include('storage_datalake_storage_type_logging', required=False)
 
 # storage.datalake.containers
 storage_datalake_container:
@@ -111,6 +110,20 @@ storage_datalake_network_private_endpoint:
 storage_datalake_storage_type_logging:
   blob: include('_logs_and_metrics', required=False)
   table: include('_logs_and_metrics', required=False)
+
+# storage.container_registry
+storage_container_registry:
+  display_name: str()
+  sku: enum("basic", "standard", "premium")
+  network: include('storage_container_registry_network', required=False)
+  iam: include('_iam', required=False)
+
+storage_container_registry_network:
+  firewall: include('_network_firewall', required=False)
+  private_endpoint: include('storage_container_registry_network_private_endpoint', required=False)
+
+storage_container_registry_network_private_endpoint:
+  enabled_in: list(enum("dev", "test", "prod"), required=False)
 
 #----------------------------------------------------------------------------------------------------------------------
 # SECURITY
@@ -180,7 +193,7 @@ _databricks_single_node_cluster:
   spark_env_vars: map(required=False)
   spark_conf: map(required=False)
   libraries: include('_databricks_cluster_libraries', required=False)
-  data_factory_linked_service_name: str(required=False) 
+  data_factory_linked_service_name: str(required=False)
 
 _databricks_high_concurrency_cluster:
   type: regex('.*^high_concurrency$')
@@ -198,7 +211,7 @@ _databricks_high_concurrency_cluster:
   spark_env_vars: map(required=False)
   spark_conf: map(required=False)
   libraries: include('_databricks_cluster_libraries', required=False)
-  data_factory_linked_service_name: str(required=False) 
+  data_factory_linked_service_name: str(required=False)
 
 _databricks_cluster_libraries:
   pypi: list(include('_databricks_cluster_library_pypi'), required=False)
@@ -306,3 +319,7 @@ _metrics:
 _logs_and_metrics:
   logs: include('_logs', required=False)
   metrics: include('_metrics', required=False)
+
+_network_firewall:
+  enabled: bool()
+  ip_access_list: list(ip(), required=False)

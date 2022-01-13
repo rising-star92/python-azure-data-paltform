@@ -1,4 +1,5 @@
-import pulumi_azure_native as azure_native
+import pulumi_azure_native.network as net
+
 from ingenii_azure_data_platform.utils import generate_cidr, generate_resource_name
 from management import resource_groups
 from project_config import platform_config, platform_outputs
@@ -19,14 +20,12 @@ vnet_name = generate_resource_name(
     platform_config=platform_config,
 )
 
-vnet = azure_native.network.VirtualNetwork(
+vnet = net.VirtualNetwork(
     resource_name=vnet_name,
     virtual_network_name=vnet_name,
     resource_group_name=resource_groups["infra"].name,
     location=platform_config.region.long_name,
-    address_space=azure_native.network.AddressSpaceArgs(
-        address_prefixes=[vnet_address_space]
-    ),
+    address_space=net.AddressSpaceArgs(address_prefixes=[vnet_address_space]),
     tags=platform_config.tags,
     # Tags are added in the ignore_changes list because of:
     # https://github.com/ingenii-solutions/azure-data-platform/issues/71
@@ -52,7 +51,7 @@ outputs["virtual_network"] = {
 subnet_outputs = outputs["virtual_network"]["subnets"] = {}
 
 # GATEWAY SUBNET
-gateway_subnet = azure_native.network.Subnet(
+gateway_subnet = net.Subnet(
     resource_name=generate_resource_name(
         resource_type="subnet", resource_name="gateway", platform_config=platform_config
     ),
@@ -60,7 +59,7 @@ gateway_subnet = azure_native.network.Subnet(
     resource_group_name=resource_groups["infra"].name,
     virtual_network_name=vnet.name,
     address_prefix=generate_cidr(vnet_address_space, 24, 0),
-    route_table=azure_native.network.RouteTableArgs(id=routing.main_route_table.id),
+    route_table=net.RouteTableArgs(id=routing.main_route_table.id),
 )
 
 # Export subnet metadata
@@ -74,14 +73,14 @@ subnet_outputs["gateway"] = {
 privatelink_subnet_name = generate_resource_name(
     resource_type="subnet", resource_name="privatelink", platform_config=platform_config
 )
-privatelink_subnet = azure_native.network.Subnet(
+privatelink_subnet = net.Subnet(
     resource_name=privatelink_subnet_name,
     subnet_name=privatelink_subnet_name,
     resource_group_name=resource_groups["infra"].name,
     virtual_network_name=vnet.name,
     address_prefix=generate_cidr(vnet_address_space, 24, 1),
-    private_endpoint_network_policies=azure_native.network.VirtualNetworkPrivateEndpointNetworkPolicies.DISABLED,
-    route_table=azure_native.network.RouteTableArgs(id=routing.main_route_table.id),
+    private_endpoint_network_policies=net.VirtualNetworkPrivateEndpointNetworkPolicies.DISABLED,
+    route_table=net.RouteTableArgs(id=routing.main_route_table.id),
     opts=ResourceOptions(depends_on=[gateway_subnet]),
 )
 
@@ -98,21 +97,22 @@ hosted_services_subnet_name = generate_resource_name(
     resource_name="hosted-services",
     platform_config=platform_config,
 )
-hosted_services_subnet = azure_native.network.Subnet(
+hosted_services_subnet = net.Subnet(
     resource_name=hosted_services_subnet_name,
     subnet_name=hosted_services_subnet_name,
     resource_group_name=resource_groups["infra"].name,
     virtual_network_name=vnet.name,
     address_prefix=generate_cidr(vnet_address_space, 24, 2),
-    route_table=azure_native.network.RouteTableArgs(id=routing.main_route_table.id),
-    nat_gateway=azure_native.network.SubResourceArgs(id=nat.gateway.id),
+    route_table=net.RouteTableArgs(id=routing.main_route_table.id),
+    nat_gateway=net.SubResourceArgs(id=nat.gateway.id),
     service_endpoints=[
-        azure_native.network.ServiceEndpointPropertiesFormatArgs(
-            service="Microsoft.Storage",
-        ),
-        azure_native.network.ServiceEndpointPropertiesFormatArgs(
-            service="Microsoft.KeyVault",
-        ),
+        net.ServiceEndpointPropertiesFormatArgs(service=service)
+        for service in [
+            "Microsoft.ContainerRegistry",
+            "Microsoft.KeyVault",
+            "Microsoft.Storage",
+            "Microsoft.SQL",
+        ]
     ],
     opts=ResourceOptions(depends_on=[privatelink_subnet]),
 )
@@ -130,27 +130,28 @@ dbw_engineering_hosts_subnet_name = generate_resource_name(
     resource_name="dbw-eng-hosts",
     platform_config=platform_config,
 )
-dbw_engineering_hosts_subnet = azure_native.network.Subnet(
+dbw_engineering_hosts_subnet = net.Subnet(
     resource_name=dbw_engineering_hosts_subnet_name,
     subnet_name=dbw_engineering_hosts_subnet_name,
     resource_group_name=resource_groups["infra"].name,
     virtual_network_name=vnet.name,
     address_prefix=generate_cidr(vnet_address_space, 22, 1),
-    route_table=azure_native.network.RouteTableArgs(id=routing.main_route_table.id),
-    network_security_group=azure_native.network.NetworkSecurityGroupArgs(
+    route_table=net.RouteTableArgs(id=routing.main_route_table.id),
+    network_security_group=net.NetworkSecurityGroupArgs(
         id=nsg.databricks_engineering.id
     ),
-    nat_gateway=azure_native.network.SubResourceArgs(id=nat.gateway.id),
+    nat_gateway=net.SubResourceArgs(id=nat.gateway.id),
     service_endpoints=[
-        azure_native.network.ServiceEndpointPropertiesFormatArgs(
-            service="Microsoft.Storage",
-        ),
-        azure_native.network.ServiceEndpointPropertiesFormatArgs(
-            service="Microsoft.KeyVault",
-        ),
+        net.ServiceEndpointPropertiesFormatArgs(service=service)
+        for service in [
+            "Microsoft.ContainerRegistry",
+            "Microsoft.KeyVault",
+            "Microsoft.Storage",
+            "Microsoft.SQL",
+        ]
     ],
     delegations=[
-        azure_native.network.DelegationArgs(
+        net.DelegationArgs(
             name="databricks", service_name="Microsoft.Databricks/workspaces"
         )
     ],
@@ -170,27 +171,28 @@ dbw_engineering_containers_subnet_name = generate_resource_name(
     resource_name="dbw-eng-cont",
     platform_config=platform_config,
 )
-dbw_engineering_containers_subnet = azure_native.network.Subnet(
+dbw_engineering_containers_subnet = net.Subnet(
     resource_name=dbw_engineering_containers_subnet_name,
     subnet_name=dbw_engineering_containers_subnet_name,
     resource_group_name=resource_groups["infra"].name,
     virtual_network_name=vnet.name,
     address_prefix=generate_cidr(vnet_address_space, 22, 2),
-    route_table=azure_native.network.RouteTableArgs(id=routing.main_route_table.id),
-    network_security_group=azure_native.network.NetworkSecurityGroupArgs(
+    route_table=net.RouteTableArgs(id=routing.main_route_table.id),
+    network_security_group=net.NetworkSecurityGroupArgs(
         id=nsg.databricks_engineering.id
     ),
-    nat_gateway=azure_native.network.SubResourceArgs(id=nat.gateway.id),
+    nat_gateway=net.SubResourceArgs(id=nat.gateway.id),
     service_endpoints=[
-        azure_native.network.ServiceEndpointPropertiesFormatArgs(
-            service="Microsoft.Storage",
-        ),
-        azure_native.network.ServiceEndpointPropertiesFormatArgs(
-            service="Microsoft.KeyVault",
-        ),
+        net.ServiceEndpointPropertiesFormatArgs(service=service)
+        for service in [
+            "Microsoft.ContainerRegistry",
+            "Microsoft.KeyVault",
+            "Microsoft.Storage",
+            "Microsoft.SQL",
+        ]
     ],
     delegations=[
-        azure_native.network.DelegationArgs(
+        net.DelegationArgs(
             name="databricks", service_name="Microsoft.Databricks/workspaces"
         )
     ],
@@ -210,27 +212,26 @@ dbw_analytics_hosts_subnet_name = generate_resource_name(
     resource_name="dbw-atc-hosts",
     platform_config=platform_config,
 )
-dbw_analytics_hosts_subnet = azure_native.network.Subnet(
+dbw_analytics_hosts_subnet = net.Subnet(
     resource_name=dbw_analytics_hosts_subnet_name,
     subnet_name=dbw_analytics_hosts_subnet_name,
     resource_group_name=resource_groups["infra"].name,
     virtual_network_name=vnet.name,
     address_prefix=generate_cidr(vnet_address_space, 22, 3),
-    route_table=azure_native.network.RouteTableArgs(id=routing.main_route_table.id),
-    network_security_group=azure_native.network.NetworkSecurityGroupArgs(
-        id=nsg.databricks_analytics.id
-    ),
-    nat_gateway=azure_native.network.SubResourceArgs(id=nat.gateway.id),
+    route_table=net.RouteTableArgs(id=routing.main_route_table.id),
+    network_security_group=net.NetworkSecurityGroupArgs(id=nsg.databricks_analytics.id),
+    nat_gateway=net.SubResourceArgs(id=nat.gateway.id),
     service_endpoints=[
-        azure_native.network.ServiceEndpointPropertiesFormatArgs(
-            service="Microsoft.Storage",
-        ),
-        azure_native.network.ServiceEndpointPropertiesFormatArgs(
-            service="Microsoft.KeyVault",
-        ),
+        net.ServiceEndpointPropertiesFormatArgs(service=service)
+        for service in [
+            "Microsoft.ContainerRegistry",
+            "Microsoft.KeyVault",
+            "Microsoft.Storage",
+            "Microsoft.SQL",
+        ]
     ],
     delegations=[
-        azure_native.network.DelegationArgs(
+        net.DelegationArgs(
             name="databricks", service_name="Microsoft.Databricks/workspaces"
         )
     ],
@@ -250,27 +251,26 @@ dbw_analytics_containers_subnet_name = generate_resource_name(
     resource_name="dbw-atc-cont",
     platform_config=platform_config,
 )
-dbw_analytics_containers_subnet = azure_native.network.Subnet(
+dbw_analytics_containers_subnet = net.Subnet(
     resource_name=dbw_analytics_containers_subnet_name,
     subnet_name=dbw_analytics_containers_subnet_name,
     resource_group_name=resource_groups["infra"].name,
     virtual_network_name=vnet.name,
     address_prefix=generate_cidr(vnet_address_space, 22, 4),
-    route_table=azure_native.network.RouteTableArgs(id=routing.main_route_table.id),
-    network_security_group=azure_native.network.NetworkSecurityGroupArgs(
-        id=nsg.databricks_analytics.id
-    ),
-    nat_gateway=azure_native.network.SubResourceArgs(id=nat.gateway.id),
+    route_table=net.RouteTableArgs(id=routing.main_route_table.id),
+    network_security_group=net.NetworkSecurityGroupArgs(id=nsg.databricks_analytics.id),
+    nat_gateway=net.SubResourceArgs(id=nat.gateway.id),
     service_endpoints=[
-        azure_native.network.ServiceEndpointPropertiesFormatArgs(
-            service="Microsoft.Storage",
-        ),
-        azure_native.network.ServiceEndpointPropertiesFormatArgs(
-            service="Microsoft.KeyVault",
-        ),
+        net.ServiceEndpointPropertiesFormatArgs(service=service)
+        for service in [
+            "Microsoft.ContainerRegistry",
+            "Microsoft.KeyVault",
+            "Microsoft.Storage",
+            "Microsoft.SQL",
+        ]
     ],
     delegations=[
-        azure_native.network.DelegationArgs(
+        net.DelegationArgs(
             name="databricks", service_name="Microsoft.Databricks/workspaces"
         )
     ],
