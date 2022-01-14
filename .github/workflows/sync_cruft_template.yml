@@ -1,0 +1,65 @@
+name: Sync Cruft Template
+env:
+  TEMPLATE_REPO: ingenii-deployments/template-customer-repo
+on:
+  release:
+    types: [published]
+jobs:
+  sync:
+    name: Sync Cruft Template
+    runs-on: ubuntu-latest
+    steps:
+      # ----------------------------------------
+      - name: Check out platform repo
+        uses: actions/checkout@v2
+        with:
+          path: platform
+      # ----------------------------------------
+      - name: Check out template repo
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ env.TEMPLATE_REPO }}
+          ssh-key: ${{ secrets.DEPLOYMENTS_ADP_TEMPLATE_REPO_DEPLOY_KEY }}
+          path: template
+      # ----------------------------------------
+      - name: Remove old template files from the template repo
+        run: |
+          cd template
+          for i in `ls -A | grep -F -v ".git"`; do rm -rf $i; done;
+          rm -rf .github
+          rm -rf .gitignore
+      # ----------------------------------------
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+          architecture: 'x64'
+      # ----------------------------------------
+      - name: Install Cruft
+        run: pip install cruft
+      # ----------------------------------------
+      - name: Get a release version
+        if: github.event_name == 'release'
+        id: tag_name
+        run: |
+          echo ::set-output name=SOURCE_TAG::${GITHUB_REF#refs/tags/}
+      - name: Generate a new template
+        run: |
+          shopt -s dotglob
+          cd platform/src/cookiecutters/customer-repo
+          make setup-template-repo PLATFORM_VERSION=${{ steps.tag_name.outputs.SOURCE_TAG }} OUTPUT_DIR=${{ github.workspace }}
+          mv ${{ github.workspace }}/tpl/* ${{ github.workspace }}/template/
+      # ----------------------------------------
+      - name: Install Deployment SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.DEPLOYMENTS_ADP_TEMPLATE_REPO_DEPLOY_KEY }}
+          known_hosts: "github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+      # ----------------------------------------
+      - name: Push template to template repo
+        run: |
+          cd template
+          git config --global user.name "GitHub Workflows"
+          git config --global user.email "workflows@ingenii.dev"
+          git add .
+          git commit -m "Syncing the cruft template to version ${{ steps.tag_name.outputs.SOURCE_TAG }}"
+          git push origin main

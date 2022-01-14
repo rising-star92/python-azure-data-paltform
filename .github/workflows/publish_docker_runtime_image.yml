@@ -27,16 +27,16 @@ jobs:
           username: ${{ secrets.INGENII_DOCKER_HUB_USERNAME }}
           password: ${{ secrets.INGENII_DOCKER_HUB_PASSWORD }}
       # ----------------------------------------
-      - name: Publish 'latest-dev'
-        if: github.ref != 'refs/heads/main' && github.event_name != 'release'
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: ${{ env.PLATFORMS }}
-          push: true
-          tags: |
-            "${{ env.IMAGE_NAME }}:latest-dev"
+      # - name: Publish 'latest-dev'
+      #   if: github.ref != 'refs/heads/main' && github.event_name != 'release'
+      #   uses: docker/build-push-action@v2
+      #   with:
+      #     context: .
+      #     file: ./Dockerfile
+      #     platforms: ${{ env.PLATFORMS }}
+      #     push: true
+      #     tags: |
+      #       "${{ env.IMAGE_NAME }}:latest-dev"
       # ----------------------------------------
       - name: Publish 'latest'
         if: github.ref == 'refs/heads/main'
