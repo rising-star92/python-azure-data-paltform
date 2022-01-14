@@ -27,8 +27,16 @@ devops_organization_name = getenv("AZDO_ORG_SERVICE_URL").strip(" /").split("/")
 # DATA FACTORIES
 # ----------------------------------------------------------------------------------------------------------------------
 datafactory_configs = platform_config.from_yml["analytics_services"]["datafactory"]["factories"]
-datafactory_repositories = SHARED_OUTPUTS["analytics"]["datafactory_repositories"]
-devops_project = SHARED_OUTPUTS["devops"]["project"]
+datafactory_repositories = SHARED_OUTPUTS.get(
+    "analytics", "datafactory_repositories",
+    preview={
+        key: {"name": f"Preview Repository name: {key}"}
+        for key in datafactory_configs
+    }
+)
+devops_project = SHARED_OUTPUTS.get(
+    "devops", "project", preview={"name": "Preview DevOps Project Name"}
+)
 
 data_datafactories = {}
 

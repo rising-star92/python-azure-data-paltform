@@ -15,7 +15,6 @@ from platform_shared import (
     container_registry_configs,
     container_registry_private_endpoint_configs,
 )
-from platform_shared import azure_client as shared_azure_client
 
 # ----------------------------------------------------------------------------------------------------------------------
 # CONTAINER REGISTRY PRIVATE ENDPOINTS
@@ -33,20 +32,10 @@ for ref_key, config in container_registry_private_endpoint_configs.items():
         )
         continue
 
-    if runtime.is_dry_run():
-        resource_group = generate_resource_name(
-            "resource_group", "data", platform_config
-        ).replace(platform_config.stack_short_name, "shr")
-        
-        container_registry_resource_id = get_container_registry_resource_id(
-            subscription_id=shared_azure_client.subscription_id,
-            resource_group_name=resource_group,
-            registry_name=registry_name,
-        )
-    else:
-        container_registry_resource_id = SHARED_OUTPUTS["storage"][
-            "container_registry"
-        ][ref_key]["id"]
+    container_registry_resource_id = SHARED_OUTPUTS.get(
+        "storage", "container_registry", ref_key, "id",
+        preview="Preview Container Registry ID"
+    )
 
     resource_group_name = resource_groups["infra"].name
 

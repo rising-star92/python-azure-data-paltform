@@ -31,7 +31,6 @@ if runtime_config["enabled"]:
         resource_group_name=resource_groups["infra"].name,
     )
 
-    cluster_details = SHARED_OUTPUTS["analytics"]["shared_kubernetes_cluster"]
     labels = {
         "data_factory": datafactory_name,
         "type": "DataFactorySelfHostedIntegrationRuntime",
@@ -42,16 +41,22 @@ if runtime_config["enabled"]:
     # DATA FACTORY RUNTIME -> ACCESS
     # ----------------------------------------------------------------------------------------------------------------------
 
-    ####
     # Use the admin credential as it's static
-    # TODO: Don't do this bit - add Pulumi service principal as Azure Kubernetes Service RBAC Cluster Admin
-    kube_config = b64decode(
-        containerservice.list_managed_cluster_admin_credentials(
-            resource_group_name=cluster_details["resource_group_name"],
-            resource_name=cluster_details["name"],
-            opts=InvokeOptions(provider=shared_services_provider)
-        ).kubeconfigs[0].value
-    ).decode()
+    # TODO: Don't do this - add Pulumi service principal as Azure Kubernetes Service RBAC Cluster Admin
+
+    def get_credentials(cluster_details):
+        if cluster_details is None:
+            return "Preview Kubernetes Config"
+        return b64decode(
+            containerservice.list_managed_cluster_admin_credentials(
+                resource_group_name=cluster_details["resource_group_name"],
+                resource_name=cluster_details["name"],
+                opts=InvokeOptions(provider=shared_services_provider)
+            ).kubeconfigs[0].value
+        ).decode()
+
+    kube_config = SHARED_OUTPUTS.get(
+        "analytics", "shared_kubernetes_cluster").apply(get_credentials)
 
     kubernetes_provider = Provider(
         "datafactory_kubernetes_provider", kubeconfig=kube_config

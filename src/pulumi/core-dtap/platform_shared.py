@@ -1,5 +1,4 @@
 from os import getenv
-from typing import Any, Dict
 
 from pulumi import InvokeOptions, ResourceOptions
 from pulumi_azure_native import Provider, keyvault
@@ -36,17 +35,17 @@ azure_client = get_client_config(opts=InvokeOptions(provider=shared_services_pro
 
 
 def get_devops_principal_id():
-    return SHARED_OUTPUTS["automation"]["deployment_user_assigned_identities"][
-        platform_config.stack
-    ]
-
-
-def get_devops_config_registry():
-    return SHARED_OUTPUTS["security"]["config_registry"]
+    return SHARED_OUTPUTS.get(
+        "automation", "deployment_user_assigned_identities", platform_config.stack,
+        preview="Preview-Devops-Principal-ID"
+    )
 
 
 def get_devops_config_registry_resource_group():
-    return get_devops_config_registry()["key_vault_id"].apply(
+    return SHARED_OUTPUTS.get(
+        "security", "config_registry", "key_vault_id",
+        preview="////PrviewDevOpsConfigRegistryResourceGroup"
+    ).apply(
         lambda id_str: id_str.split("/")[4]
     )
 
@@ -55,7 +54,10 @@ def add_config_registry_secret(secret_name, secret_value, resource_name=None):
     keyvault.Secret(
         resource_name=resource_name or f"devops-{secret_name}",
         resource_group_name=get_devops_config_registry_resource_group(),
-        vault_name=get_devops_config_registry()["key_vault_name"],
+        vault_name=SHARED_OUTPUTS.get(
+            "security", "config_registry", "key_vault_name",
+            preview="previewkeyvaultname"
+        ),
         secret_name=f"{secret_name}-{platform_config.stack}",
         properties=keyvault.SecretPropertiesArgs(value=secret_value),
         opts=ResourceOptions(provider=shared_services_provider),

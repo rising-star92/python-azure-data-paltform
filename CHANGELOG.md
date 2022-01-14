@@ -9,6 +9,7 @@
 ### Improvements
 - [preprocess] - Better initial preprocessing package
 - [resource_protection] - Enabling Azure locks to protect resource groups from accidental deletion.
+- [shared] - Handle concurrent previews when a resource is deployed in two stacks at the same time
 
 ## 0.2.2 (2022-01-03)
 

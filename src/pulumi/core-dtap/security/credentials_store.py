@@ -193,8 +193,18 @@ private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
 # KEY VAULT -> PRIVATE ENDPOINT FOR DEVOPS
 # ----------------------------------------------------------------------------------------------------------------------
 
-shared_vnet = SHARED_OUTPUTS["network"]["virtual_network"]
-shared_infra_resource_group = SHARED_OUTPUTS["management"]["resource_groups"]["infra"]
+shared_vnet = SHARED_OUTPUTS.get(
+    "network", "virtual_network",
+    preview={
+        "name": "Preview vNet Name",
+        "location": "Preview vNet Location",
+        "subnets": {"privatelink": {"id": "Preview Subnets Private Link ID"}},
+    }
+)
+shared_infra_resource_group_name = SHARED_OUTPUTS.get(
+    "management", "resource_groups", "infra", "name",
+    preview="previewresourcegroupname"
+)
 
 # PRIVATE ENDPOINT
 private_endpoint_name_devops = generate_resource_name(
@@ -214,7 +224,7 @@ private_endpoint_devops = network.PrivateEndpoint(
             request_message="none",
         )
     ],
-    resource_group_name=shared_infra_resource_group["name"],
+    resource_group_name=shared_infra_resource_group_name,
     custom_dns_configs=[],
     subnet=network.SubnetArgs(id=shared_vnet["subnets"]["privatelink"]["id"]),
     opts=ResourceOptions(provider=shared_services_provider),
@@ -245,14 +255,15 @@ private_endpoint_dns_zone_group_devops = network.PrivateDnsZoneGroup(
     private_dns_zone_configs=[
         network.PrivateDnsZoneConfigArgs(
             name=private_endpoint_name_devops,
-            private_dns_zone_id=SHARED_OUTPUTS["network"]["dns"]["private_zones"][
-                "key_vault"
-            ]["id"],
+            private_dns_zone_id=SHARED_OUTPUTS.get(
+                "network", "dns", "private_zones", "key_vault", "id",
+                preview="Preview Private DNS Zone ID"
+            ),
         )
     ],
     private_dns_zone_group_name="privatelink",
     private_endpoint_name=private_endpoint_devops.name,
-    resource_group_name=shared_infra_resource_group["name"],
+    resource_group_name=shared_infra_resource_group_name,
     opts=ResourceOptions(provider=shared_services_provider),
 )
 

@@ -1,6 +1,8 @@
-from os import getenv, path
-
 import hiyapyco as hco
+from os import getenv, path
+from pulumi import runtime, StackReference, Output, UNKNOWN
+from pulumi.output import Unknown
+from typing import Any, cast
 import yamale
 
 
@@ -212,3 +214,35 @@ class PlatformConfiguration:
 
     def __setitem__(self, key, value):
         raise Exception("You should not be updating the platform configuration!")
+
+
+class SharedOutput:
+    def __init__(self, pulumi_org_name: str, project_name: str, stack_name: str):
+        
+        shared_stack_reference = StackReference(
+            name="/".join([pulumi_org_name, project_name, stack_name])
+        )
+
+        self.outputs = shared_stack_reference.get_output("root")
+
+    def get(self, *keys, preview=None):
+
+        def handle_preview_values(value):
+            if value == {} and runtime.is_dry_run():
+                return preview
+            return value
+        
+        def lift(val, key_to_get):
+            # Derived from Output.__getitem__
+            if isinstance(val, Unknown):
+                return UNKNOWN
+        
+            return cast(Any, val).get(key_to_get, {})
+
+        curr_output = self.outputs
+        for key in keys:
+            curr_output = Output.all(co=curr_output, key=key).apply(
+                lambda args: lift(args["co"], args["key"]), True
+            )
+
+        return curr_output.apply(handle_preview_values)

@@ -25,10 +25,8 @@ def init(args: PackageInputArgs) -> None:
 
     server_name = f"{PREFIX}-{STACK_SHORT_NAME}-{REGION.short_name}-sql-{_server_name}-{UNIQUE_ID}"
 
-    resource_group_name = args.dtap_outputs.apply(
-        lambda outputs: outputs["management"]["resource_groups"][_resource_group_name][
-            "name"
-        ]
+    resource_group_name = args.dtap_outputs.get(
+        "management", "resource_groups", _resource_group_name, "name"
     )
 
     admin_password = random.RandomPassword(
@@ -44,11 +42,11 @@ def init(args: PackageInputArgs) -> None:
                 lambda password: f"username: {_admin_username}, password: {password}"
             )
         ),
-        resource_group_name=args.dtap_outputs.apply(
-            lambda outputs: outputs["management"]["resource_groups"]["security"]["name"]
+        resource_group_name=args.dtap_outputs.get(
+            "management", "resource_groups", "security", "name"
         ),
-        vault_name=args.dtap_outputs.apply(
-            lambda outputs: outputs["security"]["credentials_store"]["key_vault_name"]
+        vault_name=args.dtap_outputs.get(
+            "security", "credentials_store", "key_vault_name"
         ),
     )
 
