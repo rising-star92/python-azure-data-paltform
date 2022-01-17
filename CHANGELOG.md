@@ -1,29 +1,34 @@
 # CHANGELOG
 
+# 0.2.4 (Unreleased)
+
 # 0.2.3 (2022-01-17)
 
 ### New Features
 - [container_registry] - Deploy and manage Azure Container Registry as a shared service to all DTAP environments.
 - [data_factory] - Add Factory to obtain data integrated with a corresponding DevOps repository
+- [data_factory] - Pipeline to keep the Analytics workspace tables in sync
 
 ### Improvements
+- [devops] - Better defaults when defining the virtual machine scale set
 - [devops] - Virtual machine scale set extensions are ignored
 - [preprocess] - Better initial preprocessing package
 - [resource_protection] - Enabling Azure locks to protect resource groups from accidental deletion.
 - [shared] - Handle concurrent previews when a resource is deployed in two stacks at the same time
 
+### Bugfixes
+- [datalake] - Use the correct VirtualNetworkRuleArgs, correct the argument used
+
 ## 0.2.2 (2022-01-03)
 
 ### New Features
 - [databricks] - Allowing for instance pools to be created
-- [data_factory] - Pipeline to keep the Analytics workspace tables in sync
 
 ### Improvments
 - [databricks] - Boost Databricks engineering runtime to 0.6.0  
 - [databricks/provider] - Bump the version to 0.4.1. Also lock the version to the exact semver.
 - [dbt] - Added containers for `models` and `snapshots`
 - [devcontainer] - Additional extensions to improve the dev experience
-- [devops] - Better defaults when defining the virtual machine scale set
 - [docker_image/iac_runtime] - Create a new Dockerfile. Use the same IaC runtime for the platform deployment and for the devcontainers.
 - [platform/cicd] - Making use of the built in source code in the Docker image (/platform/src).
 - [platform/source] - Publish the source of the platform in the Docker image (/platform/src). Make the Docker image `private` in the dockerhub.
@@ -31,7 +36,6 @@
 - [secrets] - Better default access for administrators and engineers
 
 ### Bugfixes
-- [datalake] - Use the correct VirtualNetworkRuleArgs, correct the argument used
 - [dbt] - Ignoring branch and repository_url attributes on the dbt static web site resource 
 - [data_factory] - Correct group assignment for access to Kubernetes cluster
 
