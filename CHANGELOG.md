@@ -1,6 +1,6 @@
 # CHANGELOG
 
-# 0.2.3 (Unreleased)
+# 0.2.3 (2022-01-17)
 
 ### New Features
 - [container_registry] - Deploy and manage Azure Container Registry as a shared service to all DTAP environments.
