@@ -20,7 +20,7 @@ from storage.datalake import datalake
 
 factory_outputs = platform_outputs["analytics"]["datafactory"]["factories"]
 
-datafactory_resource_group = resource_groups["infra"].name
+datafactory_resource_group = resource_groups["data"].name
 devops_organization_name = getenv("AZDO_ORG_SERVICE_URL").strip(" /").split("/")[-1]
 
 # ----------------------------------------------------------------------------------------------------------------------
