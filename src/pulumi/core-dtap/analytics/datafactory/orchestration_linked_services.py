@@ -6,7 +6,6 @@ from analytics.databricks.workspaces import analytics as databricks_analytics, \
     engineering as databricks_engineering
 from analytics.datafactory.orchestration import datafactory, datafactory_name
 from management import resource_groups
-from project_config import platform_config
 from security import credentials_store
 from storage.datalake import datalake
 
@@ -135,40 +134,6 @@ databricks_engineering_compute_linked_service = \
         databricks_engineering.clusters["default"].id
     )
 
-# Other clusters and instance pools to be linked
-engineering_config = platform_config.from_yml["analytics_services"]["databricks"][
-    "workspaces"
-]["engineering"]
-for ref_key, cluster_config in engineering_config.get("clusters", {}).items():
-
-    if ref_key == "system":
-        continue
-
-    if not cluster_config.get("data_factory_linked_service_name"):
-        continue
-
-    ls_name = cluster_config["data_factory_linked_service_name"]
-
-    linked_service_cluster(
-        f"{datafactory_name}-link-to-engineering-{ls_name}",
-        ls_name,
-        databricks_engineering.workspace,
-        databricks_engineering.clusters[ref_key].id
-    )
-
-for ref_key, pool_config in engineering_config.get("instance_pools", {}).items():
-
-    if not pool_config.get("data_factory_linked_service_name"):
-        continue
-
-    ls_name = pool_config["data_factory_linked_service_name"]
-
-    linked_service_instance_pool(
-        f"{datafactory_name}-link-to-engineering-{ls_name}",
-        ls_name,
-        databricks_engineering.workspace,
-        databricks_engineering.instance_pools[ref_key].id
-    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY -> DATABRICKS -> ANALYTICS
@@ -188,35 +153,4 @@ databricks_analytics_compute_linked_service = \
         "Databricks Analytics Compute",
         databricks_analytics.workspace,
         databricks_analytics.clusters["default"].id
-    )
-
-analytics_config = platform_config.from_yml["analytics_services"]["databricks"][
-    "workspaces"
-]["analytics"]
-for ref_key, cluster_config in analytics_config.get("clusters", {}).items():
-
-    if not cluster_config.get("data_factory_linked_service_name"):
-        continue
-
-    ls_name = cluster_config["data_factory_linked_service_name"]
-
-    linked_service_cluster(
-        f"{datafactory_name}-link-to-analytics-{ls_name}",
-        ls_name,
-        databricks_analytics.workspace,
-        databricks_analytics.clusters[ref_key].id
-    )
-
-for ref_key, pool_config in analytics_config.get("instance_pools", {}).items():
-
-    if not pool_config.get("data_factory_linked_service_name"):
-        continue
-
-    ls_name = pool_config["data_factory_linked_service_name"]
-
-    linked_service_instance_pool(
-        f"{datafactory_name}-link-to-analytics-{ls_name}",
-        ls_name,
-        databricks_analytics.workspace,
-        databricks_analytics.instance_pools[ref_key].id
     )

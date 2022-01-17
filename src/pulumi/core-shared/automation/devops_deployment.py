@@ -1,3 +1,4 @@
+from pulumi import ResourceOptions
 import pulumi_azuredevops as ado
 from pulumi_azure_native import compute, managedidentity
 import pulumi_random
@@ -158,6 +159,13 @@ devops_virtual_machine_scale_set = compute.VirtualMachineScaleSet(
     + "-"
     + devops_virtual_machine_scale_set_name,
     tags=platform_config.tags,
+    opts=ResourceOptions(
+        ignore_changes=[
+            "sku.capacity",
+            "virtualMachineProfile.extensionProfile",
+            "virtualMachineProfile.osProfile.adminPassword",
+        ]
+    ),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------

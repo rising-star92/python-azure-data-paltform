@@ -193,7 +193,6 @@ _databricks_single_node_cluster:
   spark_env_vars: map(required=False)
   spark_conf: map(required=False)
   libraries: include('_databricks_cluster_libraries', required=False)
-  data_factory_linked_service_name: str(required=False)
 
 _databricks_high_concurrency_cluster:
   type: regex('.*^high_concurrency$')
@@ -211,7 +210,6 @@ _databricks_high_concurrency_cluster:
   spark_env_vars: map(required=False)
   spark_conf: map(required=False)
   libraries: include('_databricks_cluster_libraries', required=False)
-  data_factory_linked_service_name: str(required=False)
 
 _databricks_cluster_libraries:
   pypi: list(include('_databricks_cluster_library_pypi'), required=False)
@@ -234,7 +232,6 @@ _databricks_instance_pool:
   disk_count: int(required=False)
   disk_size: int(required=False)
   custom_tags: map(required=False)
-  data_factory_linked_service_name: str(required=False)
 
 _datafactory:
   factories: map(include('_datafactory_factory'),key=str(), required=False)

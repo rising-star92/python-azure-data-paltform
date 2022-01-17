@@ -7,6 +7,7 @@
 - [data_factory] - Add Factory to obtain data integrated with a corresponding DevOps repository
 
 ### Improvements
+- [devops] - Virtual machine scale set extensions are ignored
 - [preprocess] - Better initial preprocessing package
 - [resource_protection] - Enabling Azure locks to protect resource groups from accidental deletion.
 - [shared] - Handle concurrent previews when a resource is deployed in two stacks at the same time
@@ -20,7 +21,6 @@
 ### Improvments
 - [databricks] - Boost Databricks engineering runtime to 0.6.0  
 - [databricks/provider] - Bump the version to 0.4.1. Also lock the version to the exact semver.
-- [datafactory] - Databricks clusters and instance pools can be configured to be added as linked services
 - [dbt] - Added containers for `models` and `snapshots`
 - [devcontainer] - Additional extensions to improve the dev experience
 - [devops] - Better defaults when defining the virtual machine scale set
