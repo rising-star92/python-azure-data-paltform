@@ -18,7 +18,7 @@ for env, config in dtap_configs.items():
         if factory_confg.get("repository", {}).get("devops_integrated"):
             repositories_needed.add(factory_ref_key)
 
-outputs = platform_outputs["analytics"]["datafactory_repositories"] = {}
+outputs = platform_outputs["analytics"]["datafactory"]["repositories"] = {}
 
 datafactory_repositories = {}
 for repository_name in repositories_needed:
@@ -45,3 +45,21 @@ for repository_name in repositories_needed:
         "name": git_repository.name,
         "web_url": git_repository.web_url
     }
+
+    for pipeline in ["test", "prod"]:
+        ado.BuildDefinition(
+            resource_name=generate_resource_name(
+                resource_type="devops_pipeline",
+                resource_name=pipeline,
+                platform_config=platform_config,
+            ),
+            name=f"Data Factory - {repository_name} - {pipeline}",
+            project_id=ado_project.id,
+            ci_trigger=ado.BuildDefinitionCiTriggerArgs(use_yaml=True),
+            repository=ado.BuildDefinitionRepositoryArgs(
+                branch_name="refs/heads/adf_publish",
+                repo_type="TfsGit",
+                repo_id=git_repository.id,
+                yml_path=f"CICD/{pipeline}.yml",
+            ),
+        )

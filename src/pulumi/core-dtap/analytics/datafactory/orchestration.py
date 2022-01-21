@@ -12,10 +12,7 @@ from ingenii_azure_data_platform.utils import generate_resource_name
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
-from platform_shared import (
-    add_config_registry_secret,
-    get_devops_principal_id,
-)
+from platform_shared import get_devops_principal_id
 from project_config import platform_config, platform_outputs
 from storage.datalake import datalake
 
@@ -101,8 +98,6 @@ ServicePrincipalRoleAssignment(
     scope=datafactory.id,
     scope_description="orchestration-datafactory",
 )
-
-add_config_registry_secret("data-factory-name", datafactory.name)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY -> LOGGING

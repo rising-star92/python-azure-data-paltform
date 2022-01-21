@@ -375,7 +375,9 @@ for container in ["dbt", "preprocess"]:
         scope_description=f"datalake-container-{container}",
     )
 
-add_config_registry_secret("data-lake-name", datalake.name)
+add_config_registry_secret(
+    "data-lake-name", datalake.name, infrastructure_identifier=True
+)
 
 # Required while the Azure CLI command 'sync' does not support MSI authentication
 # https://docs.microsoft.com/en-us/cli/azure/storage/blob?view=azure-cli-latest#az_storage_blob_sync

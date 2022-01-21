@@ -50,7 +50,11 @@ def get_devops_config_registry_resource_group():
     )
 
 
-def add_config_registry_secret(secret_name, secret_value, resource_name=None):
+def add_config_registry_secret(secret_name, secret_value, resource_name=None, infrastructure_identifier=False):
+    if infrastructure_identifier:
+        tags = {"infrastructure_identifier": True}
+    else:
+        tags = None
     keyvault.Secret(
         resource_name=resource_name or f"devops-{secret_name}",
         resource_group_name=get_devops_config_registry_resource_group(),
@@ -60,11 +64,15 @@ def add_config_registry_secret(secret_name, secret_value, resource_name=None):
         ),
         secret_name=f"{secret_name}-{platform_config.stack}",
         properties=keyvault.SecretPropertiesArgs(value=secret_value),
+        tags=tags,
         opts=ResourceOptions(provider=shared_services_provider),
     )
 
 
-add_config_registry_secret("subscription-id", dtap_azure_client.subscription_id)
+add_config_registry_secret(
+    "subscription-id", dtap_azure_client.subscription_id,
+    infrastructure_identifier=True
+)
 
 
 container_registry_configs = shared_platform_config.from_yml.get("storage", {}).get(

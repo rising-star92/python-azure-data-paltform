@@ -1,5 +1,4 @@
-import pulumi
-from pulumi.output import Output
+from pulumi import Output, ResourceOptions
 from typing import Union
 import pulumi_azure_native as azure_native
 from ingenii_azure_data_platform.utils import generate_hash
@@ -57,9 +56,11 @@ class RoleAssignment(azure_native.authorization.RoleAssignment):
         role_name: str,
         scope: Union[str, Output[str]],
         scope_description: str,
+        role_id : Union[str, Output[str]] = None,
+        opts: ResourceOptions = None
     ) -> None:
 
-        if role_name not in self._role_definitions:
+        if role_id is None and role_name not in self._role_definitions:
             raise ValueError(
                 f"The role name {role_name} is not yet supported by this class or not a valid Azure role name."
             )
@@ -75,13 +76,16 @@ class RoleAssignment(azure_native.authorization.RoleAssignment):
             )
         ]).lower().replace(" ", "-")
 
+
         super().__init__(
             resource_name=resource_name,
             principal_id=principal_id,
             scope=scope,
-            role_definition_id=self._role_definitions[role_name],
+            role_definition_id=role_id or self._role_definitions[role_name],
             principal_type=principal_type,
-            opts=pulumi.ResourceOptions(delete_before_replace=True),
+            opts=ResourceOptions.merge(
+                ResourceOptions(delete_before_replace=True), opts
+            ),
         )
 
 
@@ -97,14 +101,18 @@ class UserRoleAssignment(RoleAssignment):
         scope_description: str,
         principal_name: str,
         principal_id: Union[str, Output[str]],
+        role_id: Union[str, Output[str]] = None,
+        opts: ResourceOptions = None
     ) -> None:
         super().__init__(
             principal_name=principal_name,
             principal_id=principal_id,
             principal_type="User",
+            role_id=role_id,
             role_name=role_name,
             scope=scope,
             scope_description=scope_description,
+            opts=opts,
         )
 
 
@@ -120,14 +128,18 @@ class GroupRoleAssignment(RoleAssignment):
         principal_id: Union[str, Output[str]],
         scope: Union[str, Output[str]],
         scope_description: str,
+        role_id: Union[str, Output[str]] = None,
+        opts: ResourceOptions = None
     ) -> None:
         super().__init__(
             principal_id=principal_id,
             principal_name=principal_name,
             principal_type="Group",
+            role_id=role_id,
             role_name=role_name,
             scope=scope,
             scope_description=scope_description,
+            opts=opts,
         )
 
 
@@ -143,14 +155,18 @@ class ServicePrincipalRoleAssignment(RoleAssignment):
         principal_id: Union[str, Output[str]],
         scope: Union[str, Output[str]],
         scope_description: str,
+        role_id: Union[str, Output[str]] = None,
+        opts: ResourceOptions = None
     ) -> None:
         super().__init__(
             principal_name=principal_name,
             principal_id=principal_id,
             principal_type="ServicePrincipal",
+            role_id=role_id,
             role_name=role_name,
             scope=scope,
             scope_description=scope_description,
+            opts=opts,
         )
 
 
@@ -166,12 +182,16 @@ class UserAssignedIdentityRoleAssignment(RoleAssignment):
         principal_id: Union[str, Output[str]],
         scope: Union[str, Output[str]],
         scope_description: str,
+        role_id: Union[str, Output[str]] = None,
+        opts: ResourceOptions = None
     ) -> None:
         super().__init__(
-            role_name=role_name,
             principal_name=principal_name,
             principal_id=principal_id,
             principal_type="ServicePrincipal",
+            role_id=role_id,
+            role_name=role_name,
             scope=scope,
             scope_description=scope_description,
+            opts=opts,
         )

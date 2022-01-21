@@ -83,6 +83,8 @@ for repo in ado_repo_configs:
     else:
         initialization = ado.GitInitializationArgs(init_type="Clean")
     
+    default_branch = f"refs/heads/{repo.get('default_branch', 'main')}"
+
     ado_repos[repo["name"]] = ado.Git(
         resource_name=generate_resource_name(
             resource_type="devops_repo",
@@ -91,7 +93,7 @@ for repo in ado_repo_configs:
         ),
         name=repo["name"],
         project_id=ado_project.id,
-        default_branch=f"refs/heads/{repo.get('default_branch', 'main')}",
+        default_branch=default_branch,
         initialization=initialization,
         opts=ResourceOptions(protect=platform_config.resource_protection),
     )
@@ -109,6 +111,7 @@ for repo in ado_repo_configs:
                 use_yaml=pipeline.get("use_yml", True),
             ),
             repository=ado.BuildDefinitionRepositoryArgs(
+                branch_name=default_branch,
                 repo_type="TfsGit",
                 repo_id=ado_repos[repo["name"]].id,
                 yml_path=pipeline.get("yml_path", "azure-pipelines.yml"),

@@ -2,6 +2,9 @@
 
 # 0.2.4 (Unreleased)
 
+### New Features
+- [data_factory] - CI/CD pipelines integrated with data Data Factories
+
 # 0.2.3 (2022-01-17)
 
 ### New Features

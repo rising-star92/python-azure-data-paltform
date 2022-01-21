@@ -235,7 +235,8 @@ _databricks_instance_pool:
 
 _datafactory:
   factories: map(include('_datafactory_factory'),key=str(), required=False)
-  integrated_self_hosted_runtime: include('_integrated_self_hosted_runtime', required=False)
+  integrated_self_hosted_runtime: include('_integrated_self_hosted_runtime', required=False) # Shared only
+  shared_self_hosted_runtime_factory: include('_shared_self_hosted_runtime_factory', required=False) # Shared only
 
 _datafactory_factory:
   display_name: str()
@@ -259,6 +260,12 @@ _integrated_self_hosted_runtime:
   enabled: bool()
   iam: include('_iam')
   image: str()
+
+_shared_self_hosted_runtime_factory:
+  enabled: bool()
+  name: str(required=False)
+  runtime_names: list(str(), required=False)
+  iam: include('_iam')
 
 _dbt:
   documentation: include('_dbt_documentation', required=False)

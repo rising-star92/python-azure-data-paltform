@@ -285,4 +285,6 @@ log_diagnostic_settings(
 # DEVOPS ACCESS
 # ----------------------------------------------------------------------------------------------------------------------
 
-add_config_registry_secret("credential-key-vault-name", key_vault_name)
+add_config_registry_secret(
+    "credential-key-vault-name", key_vault_name, infrastructure_identifier=True
+)

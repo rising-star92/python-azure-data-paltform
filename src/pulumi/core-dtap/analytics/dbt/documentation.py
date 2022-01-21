@@ -27,7 +27,9 @@ site_resource_name = generate_resource_name(
     resource_name=f"dbt-documentation-{platform_config.stack}",
     platform_config=platform_config,
 )
-add_config_registry_secret("dbt-docs-name", site_resource_name)
+add_config_registry_secret(
+    "dbt-docs-name", site_resource_name, infrastructure_identifier=True
+)
 
 if docs_enabled:
 

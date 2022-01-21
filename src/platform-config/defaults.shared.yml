@@ -112,6 +112,14 @@ analytics_services:
             role_definition_name: Azure Kubernetes Service RBAC Reader
           - user_group_ref_key: analysts
             role_definition_name: Azure Kubernetes Service RBAC Reader
+    shared_self_hosted_runtime_factory:
+      enabled: false
+      runtime_names:
+      - SelfHostedRuntime
+      iam:
+        role_assignments:
+          - user_group_ref_key: engineers
+            role_definition_name: Data Factory Contributor
 
 # ----------------------------------------------------------------------------------------------------------------------
 # AUTOMATION

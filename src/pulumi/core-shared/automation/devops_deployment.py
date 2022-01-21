@@ -185,7 +185,7 @@ variable_group_managed_identities = ado.VariableGroup(
     variables=[
         ado.VariableGroupVariableArgs(
             name=f"USER_ASSIGNED_MANAGED_IDENTITY_{env.upper()}",
-            value=identity.principal_id,
+            value=identity.client_id,
         )
         for env, identity in user_assigned_identities.items()
     ],

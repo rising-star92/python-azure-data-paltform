@@ -1,6 +1,6 @@
 from os import getenv
 from pulumi import ResourceOptions
-from pulumi_azure_native import datafactory as adf
+from pulumi_azure_native import authorization, datafactory as adf
 
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
@@ -10,17 +10,19 @@ from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.orchestration import AdfSelfHostedIntegrationRuntime
 from ingenii_azure_data_platform.utils import generate_resource_name
 
+from analytics.databricks.workspaces import engineering as databricks_engineering
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
-from platform_shared import SHARED_OUTPUTS
-from project_config import platform_config, platform_outputs
+from platform_shared import add_config_registry_secret, get_devops_principal_id, \
+    SHARED_OUTPUTS, shared_services_provider
+from project_config import azure_client, platform_config, platform_outputs
 from security.credentials_store import key_vault
 from storage.datalake import datalake
 
 factory_outputs = platform_outputs["analytics"]["datafactory"]["factories"]
 
-datafactory_resource_group = resource_groups["data"].name
+datafactory_resource_group = resource_groups["data"]
 devops_organization_name = getenv("AZDO_ORG_SERVICE_URL").strip(" /").split("/")[-1]
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -28,7 +30,7 @@ devops_organization_name = getenv("AZDO_ORG_SERVICE_URL").strip(" /").split("/")
 # ----------------------------------------------------------------------------------------------------------------------
 datafactory_configs = platform_config.from_yml["analytics_services"]["datafactory"]["factories"]
 datafactory_repositories = SHARED_OUTPUTS.get(
-    "analytics", "datafactory_repositories",
+    "analytics", "datafactory", "repositories",
     preview={
         key: {"name": f"Preview Repository name: {key}"}
         for key in datafactory_configs
@@ -37,9 +39,22 @@ datafactory_repositories = SHARED_OUTPUTS.get(
 devops_project = SHARED_OUTPUTS.get(
     "devops", "project", preview={"name": "Preview DevOps Project Name"}
 )
+shared_runtimes = SHARED_OUTPUTS.get(
+    "analytics", "datafactory", "shared_runtimes", "runtimes",
+    preview={}
+)
+
+# Dev is connected to the repository, all others are deployed to
+if platform_config.stack != "dev":
+    ServicePrincipalRoleAssignment(
+        principal_name="deployment-user-identity",
+        principal_id=get_devops_principal_id(),
+        role_name="Data Factory Contributor",
+        scope=datafactory_resource_group.id,
+        scope_description="datafactory-deployer",
+    )
 
 data_datafactories = {}
-
 for ref_key, datafactory_config in datafactory_configs.items():
     if ref_key == "orchestration":
         continue
@@ -58,24 +73,16 @@ for ref_key, datafactory_config in datafactory_configs.items():
 
     datafactory_repository = datafactory_config.get("repository", {})
     if datafactory_repository.get("devops_integrated"):
-        global_parameters = {}
         repo_configuration = adf.FactoryVSTSConfigurationArgs(
             account_name=devops_organization_name,
             collaboration_branch=datafactory_repository.get("collaboration_branch", "main"),
             project_name=devops_project["name"],
             repository_name=datafactory_repositories[ref_key]["name"],
             root_folder=datafactory_repository.get("root_folder", "/"),
+            tenant_id=azure_client.tenant_id,
             type="FactoryVSTSConfiguration"
         )
     else:
-        global_parameters = {
-            "CredentialStoreName": adf.GlobalParameterSpecificationArgs(
-                type="String", value=key_vault.name
-            ),
-            "DataLakeName": adf.GlobalParameterSpecificationArgs(
-                type="String", value=datalake.name
-            )
-        }
         repo_configuration = None
 
     # ----------------------------------------------------------------------------------------------------------------------
@@ -85,17 +92,23 @@ for ref_key, datafactory_config in datafactory_configs.items():
         resource_name=datafactory_name,
         factory_name=datafactory_name,
         location=platform_config.region.long_name,
-        resource_group_name=datafactory_resource_group,
+        resource_group_name=datafactory_resource_group.name,
         identity=adf.FactoryIdentityArgs(type=adf.FactoryIdentityType.SYSTEM_ASSIGNED),
         repo_configuration=repo_configuration,
-        global_parameters=global_parameters,
         opts=ResourceOptions(protect=platform_config.resource_protection),
     )
 
-    data_datafactories[ref_key] = datafactory
+    data_datafactories[ref_key] = {
+        "name": datafactory_name,
+        "obj": datafactory
+    }
 
     outputs["id"] = datafactory.id
     outputs["name"] = datafactory.name
+
+    add_config_registry_secret(
+        f"data-factory-name-{ref_key}", datafactory.name, infrastructure_identifier=True
+    )
 
     # ----------------------------------------------------------------------------------------------------------------------
     # DATA FACTORY -> IAM -> ROLE ASSIGNMENTS
@@ -123,12 +136,12 @@ for ref_key, datafactory_config in datafactory_configs.items():
                 name=config["name"],
                 description=config.get("description"),
                 factory_name=datafactory.name,
-                resource_group_name=datafactory_resource_group,
+                resource_group_name=datafactory_resource_group.name,
                 platform_config=platform_config,
             )
     
     # ----------------------------------------------------------------------------------------------------------------------
-    # DATA FACTORY -> DATA LAKE ACCESS
+    # DATA FACTORY -> IAM
     # ----------------------------------------------------------------------------------------------------------------------
     ServicePrincipalRoleAssignment(
         principal_id=datafactory.identity.principal_id,
@@ -145,6 +158,32 @@ for ref_key, datafactory_config in datafactory_configs.items():
         scope=key_vault.id,
         scope_description="cred-store",
     )
+
+    ServicePrincipalRoleAssignment(
+        principal_id=datafactory.identity.principal_id,
+        principal_name=f"{ref_key}-datafactory-identity",
+        role_name="Contributor",
+        scope=databricks_engineering.workspace.id,
+        scope_description="databricks-engineering",
+    )
+
+    # ----------------------------------------------------------------------------------------------------------------------
+    # DATA FACTORY -> SHARED RUNTIMES
+    # ----------------------------------------------------------------------------------------------------------------------
+    def access_runtimes(runtime_details):
+        if runtime_details is None:
+            return
+        for runtime_name, runtime_id in runtime_details.items():
+            ServicePrincipalRoleAssignment(
+                principal_id=datafactory.identity.principal_id,
+                principal_name=f"{ref_key}-datafactory-identity",
+                role_name="Contributor",
+                scope=runtime_id,
+                scope_description=f"shared-runtime-{runtime_name}",
+                opts=ResourceOptions(provider=shared_services_provider),
+            )
+    
+    shared_runtimes.apply(access_runtimes)
 
     # ----------------------------------------------------------------------------------------------------------------------
     # DATA FACTORY -> LOGGING
