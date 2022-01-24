@@ -43,6 +43,7 @@ for repository_name in repositories_needed:
     outputs[repository_name] = {
         "id": git_repository.id,
         "name": git_repository.name,
+        "remote_url": git_repository.remote_url,
         "web_url": git_repository.web_url
     }
 

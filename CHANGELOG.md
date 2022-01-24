@@ -3,12 +3,13 @@
 # 0.2.4 (Unreleased)
 
 ### New Features
+- [databricks] - Repositories created in Azure DevOps, and joining to Databricks is a manual step
 - [data_factory] - CI/CD pipelines integrated with data Data Factories
 
 # 0.2.3 (2022-01-17)
 
 ### New Features
-- [container_registry] - Deploy and manage Azure Container Registry as a shared service to all DTAP environments.
+- [container_registry] - Deploy and manage Azure Container Registry as a shared service to all DTAP environments
 - [data_factory] - Add Factory to obtain data integrated with a corresponding DevOps repository
 - [data_factory] - Pipeline to keep the Analytics workspace tables in sync
 

@@ -14,7 +14,8 @@ from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet
-from platform_shared import add_config_registry_secret
+from platform_shared import add_config_registry_secret, SHARED_OUTPUTS, \
+    shared_platform_config
 from project_config import DTAP_ROOT, azure_client, platform_config, platform_outputs
 from pulumi import FileAsset, ResourceOptions
 from pulumi_databricks import Provider as DatabricksProvider
@@ -23,15 +24,18 @@ from pulumi_databricks import databricks
 from security import credentials_store
 from storage.datalake import datalake, datalake_containers
 
-outputs = platform_outputs["analytics"]["databricks"]["workspaces"]["engineering"] = {}
+workspace_short_name = "engineering"
+workspace_config = platform_config["analytics_services"]["databricks"][
+    "workspaces"
+][workspace_short_name]
+shared_workspace_config = shared_platform_config["analytics_services"]["databricks"][
+    "workspaces"
+][workspace_short_name]
+outputs = platform_outputs["analytics"]["databricks"]["workspaces"][workspace_short_name] = {}
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE
 # ----------------------------------------------------------------------------------------------------------------------
-workspace_config = platform_config.from_yml["analytics_services"]["databricks"][
-    "workspaces"
-]["engineering"]
-workspace_short_name = "engineering"
 workspace_name = generate_resource_name(
     resource_type="databricks_workspace",
     resource_name=workspace_short_name,
@@ -223,6 +227,26 @@ for ref_key, config in workspace_config.get("instance_pools", {}).items():
             delete_before_replace=True,
         ),
     )
+
+# ----------------------------------------------------------------------------------------------------------------------
+# ANALYTICS DATABRICKS WORKSPACE -> AZURE DEVOPS REPOSITORIES
+# ----------------------------------------------------------------------------------------------------------------------
+# Unable to assign this using a servie principal
+# for repo_config in shared_workspace_config.get("devops_repositories", []):
+#     repo_name = repo_config["name"]
+#     databricks.Repo(
+#         resource_name=f"databricks-{workspace_short_name}-devops-repository-{repo_name}",
+#         git_provider="azureDevOpsServices",
+#         path=f"/Repos/AzureDevOps/{repo_name}",
+#         url=SHARED_OUTPUTS.get(
+#             "analytics", "databricks", workspace_short_name, "repositories", repo_name, "remote_url",
+#             preview="https://Preview.URL"
+#         ),
+#         opts=ResourceOptions(
+#             provider=databricks_provider,
+#             delete_before_replace=True,
+#         ),
+#     )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> CLUSTER TAGS

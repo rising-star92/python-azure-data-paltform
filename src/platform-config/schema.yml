@@ -162,14 +162,15 @@ _databricks:
   workspaces: map(include('_databricks_workspace'),key=str())
 
 _databricks_workspace:
-  config: include('_databricks_workspace_config', required=False)
-  iam: include('_iam', required=False)
-  storage_mounts: list(include('_databricks_storage_mount'), required=False)
   clusters: map(include('_databricks_single_node_cluster'),include('_databricks_high_concurrency_cluster'),key=str(), required=False)
+  config: include('_databricks_workspace_config', required=False)
+  devops_repositories: list(include('_databricks_devops_repository'), required=False)
+  iam: include('_iam', required=False)
   instance_pools: map(include('_databricks_instance_pool'),key=str(), required=False)
   logs: include('_logs', required=False)
   metrics: include('_metrics', required=False)
   network_security_groups: include('_logs_and_metrics', required=False)
+  storage_mounts: list(include('_databricks_storage_mount'), required=False)
 
 _databricks_workspace_config:
   enable_container_services: str(required=False)
@@ -232,6 +233,9 @@ _databricks_instance_pool:
   disk_count: int(required=False)
   disk_size: int(required=False)
   custom_tags: map(required=False)
+
+_databricks_devops_repository:
+  name: str()
 
 _datafactory:
   factories: map(include('_datafactory_factory'),key=str(), required=False)

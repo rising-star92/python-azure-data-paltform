@@ -99,7 +99,13 @@ network:
 # ----------------------------------------------------------------------------------------------------------------------
 analytics_services:
   databricks: 
-    workspaces: {}
+    workspaces:
+      analytics:
+        devops_repositories:
+        - name: Notebooks
+      engineering:
+        devops_repositories:
+        - name: Notebooks
   datafactory:
     integrated_self_hosted_runtime:
       enabled: false
