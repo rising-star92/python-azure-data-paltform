@@ -1,4 +1,4 @@
-from pulumi import ResourceOptions
+from pulumi import ResourceOptions, Output
 from pulumi_azure_native import datafactory as adf
 
 from ingenii_azure_data_platform.iam import (
@@ -12,8 +12,10 @@ from ingenii_azure_data_platform.utils import generate_resource_name
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
+
+from project_config import platform_config, platform_outputs, azure_client
 from platform_shared import get_devops_principal_id
-from project_config import platform_config, platform_outputs
+
 from storage.datalake import datalake
 
 outputs = platform_outputs["analytics"]["datafactory"]["factories"][
@@ -53,7 +55,9 @@ datafactory = adf.Factory(
 
 outputs["id"] = datafactory.id
 outputs["name"] = datafactory.name
-
+outputs["url"] = Output.all(datafactory_resource_group, datafactory.name).apply(
+    lambda args: f"https://adf.azure.com/en-us/home?factory=%2Fsubscriptions%2F{azure_client.subscription_id}%2FresourceGroups%2F{args[0]}%2Fproviders%2FMicrosoft.DataFactory%2Ffactories%2F{args[1]}"
+)
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY -> IAM -> ROLE ASSIGNMENTS
 # ----------------------------------------------------------------------------------------------------------------------

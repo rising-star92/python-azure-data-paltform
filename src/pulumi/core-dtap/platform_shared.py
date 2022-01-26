@@ -26,6 +26,7 @@ shared_platform_config = PlatformConfiguration(
     default_config_file_path=getenv(
         "ADP_DEFAULT_CONFIG_FILE_PATH", "../../platform-config/defaults.yml"
     ).replace("defaults.yml", "defaults.shared.yml"),
+    metadata_file_path=getenv("ADP_METADATA_FILE_PATH"),
     custom_config_file_path=getenv("ADP_CUSTOM_CONFIGS_FILE_PATH").replace(
         f"{platform_config.stack}.yml", "shared.yml"
     ),
@@ -36,21 +37,25 @@ azure_client = get_client_config(opts=InvokeOptions(provider=shared_services_pro
 
 def get_devops_principal_id():
     return SHARED_OUTPUTS.get(
-        "automation", "deployment_user_assigned_identities", platform_config.stack,
-        preview="Preview-Devops-Principal-ID"
+        "automation",
+        "deployment_user_assigned_identities",
+        platform_config.stack,
+        preview="Preview-Devops-Principal-ID",
     )
 
 
 def get_devops_config_registry_resource_group():
     return SHARED_OUTPUTS.get(
-        "security", "config_registry", "key_vault_id",
-        preview="////PrviewDevOpsConfigRegistryResourceGroup"
-    ).apply(
-        lambda id_str: id_str.split("/")[4]
-    )
+        "security",
+        "config_registry",
+        "key_vault_id",
+        preview="////PrviewDevOpsConfigRegistryResourceGroup",
+    ).apply(lambda id_str: id_str.split("/")[4])
 
 
-def add_config_registry_secret(secret_name, secret_value, resource_name=None, infrastructure_identifier=False):
+def add_config_registry_secret(
+    secret_name, secret_value, resource_name=None, infrastructure_identifier=False
+):
     if infrastructure_identifier:
         tags = {"infrastructure_identifier": True}
     else:
@@ -59,8 +64,10 @@ def add_config_registry_secret(secret_name, secret_value, resource_name=None, in
         resource_name=resource_name or f"devops-{secret_name}",
         resource_group_name=get_devops_config_registry_resource_group(),
         vault_name=SHARED_OUTPUTS.get(
-            "security", "config_registry", "key_vault_name",
-            preview="previewkeyvaultname"
+            "security",
+            "config_registry",
+            "key_vault_name",
+            preview="previewkeyvaultname",
         ),
         secret_name=f"{secret_name}-{platform_config.stack}",
         properties=keyvault.SecretPropertiesArgs(value=secret_value),
@@ -70,8 +77,7 @@ def add_config_registry_secret(secret_name, secret_value, resource_name=None, in
 
 
 add_config_registry_secret(
-    "subscription-id", dtap_azure_client.subscription_id,
-    infrastructure_identifier=True
+    "subscription-id", dtap_azure_client.subscription_id, infrastructure_identifier=True
 )
 
 

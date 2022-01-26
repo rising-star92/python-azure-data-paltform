@@ -1,6 +1,8 @@
-import pulumi_azuredevops as ado
+import urllib.parse
+from os import getenv
 
-from pulumi import ResourceOptions
+import pulumi_azuredevops as ado
+from pulumi import ResourceOptions, Output
 
 from ingenii_azure_data_platform.utils import generate_resource_name, generate_hash
 from project_config import platform_config, platform_outputs
@@ -34,6 +36,9 @@ ado_project = ado.Project(
 
 outputs["project"]["id"] = ado_project.id
 outputs["project"]["name"] = ado_project.name
+outputs["project"]["url"] = Output.all(
+    getenv("AZDO_ORG_SERVICE_URL"), ado_project.name
+).apply(lambda args: f"{args[0]}/{urllib.parse.quote(args[1])}")
 
 # Azure DevOps Project Permissions
 ado_project_iam_role_assignments = (
@@ -82,7 +87,7 @@ for repo in ado_repo_configs:
         )
     else:
         initialization = ado.GitInitializationArgs(init_type="Clean")
-    
+   
     default_branch = f"refs/heads/{repo.get('default_branch', 'main')}"
 
     ado_repos[repo["name"]] = ado.Git(

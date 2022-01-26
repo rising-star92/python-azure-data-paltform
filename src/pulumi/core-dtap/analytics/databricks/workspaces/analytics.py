@@ -74,7 +74,10 @@ workspace = azure_native.databricks.Workspace(
 
 outputs["name"] = workspace.name
 outputs["id"] = workspace.workspace_id
-outputs["url"] = workspace.workspace_url
+outputs["short_url"] = workspace.workspace_url
+outputs["url"] = workspace.workspace_url.apply(
+    lambda url: f"https://{url}/login.html?o={url.split('adb-')[1].split('.')[0]}"
+)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS DATABRICKS WORKSPACE -> LOGGING
@@ -127,8 +130,12 @@ databricks_provider = DatabricksProvider(
 databricks.WorkspaceConf(
     resource_name=workspace_name,
     custom_config={
-        "enableDcs": workspace_config["config"].get("enable_container_services", "false"),
-        "enableIpAccessLists": workspace_config["config"].get("enable_ip_access_lists", "false"),
+        "enableDcs": workspace_config["config"].get(
+            "enable_container_services", "false"
+        ),
+        "enableIpAccessLists": workspace_config["config"].get(
+            "enable_ip_access_lists", "false"
+        ),
     },
     opts=ResourceOptions(provider=databricks_provider),
 )
@@ -255,18 +262,19 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
         "opts": ResourceOptions(provider=databricks_provider),
     }
     if cluster_config.get("docker_image_url"):
-        base_cluster_configuration["docker_image"] = \
-            databricks.ClusterDockerImageArgs(
-                url=cluster_config["docker_image_url"]
-            )
+        base_cluster_configuration["docker_image"] = databricks.ClusterDockerImageArgs(
+            url=cluster_config["docker_image_url"]
+        )
     if cluster_config.get("instance_pool_ref_key"):
-        base_cluster_configuration["instance_pool_id"] = \
-            instance_pools[cluster_config["instance_pool_ref_key"]].id
+        base_cluster_configuration["instance_pool_id"] = instance_pools[
+            cluster_config["instance_pool_ref_key"]
+        ].id
         if base_cluster_configuration.get("node_type_id") is not None:
             del base_cluster_configuration["node_type_id"]
     if cluster_config.get("driver_instance_pool_ref_key"):
-        base_cluster_configuration["driver_instance_pool_id"] = \
-            instance_pools[cluster_config["driver_instance_pool_ref_key"]].id
+        base_cluster_configuration["driver_instance_pool_id"] = instance_pools[
+            cluster_config["driver_instance_pool_ref_key"]
+        ].id
         if base_cluster_configuration.get("node_type_id") is not None:
             del base_cluster_configuration["node_type_id"]
 

@@ -13,6 +13,8 @@ for file in listdir(configs_folder):
         continue
     if not file.endswith(".yml"):
         continue
+    if file == "metadata.yml":
+        continue
 
     env = file.strip(".yml")
 
@@ -24,5 +26,6 @@ for file in listdir(configs_folder):
         default_config_file_path=getenv(
             "ADP_DEFAULT_CONFIG_FILE_PATH", "../../platform-config/defaults.shared.yml"
         ).replace("defaults.shared.yml", "defaults.yml"),
-        custom_config_file_path=full_path
+        metadata_file_path=getenv("ADP_METADATA_FILE_PATH"),
+        custom_config_file_path=full_path,
     )

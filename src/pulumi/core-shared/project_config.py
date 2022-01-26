@@ -12,6 +12,7 @@ platform_config = PlatformConfiguration(
     default_config_file_path=getenv(
         "ADP_DEFAULT_CONFIG_FILE_PATH", "../../platform-config/defaults.shared.yml"
     ),
+    metadata_file_path=getenv("ADP_METADATA_FILE_PATH"),
     custom_config_file_path=getenv("ADP_CUSTOM_CONFIGS_FILE_PATH"),
 )
 
@@ -20,5 +21,7 @@ azure_client = get_client_config()
 
 # Outputs
 platform_outputs = {}
+
+platform_outputs["metadata"] = platform_config.metadata
 
 pulumi.export("root", platform_outputs)

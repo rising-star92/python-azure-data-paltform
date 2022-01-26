@@ -78,7 +78,10 @@ workspace = azure_native.databricks.Workspace(
 
 outputs["name"] = workspace.name
 outputs["id"] = workspace.workspace_id
-outputs["url"] = workspace.workspace_url
+outputs["short_url"] = workspace.workspace_url
+outputs["url"] = workspace.workspace_url.apply(
+    lambda url: f"https://{url}/login.html?o={url.split('adb-')[1].split('.')[0]}"
+)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> LOGGING
@@ -431,28 +434,31 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
 
     # Cluster for file ingestion
     if ref_key == "default":
-        base_cluster_configuration["spark_env_vars"].update({
-            "DATABRICKS_WORKSPACE_HOSTNAME": workspace.workspace_url,
-            "DATABRICKS_CLUSTER_NAME": cluster_config["display_name"],
-            "DBT_TOKEN_SCOPE": secret_scope_name,
-            "DBT_TOKEN_NAME": dbt_token_name,
-            "DBT_ROOT_FOLDER": "/dbfs/mnt/dbt",
-            "DBT_LOGS_FOLDER": "/dbfs/mnt/dbt-logs",
-        })
+        base_cluster_configuration["spark_env_vars"].update(
+            {
+                "DATABRICKS_WORKSPACE_HOSTNAME": workspace.workspace_url,
+                "DATABRICKS_CLUSTER_NAME": cluster_config["display_name"],
+                "DBT_TOKEN_SCOPE": secret_scope_name,
+                "DBT_TOKEN_NAME": dbt_token_name,
+                "DBT_ROOT_FOLDER": "/dbfs/mnt/dbt",
+                "DBT_LOGS_FOLDER": "/dbfs/mnt/dbt-logs",
+            }
+        )
 
     if cluster_config.get("docker_image_url"):
-        base_cluster_configuration["docker_image"] = \
-            databricks.ClusterDockerImageArgs(
-                url=cluster_config["docker_image_url"]
-                )
+        base_cluster_configuration["docker_image"] = databricks.ClusterDockerImageArgs(
+            url=cluster_config["docker_image_url"]
+        )
     if cluster_config.get("instance_pool_ref_key"):
-        base_cluster_configuration["instance_pool_id"] = \
-            instance_pools[cluster_config["instance_pool_ref_key"]].id
+        base_cluster_configuration["instance_pool_id"] = instance_pools[
+            cluster_config["instance_pool_ref_key"]
+        ].id
         if base_cluster_configuration.get("node_type_id") is not None:
             del base_cluster_configuration["node_type_id"]
     if cluster_config.get("driver_instance_pool_ref_key"):
-        base_cluster_configuration["driver_instance_pool_id"] = \
-            instance_pools[cluster_config["driver_instance_pool_ref_key"]].id
+        base_cluster_configuration["driver_instance_pool_id"] = instance_pools[
+            cluster_config["driver_instance_pool_ref_key"]
+        ].id
         if base_cluster_configuration.get("node_type_id") is not None:
             del base_cluster_configuration["node_type_id"]
 

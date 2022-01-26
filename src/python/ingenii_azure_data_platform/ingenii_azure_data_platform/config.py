@@ -1,9 +1,12 @@
-import hiyapyco as hco
+import yaml
 from os import getenv, path
+from typing import Any, cast, Union
+
+import yamale
+import hiyapyco as hco
+
 from pulumi import runtime, StackReference, Output, UNKNOWN
 from pulumi.output import Unknown
-from typing import Any, cast
-import yamale
 
 
 class CloudRegionException(Exception):
@@ -106,6 +109,10 @@ class PlatformConfiguration:
     * yml_config    - the yml config dictionary
     """
 
+    def _load_yml(self, file_path: str) -> Any:
+        with open(file_path, "r") as f:
+            return yaml.safe_load(f)
+
     def _validate_schema(self, schema_file_path: str, yml_config: dict):
         schema = yamale.make_schema(schema_file_path)
         data = yamale.make_data(content=hco.dump(yml_config))
@@ -121,7 +128,8 @@ class PlatformConfiguration:
         stack: str,
         config_schema_file_path: str,
         default_config_file_path: str,
-        custom_config_file_path: str = None,
+        metadata_file_path: str,
+        custom_config_file_path: Union[str, None] = None,
     ) -> None:
 
         # If no custom config file path is provided, we'll use the default config.
@@ -133,15 +141,21 @@ class PlatformConfiguration:
 
         # Merge the default + custom configs. The custom configs will override any defaults.
         if path.isfile(stack_default_config_file_path):
-            merge_files = [default_config_file_path,
-                           stack_default_config_file_path,
-                           custom_config_file_path]
+            merge_files = [
+                default_config_file_path,
+                stack_default_config_file_path,
+                custom_config_file_path,
+            ]
         else:
-            merge_files = [default_config_file_path,
-                           custom_config_file_path]
-        self._from_yml = dict(hco.load(
-            merge_files, method=hco.METHOD_MERGE, mergelists=False,
-        ))  # type: ignore
+            merge_files = [default_config_file_path, custom_config_file_path]
+
+        self._from_yml = dict(
+            hco.load(
+                merge_files,
+                method=hco.METHOD_MERGE,
+                mergelists=False,
+            )
+        )  # type: ignore
 
         # Validate the schema
         self._validate_schema(config_schema_file_path, self._from_yml)
@@ -152,7 +166,7 @@ class PlatformConfiguration:
         self._tags = self._from_yml["general"]["tags"]
         self._unique_id = self._from_yml["general"]["unique_id"]
         self._use_legacy_naming = self._from_yml["general"]["use_legacy_naming"]
-        
+
         # Returns 'True' if the resource protection is enabled, 'False' otherwise.
         self._resource_protection = bool(int(getenv("ENABLE_RESOURCE_PROTECTION", 1)))
 
@@ -162,6 +176,9 @@ class PlatformConfiguration:
         self._stack_short_name = {"test": "tst", "prod": "prd", "shared": "shr"}.get(
             self._stack, self._stack
         )
+
+        # Load metadata
+        self._metadata = self._load_yml(metadata_file_path)
 
     @property
     def from_yml(self):
@@ -204,6 +221,10 @@ class PlatformConfiguration:
     def use_legacy_naming(self):
         return self._use_legacy_naming
 
+    @property
+    def metadata(self):
+        return self._metadata
+
     # TODO: Left for backward compatibility. To be deleted in future releases.
     @property
     def yml_config(self):
@@ -218,7 +239,7 @@ class PlatformConfiguration:
 
 class SharedOutput:
     def __init__(self, pulumi_org_name: str, project_name: str, stack_name: str):
-        
+
         shared_stack_reference = StackReference(
             name="/".join([pulumi_org_name, project_name, stack_name])
         )
@@ -226,17 +247,16 @@ class SharedOutput:
         self.outputs = shared_stack_reference.get_output("root")
 
     def get(self, *keys, preview=None):
-
         def handle_preview_values(value):
             if value == {} and runtime.is_dry_run():
                 return preview
             return value
-        
+
         def lift(val, key_to_get):
             # Derived from Output.__getitem__
             if isinstance(val, Unknown):
                 return UNKNOWN
-        
+
             return cast(Any, val).get(key_to_get, {})
 
         curr_output = self.outputs

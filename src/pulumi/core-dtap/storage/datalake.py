@@ -21,7 +21,7 @@ from platform_shared import (
     add_config_registry_secret,
     get_devops_principal_id,
 )
-from project_config import platform_config, platform_outputs
+from project_config import platform_config, platform_outputs, azure_client
 from security import credentials_store
 
 outputs = platform_outputs["storage"]["datalake"] = {}
@@ -45,6 +45,7 @@ datalake_name = generate_resource_name(
     resource_name="datalake",
     platform_config=platform_config,
 )
+datalake_resource_group_name = resource_groups["data"].name
 
 if datalake_config["network"]["firewall"]["enabled"] == True:
     network_rule_set = storage.NetworkRuleSetArgs(
@@ -75,7 +76,7 @@ datalake = storage.StorageAccount(
     kind=storage.Kind.STORAGE_V2,
     location=platform_config.region.long_name,
     minimum_tls_version=storage.MinimumTlsVersion.TLS1_2,
-    resource_group_name=resource_groups["data"].name,
+    resource_group_name=datalake_resource_group_name,
     sku=storage.SkuArgs(name=storage.SkuName.STANDARD_GRS),
     tags=platform_config.tags,
     opts=ResourceOptions(
@@ -85,6 +86,12 @@ datalake = storage.StorageAccount(
 
 outputs["id"] = datalake.id
 outputs["name"] = datalake.name
+outputs["containers_view_url"] = Output.all(
+    datalake_resource_group_name, datalake.name
+).apply(
+    lambda args: f"https://portal.azure.com/#@/resource/subscriptions/{azure_client.subscription_id}/resourceGroups/{args[0]}/providers/Microsoft.Storage/storageAccounts/{args[1]}/containersList"
+)
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA LAKE -> LOGGING
@@ -264,7 +271,7 @@ for ref_key, container_config in datalake_config.get("containers", {}).items():
         resource_name=datalake_container_name,
         account_name=datalake.name,
         container_name=container_config["display_name"],
-        resource_group_name=resource_groups["data"].name,
+        resource_group_name=datalake_resource_group_name,
         opts=ResourceOptions(
             protect=platform_config.resource_protection,
             ignore_changes=[
@@ -302,7 +309,7 @@ for ref_key, table_config in datalake_config.get("tables", {}).items():
 
     datalake_tables[ref_key] = storage.Table(
         resource_name=f"{datalake_name}-{table_config['display_name']}".lower(),
-        resource_group_name=resource_groups["data"].name,
+        resource_group_name=datalake_resource_group_name,
         account_name=datalake.name,
         table_name=table_name,
     )
@@ -343,7 +350,7 @@ table_storage_sas = datalake.name.apply(
                 storage.Permissions.U,
             ]
         ),
-        resource_group_name=resource_groups["data"].name,
+        resource_group_name=datalake_resource_group_name,
     )
 )
 

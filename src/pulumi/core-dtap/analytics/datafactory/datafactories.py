@@ -1,6 +1,7 @@
 from os import getenv
-from pulumi import ResourceOptions
-from pulumi_azure_native import authorization, datafactory as adf
+
+from pulumi import ResourceOptions, Output
+from pulumi_azure_native import datafactory as adf
 
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
@@ -14,9 +15,11 @@ from analytics.databricks.workspaces import engineering as databricks_engineerin
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
+
 from platform_shared import add_config_registry_secret, get_devops_principal_id, \
     SHARED_OUTPUTS, shared_services_provider
 from project_config import azure_client, platform_config, platform_outputs
+
 from security.credentials_store import key_vault
 from storage.datalake import datalake
 
@@ -28,13 +31,14 @@ devops_organization_name = getenv("AZDO_ORG_SERVICE_URL").strip(" /").split("/")
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORIES
 # ----------------------------------------------------------------------------------------------------------------------
-datafactory_configs = platform_config.from_yml["analytics_services"]["datafactory"]["factories"]
+datafactory_configs = platform_config.from_yml["analytics_services"]["datafactory"][
+    "factories"
+]
 datafactory_repositories = SHARED_OUTPUTS.get(
     "analytics", "datafactory", "repositories",
     preview={
-        key: {"name": f"Preview Repository name: {key}"}
-        for key in datafactory_configs
-    }
+        key: {"name": f"Preview Repository name: {key}"} for key in datafactory_configs
+    },
 )
 devops_project = SHARED_OUTPUTS.get(
     "devops", "project", preview={"name": "Preview DevOps Project Name"}
@@ -75,7 +79,9 @@ for ref_key, datafactory_config in datafactory_configs.items():
     if datafactory_repository.get("devops_integrated"):
         repo_configuration = adf.FactoryVSTSConfigurationArgs(
             account_name=devops_organization_name,
-            collaboration_branch=datafactory_repository.get("collaboration_branch", "main"),
+            collaboration_branch=datafactory_repository.get(
+                "collaboration_branch", "main"
+            ),
             project_name=devops_project["name"],
             repository_name=datafactory_repositories[ref_key]["name"],
             root_folder=datafactory_repository.get("root_folder", "/"),
@@ -105,6 +111,9 @@ for ref_key, datafactory_config in datafactory_configs.items():
 
     outputs["id"] = datafactory.id
     outputs["name"] = datafactory.name
+    outputs["url"] = Output.all(datafactory_resource_group, datafactory.name).apply(
+        lambda args: f"https://adf.azure.com/en-us/home?factory=%2Fsubscriptions%2F{azure_client.subscription_id}%2FresourceGroups%2F{args[0]}%2Fproviders%2FMicrosoft.DataFactory%2Ffactories%2F{args[1]}"
+    )
 
     add_config_registry_secret(
         f"data-factory-name-{ref_key}", datafactory.name, infrastructure_identifier=True
@@ -139,7 +148,7 @@ for ref_key, datafactory_config in datafactory_configs.items():
                 resource_group_name=datafactory_resource_group.name,
                 platform_config=platform_config,
             )
-    
+
     # ----------------------------------------------------------------------------------------------------------------------
     # DATA FACTORY -> IAM
     # ----------------------------------------------------------------------------------------------------------------------

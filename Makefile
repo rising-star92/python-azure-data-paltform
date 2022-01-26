@@ -51,7 +51,7 @@ setup-env-file:
 
 setup-python-venv:
 	$(info [INFO] Setting up the Python virtual environment at ${VENV_DIR})
-	@python -m venv ${VENV_DIR}
+	@python3 -m venv ${VENV_DIR}
 	@source ${VENV_DIR}/bin/activate && cd ${SOURCE_DIR} && pip install -r requirements-dev.txt
 
 show-setup-banner:
