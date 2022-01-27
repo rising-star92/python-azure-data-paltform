@@ -160,12 +160,6 @@ automation:
           - name: DataEngineering - dbt - Production
             use_yml: True
             yml_path: "CICD/dbt_production.yml"
-          - name: DataEngineering - pipeline generation
-            use_yml: True
-            yml_path: "CICD/pipeline_generation.yml"
-          - name: DataEngineering - pipeline generation - Production
-            use_yml: True
-            yml_path: "CICD/pipeline_generation_production.yml"
           - name: DataEngineering - pre-processing
             use_yml: True
             yml_path: "CICD/pre-processing.yml"

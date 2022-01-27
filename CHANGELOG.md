@@ -7,6 +7,7 @@
 - [data_factory] - CI/CD pipelines integrated with data Data Factories
 
 ### Improvements
+- [data_factory] - Pipeline generation pipelines moved out of the Data Engineering repository
 - [outputs] - Share outputs between Pulumi and Ingenii UI using Azure Tables as storage.
 
 # 0.2.3 (2022-01-17)
