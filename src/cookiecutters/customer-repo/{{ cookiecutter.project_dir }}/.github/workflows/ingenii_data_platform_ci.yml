@@ -67,7 +67,7 @@ jobs:
       #---------------------------------
       - name: Run Pulumi Up
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: make cicd-apply-shared EXTRA_ARGS="-f"
+        run: make cicd-apply-shared
   dtap:
     name: DTAP Stacks
     needs: shared
@@ -120,7 +120,7 @@ jobs:
       #---------------------------------
       - name: Run Pulumi Up
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: make cicd-apply-dtap EXTRA_ARGS="-f"
+        run: make cicd-apply-dtap
   extensions:
     name: Extension Stacks
     needs: dtap
@@ -179,7 +179,7 @@ jobs:
       #---------------------------------
       - name: Run Pulumi Up
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && matrix.stack == 'shared'
-        run: make cicd-apply-shared-ext EXTRA_ARGS="-f"
+        run: make cicd-apply-shared-ext
       #---------------------------------
       - name: Run Pulumi Init
         if: matrix.stack != 'shared'
@@ -191,4 +191,4 @@ jobs:
       #---------------------------------
       - name: Run Pulumi Up
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && matrix.stack != 'shared'
-        run: make cicd-apply-dtap-ext EXTRA_ARGS="-f"
+        run: make cicd-apply-dtap-ext
