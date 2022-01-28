@@ -40,6 +40,7 @@ setup-cruft-project:
 	@echo "  devops:" >> ${DEV_DIR}/configs/shared.yml
 	@echo "    project:" >> ${DEV_DIR}/configs/shared.yml
 	@echo "      name: Ingenii Data Platform ${RANDOM_STR_LEN_3}" >> ${DEV_DIR}/configs/shared.yml
+	@sed -i 's|\/platform\/src|$${PROJECT_ROOT}/src|g' ${DEV_DIR}/Makefile
 	@rm -rf ${TEMP_DIR}
 
 setup-dir-links:

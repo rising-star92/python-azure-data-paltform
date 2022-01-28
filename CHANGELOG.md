@@ -1,6 +1,8 @@
 # CHANGELOG
 
-# 0.2.4 (Unreleased)
+# 0.2.5 (Unreleased)
+
+# 0.2.4 (2022-01-28)
 
 ### New Features
 - [databricks] - Repositories created in Azure DevOps, and joining to Databricks is a manual step
@@ -10,6 +12,10 @@
 - [data_factory] - Pipeline generation pipelines moved out of the Data Engineering repository
 - [outputs] - Share outputs between Pulumi and Ingenii UI using Azure Tables as storage.
 - [resource_locks] - Automatically remove resource locks before Pulumi changes are applied.
+- [pulumi] - Bump version to 3.22.1
+
+### Bugfixes
+- [dev_env] - Dev env was using the platform source code that is published in the Docker image. Added a fix to make sure the local source code is used instead.
 
 # 0.2.3 (2022-01-17)
 

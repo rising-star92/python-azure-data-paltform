@@ -1,7 +1,7 @@
 ARG VARIANT="3.10-bullseye"
 FROM mcr.microsoft.com/vscode/devcontainers/python:${VARIANT}
 
-ARG PULUMI_VERSION=3.21.0
+ARG PULUMI_VERSION=3.22.1
 
 # # User vscode needs sudoers access to all users without password.
 RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode
