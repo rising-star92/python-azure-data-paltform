@@ -1,6 +1,11 @@
 import pulumi_azure_native.network as net
 from pulumi import ResourceOptions
-from ingenii_azure_data_platform.utils import generate_cidr, generate_resource_name
+
+from ingenii_azure_data_platform.utils import (
+    generate_cidr,
+    generate_resource_name,
+    lock_resource,
+)
 
 from management import resource_groups
 from project_config import platform_config, platform_outputs
@@ -34,6 +39,8 @@ vnet = net.VirtualNetwork(
         ignore_changes=["subnets", "tags"],
     ),
 )
+
+lock_resource(vnet_name, vnet.id)
 
 # Export VNET metadata
 outputs["virtual_network"] = {

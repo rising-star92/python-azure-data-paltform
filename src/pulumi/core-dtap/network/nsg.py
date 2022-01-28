@@ -1,10 +1,11 @@
-from logging import log
 import pulumi
 import pulumi_azure_native as azure_native
+
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
-from ingenii_azure_data_platform.utils import generate_resource_name
+from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
 from logs import log_analytics_workspace
+from logging import log
 from project_config import platform_config, platform_outputs
 from management import resource_groups
 
@@ -30,6 +31,8 @@ databricks_engineering = azure_native.network.NetworkSecurityGroup(
     opts=pulumi.ResourceOptions(ignore_changes=["security_rules", "tags"]),
 )
 
+lock_resource(databricks_engineering_resource_name, databricks_engineering.id)
+
 # Export NSG metadata
 outputs["databricks_engineering"] = {
     "name": databricks_engineering.name,
@@ -54,6 +57,8 @@ databricks_analytics = azure_native.network.NetworkSecurityGroup(
     opts=pulumi.ResourceOptions(ignore_changes=["security_rules", "tags"]),
 )
 
+lock_resource(databricks_analytics_resource_name, databricks_analytics.id)
+
 # Export NSG metadata
 outputs["databricks_analytics"] = {
     "name": databricks_analytics.name,
@@ -67,13 +72,17 @@ outputs["databricks_analytics"] = {
 engineering_workspace_config = platform_config["analytics_services"]["databricks"][
     "workspaces"
 ]["engineering"]
-engineering_nsg_details = engineering_workspace_config.get("network_security_groups", {})
+engineering_nsg_details = engineering_workspace_config.get(
+    "network_security_groups", {}
+)
 log_diagnostic_settings(
-    platform_config, log_analytics_workspace.id,
-    databricks_engineering.type, databricks_engineering.id,
+    platform_config,
+    log_analytics_workspace.id,
+    databricks_engineering.type,
+    databricks_engineering.id,
     databricks_engineering_resource_name,
     logs_config=engineering_nsg_details.get("logs", {}),
-    metrics_config=engineering_nsg_details.get("metrics", {})
+    metrics_config=engineering_nsg_details.get("metrics", {}),
 )
 
 analytics_workspace_config = platform_config["analytics_services"]["databricks"][
@@ -81,9 +90,11 @@ analytics_workspace_config = platform_config["analytics_services"]["databricks"]
 ]["analytics"]
 analytics_nsg_details = analytics_workspace_config.get("network_security_groups", {})
 log_diagnostic_settings(
-    platform_config, log_analytics_workspace.id,
-    databricks_analytics.type, databricks_analytics.id,
+    platform_config,
+    log_analytics_workspace.id,
+    databricks_analytics.type,
+    databricks_analytics.id,
     databricks_analytics_resource_name,
     logs_config=analytics_nsg_details.get("logs", {}),
-    metrics_config=analytics_nsg_details.get("metrics", {})
+    metrics_config=analytics_nsg_details.get("metrics", {}),
 )

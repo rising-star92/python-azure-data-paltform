@@ -380,13 +380,23 @@ _check_if_ci:
 cicd-init-shared: _check_if_ci init-core-shared
 cicd-refresh-shared: _check_if_ci refresh-core-shared
 cicd-preview-shared: _check_if_ci preview-core-shared
-cicd-apply-shared: _check_if_ci apply-core-shared export-stack-outputs-core-shared upload-stack-outputs-core-shared
+cicd-apply-shared: 
+	@make _check_if_ci \
+	&& ingeniictl infra disable-resource-protection ${PULUMI_ORGANIZATION}/shared --pulumi-project-dir ${PULUMI_CORE_SHARED_SRC_DIR} \
+	&& make apply-core-shared \
+	&& make export-stack-outputs-core-shared \
+	&& make upload-stack-outputs-core-shared
 
 # DTAP Stack
 cicd-init-dtap: _check_if_ci init-core-dtap
 cicd-refresh-dtap: _check_if_ci refresh-core-dtap
 cicd-preview-dtap: _check_if_ci preview-core-dtap
-cicd-apply-dtap: _check_if_ci apply-core-dtap export-stack-outputs-core-dtap upload-stack-outputs-core-dtap
+cicd-apply-dtap:
+	@make _check_if_ci \
+	&& ingeniictl infra disable-resource-protection ${PULUMI_ORGANIZATION}/${STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR} \
+	&& make apply-core-dtap \
+	&& make export-stack-outputs-core-dtap \
+	&& make upload-stack-outputs-core-dtap
 
 # Extensions
 cicd-init-shared-ext: _check_if_ci init-core-shared-extensions

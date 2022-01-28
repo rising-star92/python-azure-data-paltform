@@ -11,7 +11,7 @@ from ingenii_azure_data_platform.logs import (
     log_diagnostic_settings,
     log_network_interfaces,
 )
-from ingenii_azure_data_platform.utils import generate_resource_name
+from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
 from logs import log_analytics_workspace
 from management import resource_groups
@@ -83,6 +83,8 @@ datalake = storage.StorageAccount(
         protect=platform_config.resource_protection,
     ),
 )
+
+lock_resource(datalake_name, datalake.id)
 
 outputs["id"] = datalake.id
 outputs["name"] = datalake.name
@@ -158,6 +160,8 @@ blob_private_endpoint = network.PrivateEndpoint(
     subnet=network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
 
+lock_resource(blob_private_endpoint_name, blob_private_endpoint.id)
+
 # To Log Analytics Workspace
 blob_private_endpoint_details = (
     datalake_config.get("network", {}).get("private_endpoint", {}).get("blob", {})
@@ -172,8 +176,12 @@ log_network_interfaces(
 )
 
 # BLOB PRIVATE DNS ZONE GROUP
+blob_private_endpoint_dns_zone_group_name = (
+    f"{blob_private_endpoint_name}-dns-zone-group"
+)
+
 blob_private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
-    resource_name=f"{blob_private_endpoint_name}-dns-zone-group",
+    resource_name=blob_private_endpoint_dns_zone_group_name,
     private_dns_zone_configs=[
         network.PrivateDnsZoneConfigArgs(
             name=blob_private_endpoint_name,
@@ -183,6 +191,10 @@ blob_private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
     private_dns_zone_group_name="privatelink",
     private_endpoint_name=blob_private_endpoint.name,
     resource_group_name=resource_groups["infra"].name,
+)
+
+lock_resource(
+    blob_private_endpoint_dns_zone_group_name, blob_private_endpoint_dns_zone_group.id
 )
 
 # DFS PRIVATE ENDPOINT
@@ -209,6 +221,8 @@ dfs_private_endpoint = network.PrivateEndpoint(
     subnet=network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
 
+lock_resource(dfs_private_endpoint_name, dfs_private_endpoint.id)
+
 # To Log Analytics Workspace
 dfs_private_endpoint_details = (
     datalake_config.get("network", {}).get("private_endpoint", {}).get("dfs", {})
@@ -223,8 +237,9 @@ log_network_interfaces(
 )
 
 # DFS PRIVATE DNS ZONE GROUP
+dfs_private_endpoint_dns_zone_group_name = f"{dfs_private_endpoint_name}-dns-zone-group"
 dfs_private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
-    resource_name=f"{dfs_private_endpoint_name}-dns-zone-group",
+    resource_name=dfs_private_endpoint_dns_zone_group_name,
     private_dns_zone_configs=[
         network.PrivateDnsZoneConfigArgs(
             name=dfs_private_endpoint_name,
@@ -234,6 +249,10 @@ dfs_private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
     private_dns_zone_group_name="privatelink",
     private_endpoint_name=dfs_private_endpoint.name,
     resource_group_name=resource_groups["infra"].name,
+)
+
+lock_resource(
+    dfs_private_endpoint_dns_zone_group_name, dfs_private_endpoint_dns_zone_group.id
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -281,6 +300,9 @@ for ref_key, container_config in datalake_config.get("containers", {}).items():
             ],
         ),
     )
+
+    lock_resource(datalake_container_name, datalake_containers[ref_key].id)
+
     # Container Role Assignments
     role_assignments = container_config.get("iam", {}).get("role_assignments", [])
     for assignment in role_assignments:
@@ -307,12 +329,17 @@ for ref_key, table_config in datalake_config.get("tables", {}).items():
 
     table_name = table_config["display_name"]
 
+    datalake_table_resource_name = (
+        f"{datalake_name}-{table_config['display_name']}".lower()
+    )
     datalake_tables[ref_key] = storage.Table(
-        resource_name=f"{datalake_name}-{table_config['display_name']}".lower(),
+        resource_name=datalake_table_resource_name,
         resource_group_name=datalake_resource_group_name,
         account_name=datalake.name,
         table_name=table_name,
     )
+
+    lock_resource(datalake_table_resource_name, datalake_tables[ref_key].id)
 
     entities = table_config.get("entities", {})
 

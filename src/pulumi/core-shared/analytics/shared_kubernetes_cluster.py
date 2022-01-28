@@ -1,14 +1,16 @@
-from pulumi_azure_native import containerservice
 import pulumi_random
+from pulumi_azure_native import containerservice
 
 from ingenii_azure_data_platform.iam import GroupRoleAssignment
-from ingenii_azure_data_platform.utils import generate_resource_name
+from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
 from management import resource_groups, user_groups
 from network.vnet import hosted_services_subnet
 from project_config import platform_config, platform_outputs
 
-runtime_config = platform_config["analytics_services"]["datafactory"]["integrated_self_hosted_runtime"]
+runtime_config = platform_config["analytics_services"]["datafactory"][
+    "integrated_self_hosted_runtime"
+]
 
 # ----------------------------------------------------------------------------------------------------------------------
 # SHARED KUBERNETES CLUSTER
@@ -59,7 +61,7 @@ if runtime_config["enabled"]:
                 os_type=containerservice.OSType.LINUX,
                 type="VirtualMachineScaleSets",
                 vm_size="Standard_B2ms",
-                vnet_subnet_id=hosted_services_subnet.id
+                vnet_subnet_id=hosted_services_subnet.id,
             ),
             containerservice.ManagedClusterAgentPoolProfileArgs(
                 availability_zones=["1"],
@@ -73,7 +75,7 @@ if runtime_config["enabled"]:
                 os_type=containerservice.OSType.WINDOWS,
                 type="VirtualMachineScaleSets",
                 vm_size="Standard_B2ms",
-                vnet_subnet_id=hosted_services_subnet.id
+                vnet_subnet_id=hosted_services_subnet.id,
             ),
         ],
         auto_upgrade_profile=containerservice.ManagedClusterAutoUpgradeProfileArgs(
@@ -89,7 +91,7 @@ if runtime_config["enabled"]:
         network_profile=containerservice.ContainerServiceNetworkProfileArgs(
             network_mode=containerservice.NetworkMode.TRANSPARENT,
             network_plugin=containerservice.NetworkPlugin.AZURE,
-            network_policy=containerservice.NetworkPolicy.AZURE
+            network_policy=containerservice.NetworkPolicy.AZURE,
         ),
         resource_group_name=resource_group_name,
         sku=containerservice.ManagedClusterSKUArgs(
@@ -102,6 +104,8 @@ if runtime_config["enabled"]:
             admin_username="runtimeclusteradmin",
         ),
     )
+
+    lock_resource("shared_kubernetes_cluster", kubernetes_cluster.id)
 
     # TODO: Potentially implement
     #    identity_profile: Optional[Mapping[str, ManagedClusterPropertiesIdentityProfileArgs]] = None,
@@ -124,5 +128,5 @@ if runtime_config["enabled"]:
                 principal_name=user_group_ref_key,
                 role_name=assignment["role_definition_name"],
                 scope=kubernetes_cluster.id,
-                scope_description="kubernetes-cluster"
+                scope_description="kubernetes-cluster",
             )

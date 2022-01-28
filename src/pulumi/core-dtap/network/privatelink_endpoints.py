@@ -2,7 +2,7 @@ from pulumi import runtime, log, Output
 from pulumi_azure_native import network as net
 from pulumi_azure_native.network import PrivateEndpoint, get_network_interface
 
-from ingenii_azure_data_platform.utils import generate_resource_name
+from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 from ingenii_azure_data_platform.network import get_private_endpoint_ip_addr_and_fqdn
 from ingenii_azure_data_platform.storage import get_container_registry_resource_id
 
@@ -33,8 +33,11 @@ for ref_key, config in container_registry_private_endpoint_configs.items():
         continue
 
     container_registry_resource_id = SHARED_OUTPUTS.get(
-        "storage", "container_registry", ref_key, "id",
-        preview="Preview Container Registry ID"
+        "storage",
+        "container_registry",
+        ref_key,
+        "id",
+        preview="Preview Container Registry ID",
     )
 
     resource_group_name = resource_groups["infra"].name
@@ -62,11 +65,15 @@ for ref_key, config in container_registry_private_endpoint_configs.items():
         tags=platform_config.tags,
     )
 
+    lock_resource(endpoint_name, endpoint.id)
+
     endpoint_ip_and_fqdn = Output.all(
         resource_group_name=resource_group_name, endpoint=endpoint
-    ).apply(lambda args: get_private_endpoint_ip_addr_and_fqdn(
-        args["endpoint"], args["resource_group_name"]
-    ))
+    ).apply(
+        lambda args: get_private_endpoint_ip_addr_and_fqdn(
+            args["endpoint"], args["resource_group_name"]
+        )
+    )
 
     def create_record_sets(record_sets):
         for entry in record_sets:
@@ -77,7 +84,7 @@ for ref_key, config in container_registry_private_endpoint_configs.items():
                 record_type="A",
                 ttl=3600,
                 private_zone_name=container_registry_dns_zone.name,
-                resource_group_name=resource_group_name
+                resource_group_name=resource_group_name,
             )
-    
+
     endpoint_ip_and_fqdn.apply(create_record_sets)

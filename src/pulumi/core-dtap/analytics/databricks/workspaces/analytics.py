@@ -2,33 +2,43 @@ from os import getenv
 import pulumi_azure_native as azure_native
 import pulumi_azuread as azuread
 
+from pulumi import ResourceOptions
+from pulumi_databricks import (
+    Provider as DatabricksProvider,
+    ProviderArgs as DatabricksProviderArgs,
+    databricks,
+)
+
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
 )
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
-from ingenii_azure_data_platform.utils import generate_hash, generate_resource_name
+from ingenii_azure_data_platform.utils import (
+    generate_hash,
+    generate_resource_name,
+    lock_resource,
+)
 
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet
+from storage.datalake import datalake
 from platform_shared import SHARED_OUTPUTS, shared_platform_config
 from project_config import azure_client, platform_config, platform_outputs
-from pulumi import ResourceOptions
-from pulumi_databricks import Provider as DatabricksProvider
-from pulumi_databricks import ProviderArgs as DatabricksProviderArgs
-from pulumi_databricks import databricks
-from storage.datalake import datalake
+
 
 workspace_short_name = "analytics"
-workspace_config = platform_config["analytics_services"]["databricks"][
-    "workspaces"
-][workspace_short_name]
+workspace_config = platform_config["analytics_services"]["databricks"]["workspaces"][
+    workspace_short_name
+]
 shared_workspace_config = shared_platform_config["analytics_services"]["databricks"][
     "workspaces"
 ][workspace_short_name]
-outputs = platform_outputs["analytics"]["databricks"]["workspaces"][workspace_short_name] = {}
+outputs = platform_outputs["analytics"]["databricks"]["workspaces"][
+    workspace_short_name
+] = {}
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS DATABRICKS WORKSPACE
@@ -71,6 +81,8 @@ workspace = azure_native.databricks.Workspace(
         protect=platform_config.resource_protection,
     ),
 )
+
+lock_resource(workspace_name, workspace.id)
 
 outputs["name"] = workspace.name
 outputs["id"] = workspace.workspace_id

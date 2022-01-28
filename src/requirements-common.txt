@@ -13,3 +13,4 @@ yamale>=3.0.0,<4.0.0
 wheel>=0.36.2
 cruft>=2.9.0
 pip
+ingeniictl

@@ -1,7 +1,8 @@
 import pulumi_azure_native as azure_native
 from pulumi.resource import ResourceOptions
+
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
-from ingenii_azure_data_platform.utils import generate_resource_name
+from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
 from logs import log_analytics_workspace
 from project_config import platform_config, platform_outputs
@@ -34,6 +35,8 @@ if is_gateway_enabled:
             ignore_changes=["nat_gateway"],
         ),
     )
+
+    lock_resource(gateway_public_ip_resource_name, gateway_public_ip.id)
 
     # Send diagnostic logs to Log Analytics Workspace
     public_ip_details = gateway_config.get("public_ip", {})
@@ -68,6 +71,8 @@ if is_gateway_enabled:
             name="Standard",
         ),
     )
+
+    lock_resource(gateway_resource_name, gateway.id)
 
     outputs["gateway"] = {"id": gateway.id, "name": gateway.name}
 

@@ -187,8 +187,8 @@ jobs:
       #---------------------------------
       - name: Run Pulumi Preview
         if: matrix.stack != 'shared'
-        run: make preview-dtap-ext
+        run: make cicd-preview-dtap-ext
       #---------------------------------
       - name: Run Pulumi Up
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && matrix.stack != 'shared'
-        run: make apply-dtap-ext EXTRA_ARGS="-f"
+        run: make cicd-apply-dtap-ext EXTRA_ARGS="-f"

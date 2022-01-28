@@ -3,7 +3,7 @@ from pulumi_azure_native import containerregistry as cr
 
 from ingenii_azure_data_platform.defaults import CONTAINER_REGISTRY_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import GroupRoleAssignment
-from ingenii_azure_data_platform.utils import generate_resource_name
+from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
 from management.resource_groups import resource_groups
 from management.user_groups import user_groups
@@ -60,6 +60,8 @@ for ref_key, config in registry_config.items():
             ],
         ),
     )
+
+    lock_resource(resource_name,registry.id)
 
     registries[ref_key] = registry
 

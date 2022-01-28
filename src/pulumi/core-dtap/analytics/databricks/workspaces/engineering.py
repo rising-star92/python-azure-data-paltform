@@ -2,36 +2,47 @@ from os import getenv
 import pulumi
 import pulumi_azure_native as azure_native
 import pulumi_azuread as azuread
+from pulumi import FileAsset, ResourceOptions
+from pulumi_databricks import (
+    Provider as DatabricksProvider,
+    ProviderArgs as DatabricksProviderArgs,
+    databricks,
+)
 
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
 )
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
-from ingenii_azure_data_platform.utils import generate_hash, generate_resource_name
+from ingenii_azure_data_platform.utils import (
+    generate_hash,
+    generate_resource_name,
+    lock_resource,
+)
 
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet
-from platform_shared import add_config_registry_secret, SHARED_OUTPUTS, \
-    shared_platform_config
+from platform_shared import (
+    add_config_registry_secret,
+    SHARED_OUTPUTS,
+    shared_platform_config,
+)
 from project_config import DTAP_ROOT, azure_client, platform_config, platform_outputs
-from pulumi import FileAsset, ResourceOptions
-from pulumi_databricks import Provider as DatabricksProvider
-from pulumi_databricks import ProviderArgs as DatabricksProviderArgs
-from pulumi_databricks import databricks
 from security import credentials_store
 from storage.datalake import datalake, datalake_containers
 
 workspace_short_name = "engineering"
-workspace_config = platform_config["analytics_services"]["databricks"][
-    "workspaces"
-][workspace_short_name]
+workspace_config = platform_config["analytics_services"]["databricks"]["workspaces"][
+    workspace_short_name
+]
 shared_workspace_config = shared_platform_config["analytics_services"]["databricks"][
     "workspaces"
 ][workspace_short_name]
-outputs = platform_outputs["analytics"]["databricks"]["workspaces"][workspace_short_name] = {}
+outputs = platform_outputs["analytics"]["databricks"]["workspaces"][
+    workspace_short_name
+] = {}
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE
@@ -75,6 +86,8 @@ workspace = azure_native.databricks.Workspace(
         protect=platform_config.resource_protection,
     ),
 )
+
+lock_resource(workspace_name, workspace.id)
 
 outputs["name"] = workspace.name
 outputs["id"] = workspace.workspace_id
@@ -336,7 +349,8 @@ storage_mounts_datalake_role_assignment = ServicePrincipalRoleAssignment(
 )
 
 # STORAGE MOUNTS
-# If no storage mounts are defined in the YAML files, we'll not attempt to create any.
+# If no storage mounts are defined in the YAML files, we'll not attempt
+# to create any.
 storage_mounts = {}
 for definition in workspace_config.get("storage_mounts", []):
     storage_mounts[definition["mount_name"]] = databricks.AzureAdlsGen2Mount(
@@ -522,17 +536,19 @@ for ref_key, cluster_config in clusters.items():
 # ----------------------------------------------------------------------------------------------------------------------
 
 add_config_registry_secret(
-    "databricks-engineering-workspace-id", workspace.id,
-    infrastructure_identifier=True
+    "databricks-engineering-workspace-id", workspace.id, infrastructure_identifier=True
 )
 add_config_registry_secret(
-    "databricks-engineering-workspace-hostname", workspace.workspace_url,
-    infrastructure_identifier=True
+    "databricks-engineering-workspace-hostname",
+    workspace.workspace_url,
+    infrastructure_identifier=True,
 )
 add_config_registry_secret(
-    "databricks-engineering-cluster-id", clusters["default"].cluster_id,
-    infrastructure_identifier=True
+    "databricks-engineering-cluster-id",
+    clusters["default"].cluster_id,
+    infrastructure_identifier=True,
 )
 add_config_registry_secret(
-    "databricks-engineering-cluster-name", clusters["default"].cluster_name,
+    "databricks-engineering-cluster-name",
+    clusters["default"].cluster_name,
 )

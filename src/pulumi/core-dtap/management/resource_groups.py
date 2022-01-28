@@ -15,10 +15,7 @@ resource_groups = {}
 for ref_key, config in resource_groups_config.items():
     resource = ResourceGroup(
         resource_group_name=config["display_name"],
-        enable_delete_protection=config.get(
-            "enable_delete_protection",
-            platform_config.resource_protection,
-        ),
+        enable_delete_protection=config.get("enable_delete_protection", False),
         platform_config=platform_config,
     )
     resource_groups[ref_key] = resource

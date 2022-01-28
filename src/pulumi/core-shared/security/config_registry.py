@@ -1,4 +1,6 @@
 import pulumi_azure_native as azure_native
+from pulumi import ResourceOptions
+
 from ingenii_azure_data_platform.defaults import KEY_VAULT_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
@@ -8,13 +10,13 @@ from ingenii_azure_data_platform.logs import (
     log_diagnostic_settings,
     log_network_interfaces,
 )
-from ingenii_azure_data_platform.utils import generate_resource_name
+from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
+
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
 from network import dns, vnet
 from project_config import azure_client, platform_config, platform_outputs
-from pulumi import ResourceOptions
 
 outputs = platform_outputs["security"]["config_registry"] = {}
 
@@ -72,6 +74,8 @@ key_vault = azure_native.keyvault.Vault(
     opts=ResourceOptions(protect=platform_config.resource_protection),
 )
 
+lock_resource(key_vault_name, key_vault.id)
+
 outputs["key_vault_id"] = key_vault.id
 outputs["key_vault_name"] = key_vault.name
 
@@ -103,6 +107,8 @@ private_endpoint = azure_native.network.PrivateEndpoint(
     subnet=azure_native.network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
 
+lock_resource(private_endpoint_name, private_endpoint.id)
+
 # To Log Analytics Workspace
 log_and_metrics_config = key_vault_config.get("network", {}).get("private_endpoint", {})
 log_network_interfaces(
@@ -132,6 +138,8 @@ private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
     private_endpoint_name=private_endpoint.name,
     resource_group_name=resource_groups["infra"].name,
 )
+
+lock_resource(private_endpoint_dns_zone_group_name, private_endpoint_dns_zone_group.id)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> IAM -> ROLE ASSIGNMENTS

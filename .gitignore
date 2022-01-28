@@ -148,6 +148,7 @@ tempdir
 venv
 dev
 .env
+.mypy_cache
 src/pulumi/core-dtap/Pulumi.y*ml
 src/pulumi/core-shared/Pulumi.y*ml
 src/pulumi/core-extensions/Pulumi.y*ml

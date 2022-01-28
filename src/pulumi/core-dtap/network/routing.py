@@ -1,5 +1,7 @@
 import pulumi_azure_native as azure_native
-from ingenii_azure_data_platform.utils import generate_resource_name
+
+from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
+
 from project_config import platform_config, platform_outputs
 from management import resource_groups
 
@@ -15,6 +17,8 @@ main_route_table = azure_native.network.RouteTable(
     disable_bgp_route_propagation=True,
     tags=platform_config.tags,
 )
+
+lock_resource(main_route_table_resource_name, main_route_table.id)
 
 # Export route table metadata
 outputs["main"] = {

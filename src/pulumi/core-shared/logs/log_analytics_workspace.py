@@ -1,8 +1,10 @@
-from ingenii_azure_data_platform.utils import generate_resource_name
-from management import resource_groups
-from project_config import platform_config, platform_outputs
 from pulumi import ResourceOptions
 from pulumi_azure_native import operationalinsights
+
+from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
+
+from management import resource_groups
+from project_config import platform_config, platform_outputs
 
 outputs = platform_outputs["logs"] = {}
 
@@ -21,6 +23,8 @@ log_analytics_workspace = operationalinsights.Workspace(
     tags=platform_config.tags,
     opts=ResourceOptions(protect=platform_config.resource_protection),
 )
+
+lock_resource(workspace_name, log_analytics_workspace.id)
 
 outputs["name"] = log_analytics_workspace.name
 outputs["id"] = log_analytics_workspace.id

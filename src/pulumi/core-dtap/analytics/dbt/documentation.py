@@ -2,7 +2,7 @@ from pulumi import ResourceOptions
 from pulumi_azure_native import web
 
 from ingenii_azure_data_platform.iam import UserAssignedIdentityRoleAssignment
-from ingenii_azure_data_platform.utils import generate_resource_name
+from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
 from management import resource_groups
 from project_config import platform_config, platform_outputs
@@ -54,6 +54,8 @@ if docs_enabled:
         tags=platform_config.tags,
         opts=ResourceOptions(ignore_changes=["branch", "repository_url"]),
     )
+
+    lock_resource(site_resource_name, static_site.id)
 
     outputs["name"] = static_site.name
     outputs["url"] = static_site.default_hostname

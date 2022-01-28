@@ -1,5 +1,7 @@
 import pulumi_azure_native as azure_native
 
+from ingenii_azure_data_platform.utils import lock_resource
+
 from project_config import platform_config, platform_outputs
 from management import resource_groups
 
@@ -18,9 +20,12 @@ key_vault_private_dns_zone = azure_native.network.PrivateZone(
     tags=platform_config.tags,
 )
 
+
+lock_resource("privatelink-vaultcore-azure-net", key_vault_private_dns_zone.id)
+
 outputs["private_zones"]["key_vault"] = {
     "id": key_vault_private_dns_zone.id,
-    "name": key_vault_private_dns_zone.name
+    "name": key_vault_private_dns_zone.name,
 }
 
 key_vault_private_dns_zone_link = azure_native.network.VirtualNetworkLink(
@@ -34,4 +39,8 @@ key_vault_private_dns_zone_link = azure_native.network.VirtualNetworkLink(
     virtual_network=azure_native.network.SubResourceArgs(
         id=vnet.id,
     ),
+)
+
+lock_resource(
+    "privatelink-vaultcore-azure-net-zone-link", key_vault_private_dns_zone_link.id
 )

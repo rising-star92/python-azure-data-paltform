@@ -9,6 +9,7 @@
 ### Improvements
 - [data_factory] - Pipeline generation pipelines moved out of the Data Engineering repository
 - [outputs] - Share outputs between Pulumi and Ingenii UI using Azure Tables as storage.
+- [resource_locks] - Automatically remove resource locks before Pulumi changes are applied.
 
 # 0.2.3 (2022-01-17)
 

@@ -1,5 +1,6 @@
 from pulumi import ResourceOptions
 from pulumi_azure_native import keyvault, network
+
 from ingenii_azure_data_platform.defaults import KEY_VAULT_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
@@ -10,7 +11,8 @@ from ingenii_azure_data_platform.logs import (
     log_diagnostic_settings,
     log_network_interfaces,
 )
-from ingenii_azure_data_platform.utils import generate_resource_name
+from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
+
 from logs import log_analytics_workspace
 from platform_shared import (
     add_config_registry_secret,
@@ -79,6 +81,8 @@ key_vault = keyvault.Vault(
         protect=platform_config.resource_protection,
     ),
 )
+
+lock_resource(key_vault_name, key_vault.id)
 
 outputs["key_vault_id"] = key_vault.id
 outputs["key_vault_name"] = key_vault.name
@@ -157,6 +161,8 @@ private_endpoint = network.PrivateEndpoint(
     tags=platform_config.tags,
 )
 
+lock_resource(private_endpoint_name, private_endpoint.id)
+
 # To Log Analytics Workspace
 private_endpoint_logs_and_metrics = key_vault_config.get("network", {}).get(
     "private_endpoint", {}
@@ -189,21 +195,23 @@ private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
     resource_group_name=resource_groups["infra"].name,
 )
 
+lock_resource(private_endpoint_dns_zone_group_name, private_endpoint_dns_zone_group.id)
+
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> PRIVATE ENDPOINT FOR DEVOPS
 # ----------------------------------------------------------------------------------------------------------------------
 
 shared_vnet = SHARED_OUTPUTS.get(
-    "network", "virtual_network",
+    "network",
+    "virtual_network",
     preview={
         "name": "Preview vNet Name",
         "location": "Preview vNet Location",
         "subnets": {"privatelink": {"id": "Preview Subnets Private Link ID"}},
-    }
+    },
 )
 shared_infra_resource_group_name = SHARED_OUTPUTS.get(
-    "management", "resource_groups", "infra", "name",
-    preview="previewresourcegroupname"
+    "management", "resource_groups", "infra", "name", preview="previewresourcegroupname"
 )
 
 # PRIVATE ENDPOINT
@@ -231,6 +239,8 @@ private_endpoint_devops = network.PrivateEndpoint(
     tags=platform_config.tags,
 )
 
+lock_resource(private_endpoint_name_devops, private_endpoint_devops.id)
+
 # To Log Analytics Workspace
 private_endpoint_logs_and_metrics = key_vault_config.get("network", {}).get(
     "private_endpoint", {}
@@ -256,8 +266,12 @@ private_endpoint_dns_zone_group_devops = network.PrivateDnsZoneGroup(
         network.PrivateDnsZoneConfigArgs(
             name=private_endpoint_name_devops,
             private_dns_zone_id=SHARED_OUTPUTS.get(
-                "network", "dns", "private_zones", "key_vault", "id",
-                preview="Preview Private DNS Zone ID"
+                "network",
+                "dns",
+                "private_zones",
+                "key_vault",
+                "id",
+                preview="Preview Private DNS Zone ID",
             ),
         )
     ],
@@ -266,6 +280,8 @@ private_endpoint_dns_zone_group_devops = network.PrivateDnsZoneGroup(
     resource_group_name=shared_infra_resource_group_name,
     opts=ResourceOptions(provider=shared_services_provider),
 )
+
+lock_resource(private_endpoint_dns_zone_group_name_devops, private_endpoint_dns_zone_group_devops.id)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> LOGGING
