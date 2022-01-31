@@ -111,7 +111,7 @@ for ref_key, datafactory_config in datafactory_configs.items():
 
     outputs["id"] = datafactory.id
     outputs["name"] = datafactory.name
-    outputs["url"] = Output.all(datafactory_resource_group, datafactory.name).apply(
+    outputs["url"] = Output.all(datafactory_resource_group.name, datafactory.name).apply(
         lambda args: f"https://adf.azure.com/en-us/home?factory=%2Fsubscriptions%2F{azure_client.subscription_id}%2FresourceGroups%2F{args[0]}%2Fproviders%2FMicrosoft.DataFactory%2Ffactories%2F{args[1]}"
     )
 
