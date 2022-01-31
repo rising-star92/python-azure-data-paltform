@@ -2,7 +2,7 @@
 
 # 0.2.5 (Unreleased)
 
-# 0.2.4 (2022-01-28)
+# 0.2.4 (2022-01-31)
 
 ### New Features
 - [databricks] - Repositories created in Azure DevOps, and joining to Databricks is a manual step
