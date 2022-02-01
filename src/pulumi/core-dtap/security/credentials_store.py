@@ -239,8 +239,6 @@ private_endpoint_devops = network.PrivateEndpoint(
     tags=platform_config.tags,
 )
 
-lock_resource(private_endpoint_name_devops, private_endpoint_devops.id)
-
 # To Log Analytics Workspace
 private_endpoint_logs_and_metrics = key_vault_config.get("network", {}).get(
     "private_endpoint", {}
@@ -280,8 +278,6 @@ private_endpoint_dns_zone_group_devops = network.PrivateDnsZoneGroup(
     resource_group_name=shared_infra_resource_group_name,
     opts=ResourceOptions(provider=shared_services_provider),
 )
-
-lock_resource(private_endpoint_dns_zone_group_name_devops, private_endpoint_dns_zone_group_devops.id)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> LOGGING
