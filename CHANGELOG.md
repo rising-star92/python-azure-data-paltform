@@ -2,20 +2,18 @@
 
 # 0.2.5 (Unreleased)
 
-### New Features
-- [data_factory] - Alert rules for pipeline failures
-
-# 0.2.4 (2022-01-31)
+# 0.2.4 (2022-02-01)
 
 ### New Features
 - [databricks] - Repositories created in Azure DevOps, and joining to Databricks is a manual step
 - [data_factory] - CI/CD pipelines integrated with data Data Factories
+- [data_factory] - Alert rules for pipeline failures
 
 ### Improvements
 - [data_factory] - Pipeline generation pipelines moved out of the Data Engineering repository
 - [outputs] - Share outputs between Pulumi and Ingenii UI using Azure Tables as storage.
 - [resource_locks] - Automatically remove resource locks before Pulumi changes are applied.
-- [pulumi] - Bump version to 3.22.1
+- [pulumi] - Bump version to 3.22.2
 - [databricks] - Update default runtime version from 8.4 to 9.1
 - [shared] - Set which environments are deployed
 
