@@ -64,8 +64,8 @@ for ref_key, config in container_registry_private_endpoint_configs.items():
         subnet=net.SubnetArgs(id=privatelink_subnet.id),
         tags=platform_config.tags,
     )
-
-    lock_resource(endpoint_name, endpoint.id)
+    if platform_config.resource_protection:
+        lock_resource(endpoint_name, endpoint.id)
 
     endpoint_ip_and_fqdn = Output.all(
         resource_group_name=resource_group_name, endpoint=endpoint

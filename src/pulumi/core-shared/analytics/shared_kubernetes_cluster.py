@@ -104,8 +104,8 @@ if runtime_config["enabled"]:
             admin_username="runtimeclusteradmin",
         ),
     )
-
-    lock_resource("shared_kubernetes_cluster", kubernetes_cluster.id)
+    if platform_config.resource_protection:
+        lock_resource("shared_kubernetes_cluster", kubernetes_cluster.id)
 
     # TODO: Potentially implement
     #    identity_profile: Optional[Mapping[str, ManagedClusterPropertiesIdentityProfileArgs]] = None,

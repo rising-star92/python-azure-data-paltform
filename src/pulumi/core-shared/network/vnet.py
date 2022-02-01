@@ -40,7 +40,8 @@ vnet = net.VirtualNetwork(
     ),
 )
 
-lock_resource(vnet_name, vnet.id)
+if platform_config.resource_protection:
+    lock_resource(vnet_name, vnet.id)
 
 # Export VNET metadata
 outputs["virtual_network"] = {

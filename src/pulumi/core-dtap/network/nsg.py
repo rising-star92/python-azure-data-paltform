@@ -30,8 +30,8 @@ databricks_engineering = azure_native.network.NetworkSecurityGroup(
     # https://github.com/ingenii-solutions/azure-data-platform/issues/71
     opts=pulumi.ResourceOptions(ignore_changes=["security_rules", "tags"]),
 )
-
-lock_resource(databricks_engineering_resource_name, databricks_engineering.id)
+if platform_config.resource_protection:
+    lock_resource(databricks_engineering_resource_name, databricks_engineering.id)
 
 # Export NSG metadata
 outputs["databricks_engineering"] = {
@@ -56,8 +56,8 @@ databricks_analytics = azure_native.network.NetworkSecurityGroup(
     # https://github.com/ingenii-solutions/azure-data-platform/issues/71
     opts=pulumi.ResourceOptions(ignore_changes=["security_rules", "tags"]),
 )
-
-lock_resource(databricks_analytics_resource_name, databricks_analytics.id)
+if platform_config.resource_protection:
+    lock_resource(databricks_analytics_resource_name, databricks_analytics.id)
 
 # Export NSG metadata
 outputs["databricks_analytics"] = {

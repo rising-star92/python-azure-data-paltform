@@ -20,8 +20,8 @@ key_vault_private_dns_zone = azure_native.network.PrivateZone(
     tags=platform_config.tags,
 )
 
-
-lock_resource("privatelink-vaultcore-azure-net", key_vault_private_dns_zone.id)
+if platform_config.resource_protection:
+    lock_resource("privatelink-vaultcore-azure-net", key_vault_private_dns_zone.id)
 
 outputs["private_zones"]["key_vault"] = {
     "id": key_vault_private_dns_zone.id,
@@ -40,7 +40,7 @@ key_vault_private_dns_zone_link = azure_native.network.VirtualNetworkLink(
         id=vnet.id,
     ),
 )
-
-lock_resource(
+if platform_config.resource_protection:
+    lock_resource(
     "privatelink-vaultcore-azure-net-zone-link", key_vault_private_dns_zone_link.id
 )

@@ -74,7 +74,8 @@ key_vault = azure_native.keyvault.Vault(
     opts=ResourceOptions(protect=platform_config.resource_protection),
 )
 
-lock_resource(key_vault_name, key_vault.id)
+if platform_config.resource_protection:
+    lock_resource(key_vault_name, key_vault.id)
 
 outputs["key_vault_id"] = key_vault.id
 outputs["key_vault_name"] = key_vault.name
@@ -107,7 +108,8 @@ private_endpoint = azure_native.network.PrivateEndpoint(
     subnet=azure_native.network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
 
-lock_resource(private_endpoint_name, private_endpoint.id)
+if platform_config.resource_protection:
+    lock_resource(private_endpoint_name, private_endpoint.id)
 
 # To Log Analytics Workspace
 log_and_metrics_config = key_vault_config.get("network", {}).get("private_endpoint", {})
@@ -139,7 +141,10 @@ private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
     resource_group_name=resource_groups["infra"].name,
 )
 
-lock_resource(private_endpoint_dns_zone_group_name, private_endpoint_dns_zone_group.id)
+if platform_config.resource_protection:
+    lock_resource(
+        private_endpoint_dns_zone_group_name, private_endpoint_dns_zone_group.id
+    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> IAM -> ROLE ASSIGNMENTS

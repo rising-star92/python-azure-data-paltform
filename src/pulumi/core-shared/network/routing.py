@@ -17,8 +17,8 @@ main_route_table = azure_native.network.RouteTable(
     disable_bgp_route_propagation=True,
     tags=platform_config.tags,
 )
-
-lock_resource(main_route_table_resource_name, main_route_table.id)
+if platform_config.resource_protection:
+    lock_resource(main_route_table_resource_name, main_route_table.id)
 
 # Export route table metadata
 outputs["main"] = {

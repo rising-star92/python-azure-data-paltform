@@ -86,8 +86,8 @@ workspace = azure_native.databricks.Workspace(
         protect=platform_config.resource_protection,
     ),
 )
-
-lock_resource(workspace_name, workspace.id)
+if platform_config.resource_protection:
+    lock_resource(workspace_name, workspace.id)
 
 outputs["name"] = workspace.name
 outputs["id"] = workspace.workspace_id

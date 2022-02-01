@@ -60,8 +60,8 @@ for ref_key, config in registry_config.items():
             ],
         ),
     )
-
-    lock_resource(resource_name,registry.id)
+    if platform_config.resource_protection:
+        lock_resource(resource_name, registry.id)
 
     registries[ref_key] = registry
 

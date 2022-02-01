@@ -385,7 +385,8 @@ cicd-preview-shared: _check_if_ci
 
 cicd-apply-shared: _check_if_ci
 	@ingeniictl infra disable-resource-protection ${PULUMI_ORGANIZATION}/shared --pulumi-project-dir ${PULUMI_CORE_SHARED_SRC_DIR} \
-	&& make apply-core-shared EXTRA_ARGS="-f" \
+	&& ENABLE_RESOURCE_PROTECTION=0 make apply-core-shared EXTRA_ARGS="-f" \
+	&& ENABLE_RESOURCE_PROTECTION=1 make apply-core-shared EXTRA_ARGS="-f" \
 	&& make export-stack-outputs-core-shared \
 	&& make upload-stack-outputs-core-shared
 
@@ -398,7 +399,8 @@ cicd-preview-dtap: _check_if_ci
 
 cicd-apply-dtap: _check_if_ci
 	@ingeniictl infra disable-resource-protection ${PULUMI_ORGANIZATION}/${STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR} \
-	&& make apply-core-dtap EXTRA_ARGS="-f" \
+	&& ENABLE_RESOURCE_PROTECTION=0 make apply-core-dtap EXTRA_ARGS="-f" \
+	&& ENABLE_RESOURCE_PROTECTION=1 make apply-core-dtap EXTRA_ARGS="-f" \
 	&& make export-stack-outputs-core-dtap \
 	&& make upload-stack-outputs-core-dtap
 
@@ -408,11 +410,13 @@ cicd-refresh-shared-ext: _check_if_ci refresh-core-shared-extensions
 cicd-preview-shared-ext: _check_if_ci preview-core-shared-extensions
 cicd-apply-shared-ext:
 	@make _check_if_ci \
-	&& make apply-core-shared-extensions EXTRA_ARGS="-f"
+	&& ENABLE_RESOURCE_PROTECTION=0 make apply-core-shared-extensions EXTRA_ARGS="-f"
+	&& ENABLE_RESOURCE_PROTECTION=1 make apply-core-shared-extensions EXTRA_ARGS="-f"
 
 cicd-init-dtap-ext: _check_if_ci init-core-dtap-extensions 
 cicd-refresh-dtap-ext: _check_if_ci refresh-core-dtap-extensions
 cicd-preview-dtap-ext: _check_if_ci preview-core-dtap-extensions 
 cicd-apply-dtap-ext:
 	@make _check_if_ci \
-	&& make apply-core-dtap-extensions  EXTRA_ARGS="-f"
+	&& ENABLE_RESOURCE_PROTECTION=0 make apply-core-dtap-extensions  EXTRA_ARGS="-f"
+	&& ENABLE_RESOURCE_PROTECTION=1 make apply-core-dtap-extensions  EXTRA_ARGS="-f"

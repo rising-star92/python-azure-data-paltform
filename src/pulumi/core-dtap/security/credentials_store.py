@@ -81,8 +81,8 @@ key_vault = keyvault.Vault(
         protect=platform_config.resource_protection,
     ),
 )
-
-lock_resource(key_vault_name, key_vault.id)
+if platform_config.resource_protection:
+    lock_resource(key_vault_name, key_vault.id)
 
 outputs["key_vault_id"] = key_vault.id
 outputs["key_vault_name"] = key_vault.name
@@ -161,7 +161,8 @@ private_endpoint = network.PrivateEndpoint(
     tags=platform_config.tags,
 )
 
-lock_resource(private_endpoint_name, private_endpoint.id)
+if platform_config.resource_protection:
+    lock_resource(private_endpoint_name, private_endpoint.id)
 
 # To Log Analytics Workspace
 private_endpoint_logs_and_metrics = key_vault_config.get("network", {}).get(
@@ -194,8 +195,8 @@ private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
     private_endpoint_name=private_endpoint.name,
     resource_group_name=resource_groups["infra"].name,
 )
-
-lock_resource(private_endpoint_dns_zone_group_name, private_endpoint_dns_zone_group.id)
+if platform_config.resource_protection:
+    lock_resource(private_endpoint_dns_zone_group_name, private_endpoint_dns_zone_group.id)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> PRIVATE ENDPOINT FOR DEVOPS

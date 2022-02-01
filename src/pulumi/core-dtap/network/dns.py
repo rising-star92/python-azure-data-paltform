@@ -18,8 +18,8 @@ storage_blob_private_dns_zone = net.PrivateZone(
     resource_group_name=resource_groups["infra"].name,
     tags=platform_config.tags,
 )
-
-lock_resource("privatelink-blob-core-windows-net", storage_blob_private_dns_zone.id)
+if platform_config.resource_protection:
+    lock_resource("privatelink-blob-core-windows-net", storage_blob_private_dns_zone.id)
 
 storage_blob_private_dns_zone_link = net.VirtualNetworkLink(
     resource_name="privatelink-blob-core-windows-net",
@@ -33,10 +33,10 @@ storage_blob_private_dns_zone_link = net.VirtualNetworkLink(
         id=vnet.id,
     ),
 )
-
-lock_resource(
-    "privatelink-blob-core-windows-net-link", storage_blob_private_dns_zone_link.id
-)
+if platform_config.resource_protection:
+    lock_resource(
+        "privatelink-blob-core-windows-net-link", storage_blob_private_dns_zone_link.id
+    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # STORAGE DFS PRIVATE DNS ZONE
@@ -48,8 +48,8 @@ storage_dfs_private_dns_zone = net.PrivateZone(
     resource_group_name=resource_groups["infra"].name,
     tags=platform_config.tags,
 )
-
-lock_resource("privatelink-dfs-core-windows-net", storage_dfs_private_dns_zone.id)
+if platform_config.resource_protection:
+    lock_resource("privatelink-dfs-core-windows-net", storage_dfs_private_dns_zone.id)
 
 storage_dfs_private_dns_zone_link = net.VirtualNetworkLink(
     resource_name="privatelink-dfs-core-windows-net",
@@ -64,9 +64,10 @@ storage_dfs_private_dns_zone_link = net.VirtualNetworkLink(
     tags=platform_config.tags,
 )
 
-lock_resource(
-    "privatelink-dfs-core-windows-net-link", storage_dfs_private_dns_zone_link.id
-)
+if platform_config.resource_protection:
+    lock_resource(
+        "privatelink-dfs-core-windows-net-link", storage_dfs_private_dns_zone_link.id
+    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # KEYVAULT PRIVATE DNS ZONE
@@ -78,8 +79,8 @@ key_vault_private_dns_zone = net.PrivateZone(
     resource_group_name=resource_groups["infra"].name,
     tags=platform_config.tags,
 )
-
-lock_resource("privatelink-vaultcore-azure-net", key_vault_private_dns_zone.id)
+if platform_config.resource_protection:
+    lock_resource("privatelink-vaultcore-azure-net", key_vault_private_dns_zone.id)
 
 key_vault_private_dns_zone_link = net.VirtualNetworkLink(
     resource_name="privatelink-vaultcore-azure-net",
@@ -94,9 +95,10 @@ key_vault_private_dns_zone_link = net.VirtualNetworkLink(
     ),
 )
 
-lock_resource(
-    "privatelink-vaultcore-azure-net-link", key_vault_private_dns_zone_link.id
-)
+if platform_config.resource_protection:
+    lock_resource(
+        "privatelink-vaultcore-azure-net-link", key_vault_private_dns_zone_link.id
+    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # CONTAINER REGISTRY PRIVATE DNS ZONE
@@ -114,8 +116,8 @@ if container_registry_private_endpoint_configs:
         resource_group_name=resource_groups["infra"].name,
         tags=platform_config.tags,
     )
-
-    lock_resource("privatelink-azurecr-io", container_registry_dns_zone.id)
+    if platform_config.resource_protection:
+        lock_resource("privatelink-azurecr-io", container_registry_dns_zone.id)
 
     container_registry_dns_zone_link = net.VirtualNetworkLink(
         resource_name="privatelink-azurecr-io",
@@ -129,8 +131,8 @@ if container_registry_private_endpoint_configs:
             id=vnet.id,
         ),
     )
-
-    lock_resource("privatelink-azurecr-io-link", container_registry_dns_zone_link.id)
+    if platform_config.resource_protection:
+        lock_resource("privatelink-azurecr-io-link", container_registry_dns_zone_link.id)
 else:
     container_registry_dns_zone = None
     container_registry_dns_zone_link = None

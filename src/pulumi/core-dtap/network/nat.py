@@ -35,8 +35,8 @@ if is_gateway_enabled:
             ignore_changes=["nat_gateway"],
         ),
     )
-
-    lock_resource(gateway_public_ip_resource_name, gateway_public_ip.id)
+    if platform_config.resource_protection:
+        lock_resource(gateway_public_ip_resource_name, gateway_public_ip.id)
 
     outputs["public_ip_address"] = gateway_public_ip.ip_address
 
@@ -71,8 +71,8 @@ if is_gateway_enabled:
             name="Standard",
         ),
     )
-
-    lock_resource(gateway_resource_name, gateway.id)
+    if platform_config.resource_protection:
+        lock_resource(gateway_resource_name, gateway.id)
 
     outputs["gateway"] = {"id": gateway.id, "name": gateway.name}
 

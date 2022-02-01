@@ -54,8 +54,8 @@ if docs_enabled:
         tags=platform_config.tags,
         opts=ResourceOptions(ignore_changes=["branch", "repository_url"]),
     )
-
-    lock_resource(site_resource_name, static_site.id)
+    if platform_config.resource_protection:
+        lock_resource(site_resource_name, static_site.id)
 
     outputs["name"] = static_site.name
     outputs["url"] = static_site.default_hostname

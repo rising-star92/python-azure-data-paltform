@@ -23,8 +23,8 @@ log_analytics_workspace = operationalinsights.Workspace(
     tags=platform_config.tags,
     opts=ResourceOptions(protect=platform_config.resource_protection),
 )
-
-lock_resource(workspace_name, log_analytics_workspace.id)
+if platform_config.resource_protection:
+    lock_resource(workspace_name, log_analytics_workspace.id)
 
 outputs["name"] = log_analytics_workspace.name
 outputs["id"] = log_analytics_workspace.id

@@ -83,8 +83,8 @@ datalake = storage.StorageAccount(
         protect=platform_config.resource_protection,
     ),
 )
-
-lock_resource(datalake_name, datalake.id)
+if platform_config.resource_protection:
+    lock_resource(datalake_name, datalake.id)
 
 outputs["id"] = datalake.id
 outputs["name"] = datalake.name
@@ -160,7 +160,8 @@ blob_private_endpoint = network.PrivateEndpoint(
     subnet=network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
 
-lock_resource(blob_private_endpoint_name, blob_private_endpoint.id)
+if platform_config.resource_protection:
+    lock_resource(blob_private_endpoint_name, blob_private_endpoint.id)
 
 # To Log Analytics Workspace
 blob_private_endpoint_details = (
@@ -192,10 +193,11 @@ blob_private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
     private_endpoint_name=blob_private_endpoint.name,
     resource_group_name=resource_groups["infra"].name,
 )
-
-lock_resource(
-    blob_private_endpoint_dns_zone_group_name, blob_private_endpoint_dns_zone_group.id
-)
+if platform_config.resource_protection:
+    lock_resource(
+        blob_private_endpoint_dns_zone_group_name,
+        blob_private_endpoint_dns_zone_group.id,
+    )
 
 # DFS PRIVATE ENDPOINT
 dfs_private_endpoint_name = generate_resource_name(
@@ -221,7 +223,8 @@ dfs_private_endpoint = network.PrivateEndpoint(
     subnet=network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
 
-lock_resource(dfs_private_endpoint_name, dfs_private_endpoint.id)
+if platform_config.resource_protection:
+    lock_resource(dfs_private_endpoint_name, dfs_private_endpoint.id)
 
 # To Log Analytics Workspace
 dfs_private_endpoint_details = (
@@ -251,9 +254,10 @@ dfs_private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
     resource_group_name=resource_groups["infra"].name,
 )
 
-lock_resource(
-    dfs_private_endpoint_dns_zone_group_name, dfs_private_endpoint_dns_zone_group.id
-)
+if platform_config.resource_protection:
+    lock_resource(
+        dfs_private_endpoint_dns_zone_group_name, dfs_private_endpoint_dns_zone_group.id
+    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA LAKE -> IAM -> ROLE ASSIGNMENTS
@@ -300,8 +304,8 @@ for ref_key, container_config in datalake_config.get("containers", {}).items():
             ],
         ),
     )
-
-    lock_resource(datalake_container_name, datalake_containers[ref_key].id)
+    if platform_config.resource_protection:
+        lock_resource(datalake_container_name, datalake_containers[ref_key].id)
 
     # Container Role Assignments
     role_assignments = container_config.get("iam", {}).get("role_assignments", [])
@@ -338,8 +342,8 @@ for ref_key, table_config in datalake_config.get("tables", {}).items():
         account_name=datalake.name,
         table_name=table_name,
     )
-
-    lock_resource(datalake_table_resource_name, datalake_tables[ref_key].id)
+    if platform_config.resource_protection:
+        lock_resource(datalake_table_resource_name, datalake_tables[ref_key].id)
 
     entities = table_config.get("entities", {})
 
