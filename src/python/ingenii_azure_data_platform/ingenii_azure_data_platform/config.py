@@ -132,6 +132,18 @@ class PlatformConfiguration:
         custom_config_file_path: Union[str, None] = None,
     ) -> None:
 
+        ########
+        # Stack
+        ########
+        self._stack = stack.lower()
+        # In the new naming convention, we have shortened the stack names if they are either test, prod or shared.
+        self._stack_short_name = {"test": "tst", "prod": "prd", "shared": "shr"}.get(
+            self._stack, self._stack
+        )
+
+        ########
+        # Config files
+        ########
         # If no custom config file path is provided, we'll use the default config.
         custom_config_file_path = custom_config_file_path or default_config_file_path
 
@@ -160,22 +172,25 @@ class PlatformConfiguration:
         # Validate the schema
         self._validate_schema(config_schema_file_path, self._from_yml)
 
-        # Add properties
-        self._prefix = self._from_yml["general"]["prefix"]
-        self._region = CloudRegion(self._from_yml["general"]["region"])
-        self._tags = self._from_yml["general"]["tags"]
-        self._unique_id = self._from_yml["general"]["unique_id"]
-        self._use_legacy_naming = self._from_yml["general"]["use_legacy_naming"]
+        ########
+        # General
+        ########
+        general_config = self._from_yml["general"]
+        self._prefix = general_config["prefix"]
+        self._region = CloudRegion(general_config["region"])
+        self._tags = general_config["tags"]
+        self._unique_id = general_config["unique_id"]
+        self._use_legacy_naming = general_config["use_legacy_naming"]
 
+        # Default here, not in .yml, so a set list replaces and not merges
+        if self._stack == "shared" and not general_config.get("environments"):
+            general_config["environments"] = ["dev", "test", "prod"]
+
+        ########
+        # Other
+        ########
         # Returns 'True' if the resource protection is enabled, 'False' otherwise.
         self._resource_protection = bool(int(getenv("ENABLE_RESOURCE_PROTECTION", 1)))
-
-        self._stack = stack.lower()
-
-        # In the new naming convention, we have shortened the stack names if they are either test, prod or shared.
-        self._stack_short_name = {"test": "tst", "prod": "prd", "shared": "shr"}.get(
-            self._stack, self._stack
-        )
 
         # Load metadata
         self._metadata = self._load_yml(metadata_file_path)

@@ -48,6 +48,9 @@ for repository_name in repositories_needed:
     }
 
     for pipeline in ["test", "prod"]:
+        if pipeline not in platform_config["general"]["environments"]:
+            continue
+
         ado.BuildDefinition(
             resource_name=generate_resource_name(
                 resource_type="devops_pipeline",

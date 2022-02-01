@@ -3,7 +3,9 @@
 # 0.2.5 (Unreleased)
 
 ### Improvements
+
 - [databricks] - Update default runtime version from 8.4 to 9.1
+- [shared] - Set which environments are deployed
 
 # 0.2.4 (2022-01-31)
 

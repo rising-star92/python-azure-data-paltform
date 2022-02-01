@@ -22,6 +22,7 @@ general:
   use_legacy_naming: bool()
   region: str()
   tags: map()
+  environments: list(str(), required=False) # Shared only
 
 #----------------------------------------------------------------------------------------------------------------------
 # MANAGEMENT

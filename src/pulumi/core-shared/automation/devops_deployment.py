@@ -53,7 +53,7 @@ user_assigned_identities = {
         resource_group_name=resource_groups["security"].name,
         tags=platform_config.tags,
     )
-    for env in ["dev", "test", "acc", "prod"]
+    for env in platform_config["general"]["environments"]
 }
 
 outputs["deployment_user_assigned_identities"] = {
