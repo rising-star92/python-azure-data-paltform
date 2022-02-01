@@ -28,9 +28,10 @@ general:
 # MANAGEMENT
 #----------------------------------------------------------------------------------------------------------------------
 management:
-  user_groups: map(include('user_group'),key=str())
-  resource_groups: map(include('resource_group'),key=str())
-  resource_providers: list(str(),null(), required=False)
+  user_groups: map(include('user_group'), key=str())
+  resource_groups: map(include('resource_group'), key=str())
+  resource_providers: list(str(), null(), required=False)
+  action_groups: map(include('action_group'), key=str(), required=False)
 
 # management.user_groups
 user_group:
@@ -42,6 +43,13 @@ resource_group:
   display_name: str()
   enable_delete_protection: bool(required=False)
   iam: include('_iam', required=False)
+
+# management.action_groups
+action_group:
+  display_name: str()
+  short_name: str(max=12)
+  enabled: bool()
+  email_addresses: list(str())
 
 #----------------------------------------------------------------------------------------------------------------------
 # LOGS
@@ -70,7 +78,7 @@ _network_virtual_network:
 #----------------------------------------------------------------------------------------------------------------------
 storage:
   datalake: include('storage_datalake', required=False)
-  container_registry: map(include('storage_container_registry'),key=str(), required=False)
+  container_registry: map(include('storage_container_registry'), key=str(), required=False)
 
 # storage.datalake
 storage_datalake:
@@ -163,11 +171,11 @@ _databricks:
   workspaces: map(include('_databricks_workspace'),key=str())
 
 _databricks_workspace:
-  clusters: map(include('_databricks_single_node_cluster'),include('_databricks_high_concurrency_cluster'),key=str(), required=False)
+  clusters: map(include('_databricks_single_node_cluster'), include('_databricks_high_concurrency_cluster'), key=str(), required=False)
   config: include('_databricks_workspace_config', required=False)
   devops_repositories: list(include('_databricks_devops_repository'), required=False)
   iam: include('_iam', required=False)
-  instance_pools: map(include('_databricks_instance_pool'),key=str(), required=False)
+  instance_pools: map(include('_databricks_instance_pool'), key=str(), required=False)
   logs: include('_logs', required=False)
   metrics: include('_metrics', required=False)
   network_security_groups: include('_logs_and_metrics', required=False)
@@ -250,6 +258,7 @@ _datafactory_factory:
   logs: include('_logs', required=False)
   metrics: include('_metrics', required=False)
   repository: include('_datafactory_repository', required=False)
+  pipeline_failure_action_groups: list(str(), required=False)
 
 _datafactory_repository:
   devops_integrated: bool(required=False)

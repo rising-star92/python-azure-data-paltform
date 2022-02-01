@@ -52,6 +52,12 @@ management:
             role_definition_name: Reader
           - user_group_ref_key: analysts
             role_definition_name: Reader
+  action_groups:
+    data_pipeline_failures:
+      display_name: Data Pipeline Failures
+      short_name: PipelineFail
+      enabled: true
+      email_addresses: []
 
 # ----------------------------------------------------------------------------------------------------------------------
 # SECURITY

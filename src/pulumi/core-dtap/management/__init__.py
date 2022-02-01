@@ -7,3 +7,4 @@ platform_outputs["management"] = {}
 from . import resource_providers
 from .user_groups import user_groups
 from .resource_groups import resource_groups
+from .action_groups import action_groups

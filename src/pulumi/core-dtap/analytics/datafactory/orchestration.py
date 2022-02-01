@@ -1,5 +1,5 @@
 from pulumi import ResourceOptions, Output
-from pulumi_azure_native import datafactory as adf
+from pulumi_azure_native import datafactory as adf, insights
 
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
@@ -10,8 +10,7 @@ from ingenii_azure_data_platform.orchestration import AdfSelfHostedIntegrationRu
 from ingenii_azure_data_platform.utils import generate_resource_name
 
 from logs import log_analytics_workspace
-from management import resource_groups
-from management.user_groups import user_groups
+from management import action_groups, resource_groups, user_groups
 
 from project_config import platform_config, platform_outputs, azure_client
 from platform_shared import get_devops_principal_id
@@ -102,6 +101,44 @@ ServicePrincipalRoleAssignment(
     scope=datafactory.id,
     scope_description="orchestration-datafactory",
 )
+
+# ----------------------------------------------------------------------------------------------------------------------
+# DATA FACTORY -> PIPELINE FAILURE ALERT RULE
+# ----------------------------------------------------------------------------------------------------------------------
+if datafactory_config.get("pipeline_failure_action_groups"):
+    insights.MetricAlert(
+        resource_name=generate_resource_name(
+            resource_type="metric_alert",
+            resource_name="datafactory_orchestration_pipeline_failure",
+            platform_config=platform_config,
+        ),
+        actions=[
+            insights.MetricAlertActionArgs(action_group_id=action_groups[pfac])
+            for pfac in datafactory_config.get("pipeline_failure_action_groups", [])
+        ],
+        auto_mitigate=False,
+        criteria=insights.MetricAlertMultipleResourceMultipleMetricCriteriaArgs(
+            odata_type="Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria",
+            all_of=[insights.MetricCriteriaArgs(
+                criterion_type="StaticThresholdCriterion",
+                metric_name="PipelineFailedRuns",
+                name="Pipeline failure",
+                operator=insights.ConditionalOperator.GREATER_THAN_OR_EQUAL,
+                threshold=0,
+                time_aggregation=insights.AggregationTypeEnum.TOTAL,
+            )],
+        ),
+        description="Alerts on pipeline failures",
+        enabled=True,
+        evaluation_frequency="PT15M",
+        location="global",
+        resource_group_name=datafactory_resource_group,
+        rule_name="Pipeline Failures - orchestration",
+        scopes=[datafactory.id],
+        severity=1,
+        tags=platform_config.tags,
+        window_size="PT15M"
+    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY -> LOGGING

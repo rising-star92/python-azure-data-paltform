@@ -34,6 +34,7 @@ def generate_resource_name(
         The generated resource name.
     """
     resource_names = {
+        "action_group": "ag",
         "container_registry": "cr",
         "databricks_cluster": "dbwc",
         "databricks_instance_pool": "dbwip",
@@ -45,6 +46,7 @@ def generate_resource_name(
         "dns_zone": "dz",
         "kubernetes_cluster": "kc",
         "log_analytics_workspace": "law",
+        "metric_alert": "ma",
         "nat_gateway": "ngw",
         "network_security_group": "nsg",
         "private_dns_zone": "prdz",

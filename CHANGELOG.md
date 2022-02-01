@@ -2,6 +2,9 @@
 
 # 0.2.5 (Unreleased)
 
+### New Features
+- [data_factory] - Alert rules for pipeline failures
+
 # 0.2.4 (2022-01-31)
 
 ### New Features
