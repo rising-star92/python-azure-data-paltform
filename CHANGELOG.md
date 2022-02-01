@@ -13,7 +13,7 @@
 - [data_factory] - Pipeline generation pipelines moved out of the Data Engineering repository
 - [outputs] - Share outputs between Pulumi and Ingenii UI using Azure Tables as storage.
 - [resource_locks] - Automatically remove resource locks before Pulumi changes are applied.
-- [pulumi] - Bump version to 3.22.2
+- [pulumi] - Bump version to 3.23.2
 - [databricks] - Update default runtime version from 8.4 to 9.1
 - [shared] - Set which environments are deployed
 
