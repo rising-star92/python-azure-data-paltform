@@ -15,8 +15,12 @@ from analytics.databricks.workspaces import engineering as databricks_engineerin
 from logs import log_analytics_workspace
 from management import action_groups, resource_groups, user_groups
 
-from platform_shared import add_config_registry_secret, get_devops_principal_id, \
-    SHARED_OUTPUTS, shared_services_provider
+from platform_shared import (
+    add_config_registry_secret,
+    get_devops_principal_id,
+    SHARED_OUTPUTS,
+    shared_services_provider,
+)
 from project_config import azure_client, platform_config, platform_outputs
 
 from security.credentials_store import key_vault
@@ -34,7 +38,9 @@ datafactory_configs = platform_config.from_yml["analytics_services"]["datafactor
     "factories"
 ]
 datafactory_repositories = SHARED_OUTPUTS.get(
-    "analytics", "datafactory", "repositories",
+    "analytics",
+    "datafactory",
+    "repositories",
     preview={
         key: {"name": f"Preview Repository name: {key}"} for key in datafactory_configs
     },
@@ -43,8 +49,7 @@ devops_project = SHARED_OUTPUTS.get(
     "devops", "project", preview={"name": "Preview DevOps Project Name"}
 )
 shared_runtimes = SHARED_OUTPUTS.get(
-    "analytics", "datafactory", "shared_runtimes", "runtimes",
-    preview={}
+    "analytics", "datafactory", "shared_runtimes", "runtimes", preview={}
 )
 
 # Dev is connected to the repository, all others are deployed to
@@ -85,7 +90,7 @@ for ref_key, datafactory_config in datafactory_configs.items():
             repository_name=datafactory_repositories[ref_key]["name"],
             root_folder=datafactory_repository.get("root_folder", "/"),
             tenant_id=azure_client.tenant_id,
-            type="FactoryVSTSConfiguration"
+            type="FactoryVSTSConfiguration",
         )
     else:
         repo_configuration = None
@@ -100,17 +105,19 @@ for ref_key, datafactory_config in datafactory_configs.items():
         resource_group_name=datafactory_resource_group.name,
         identity=adf.FactoryIdentityArgs(type=adf.FactoryIdentityType.SYSTEM_ASSIGNED),
         repo_configuration=repo_configuration,
-        opts=ResourceOptions(protect=platform_config.resource_protection),
+        opts=ResourceOptions(
+            protect=platform_config.resource_protection,
+            ignore_changes=["repo_configuration.last_commit_id"],
+        ),
     )
 
-    data_datafactories[ref_key] = {
-        "name": datafactory_name,
-        "obj": datafactory
-    }
+    data_datafactories[ref_key] = {"name": datafactory_name, "obj": datafactory}
 
     outputs["id"] = datafactory.id
     outputs["name"] = datafactory.name
-    outputs["url"] = Output.all(datafactory_resource_group.name, datafactory.name).apply(
+    outputs["url"] = Output.all(
+        datafactory_resource_group.name, datafactory.name
+    ).apply(
         lambda args: f"https://adf.azure.com/en-us/home?factory=%2Fsubscriptions%2F{azure_client.subscription_id}%2FresourceGroups%2F{args[0]}%2Fproviders%2FMicrosoft.DataFactory%2Ffactories%2F{args[1]}"
     )
 
@@ -190,7 +197,7 @@ for ref_key, datafactory_config in datafactory_configs.items():
                 scope_description=f"shared-runtime-{runtime_name}",
                 opts=ResourceOptions(provider=shared_services_provider),
             )
-    
+
     shared_runtimes.apply(access_runtimes)
 
     # ----------------------------------------------------------------------------------------------------------------------
@@ -210,14 +217,16 @@ for ref_key, datafactory_config in datafactory_configs.items():
             auto_mitigate=False,
             criteria=insights.MetricAlertMultipleResourceMultipleMetricCriteriaArgs(
                 odata_type="Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria",
-                all_of=[insights.MetricCriteriaArgs(
-                    criterion_type="StaticThresholdCriterion",
-                    metric_name="PipelineFailedRuns",
-                    name="Pipeline failure",
-                    operator=insights.ConditionalOperator.GREATER_THAN_OR_EQUAL,
-                    threshold=0,
-                    time_aggregation=insights.AggregationTypeEnum.TOTAL,
-                )],
+                all_of=[
+                    insights.MetricCriteriaArgs(
+                        criterion_type="StaticThresholdCriterion",
+                        metric_name="PipelineFailedRuns",
+                        name="Pipeline failure",
+                        operator=insights.ConditionalOperator.GREATER_THAN_OR_EQUAL,
+                        threshold=0,
+                        time_aggregation=insights.AggregationTypeEnum.TOTAL,
+                    )
+                ],
             ),
             description="Alerts on pipeline failures",
             enabled=True,
@@ -228,7 +237,7 @@ for ref_key, datafactory_config in datafactory_configs.items():
             scopes=[datafactory.id],
             severity=1,
             tags=platform_config.tags,
-            window_size="PT15M"
+            window_size="PT15M",
         )
 
     # ----------------------------------------------------------------------------------------------------------------------

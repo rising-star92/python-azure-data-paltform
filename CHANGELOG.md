@@ -2,6 +2,9 @@
 
 # 0.2.5 (Unreleased)
 
+### Bugfixes
+- [data_factory] - Ignore `last_commit_id` attribute in the `repo_configuration` to avoid unnecessary diffs.
+
 # 0.2.4 (2022-02-01)
 
 ### New Features
