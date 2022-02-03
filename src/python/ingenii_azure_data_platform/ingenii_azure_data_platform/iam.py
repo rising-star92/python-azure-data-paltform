@@ -2,7 +2,6 @@ from typing import Union
 
 from azure.core.credentials import AccessToken
 from azure.mgmt.authorization import AuthorizationManagementClient
-from black import err
 from pulumi import Output, ResourceOptions
 from pulumi_azure_native import authorization
 
