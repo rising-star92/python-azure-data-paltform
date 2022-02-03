@@ -1,5 +1,3 @@
-from os import getenv
-
 from ingenii_azure_data_platform.iam import GroupRoleAssignment
 from ingenii_azure_data_platform.management import ResourceGroup
 from project_config import platform_config, platform_outputs

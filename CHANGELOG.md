@@ -2,6 +2,9 @@
 
 # 0.2.5 (Unreleased)
 
+### Improvements
+- [iam_roles] - IAM role ids are now retrieved automatically by querying the Azure Management API.
+
 ### Bugfixes
 - [data_factory] - Ignore `last_commit_id` attribute in the `repo_configuration` to avoid unnecessary diffs.
 
