@@ -1,6 +1,6 @@
-# CHANGELOG
+# 0.2.6 (Unreleased)
 
-# 0.2.5 (Unreleased)
+# 0.2.5 (2022-02-04)
 
 ### Improvements
 - [global_firewall] - We now have the ability to enable/disable global firewall that works across all major resources that support network filtering: Databricks, Storage Accounts, Key Vaults, Container Registries
