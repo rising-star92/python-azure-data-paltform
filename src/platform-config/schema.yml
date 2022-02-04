@@ -86,8 +86,7 @@ storage_datalake:
   containers: map(include('storage_datalake_container'), key=str())
   tables: map(include('storage_datalake_table'), key=str())
   network:
-    firewall:
-      enabled: bool()
+    firewall: include('_network_firewall', required=False)
     private_endpoint: include('storage_datalake_network_private_endpoint', required=False)
   iam: include('_iam', required=False)
   logs: include('_logs', required=False)
@@ -143,8 +142,7 @@ security:
 
 _config_registry:
   network:
-    firewall:
-      enabled: bool()
+    firewall: include('_network_firewall', required=False)
     private_endpoint: include('_logs_and_metrics', required=False)
   iam: include('_iam', required=False)
   logs: include('_logs', required=False)
@@ -152,8 +150,7 @@ _config_registry:
 
 _credentials_store:
   network:
-    firewall:
-      enabled: bool()
+    firewall: include('_network_firewall', required=False)
     private_endpoint: include('_logs_and_metrics', required=False)
   iam: include('_iam', required=False)
   logs: include('_logs', required=False)
@@ -178,12 +175,15 @@ _databricks_workspace:
   instance_pools: map(include('_databricks_instance_pool'), key=str(), required=False)
   logs: include('_logs', required=False)
   metrics: include('_metrics', required=False)
+  network: include('_databricks_network_config', required=False)
   network_security_groups: include('_logs_and_metrics', required=False)
   storage_mounts: list(include('_databricks_storage_mount'), required=False)
 
+_databricks_network_config:
+  firewall: include('_network_firewall', required=False)
+
 _databricks_workspace_config:
   enable_container_services: str(required=False)
-  enable_ip_access_lists: str(required=False)
 
 _databricks_storage_mount:
   type: str()
@@ -341,3 +341,10 @@ _logs_and_metrics:
 _network_firewall:
   enabled: bool()
   ip_access_list: list(ip(), required=False)
+  vnet_access_list: list(str(), required=False) # applies to Storage Accounts, Key Vaults
+  resource_access_list: list(include('_network_firewall_resource_access'), required=False) # applies to Storage Accounts
+  trust_azure_services: bool(required=False) # applies to Storage Accounts, Key Vaults
+
+_network_firewall_resource_access:
+  resource_id: str()
+  tenant_id: str()

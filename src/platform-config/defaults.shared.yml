@@ -87,7 +87,8 @@ network:
   firewall:
     enabled: false
     ip_access_list:
-      - 151.251.5.72
+      - 151.251.5.72 # Ingenii TK
+      - 52.142.62.11 # Ingenii GitHub Runner
   nat_gateway:
     enabled: true
   virtual_network:

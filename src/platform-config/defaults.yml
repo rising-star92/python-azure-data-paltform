@@ -96,7 +96,8 @@ network:
   firewall:
     enabled: false
     ip_access_list:
-      - 151.251.5.72
+      - 151.251.5.72 # Ingenii TK
+      - 52.142.62.11 # Ingenii GitHub Runner
   nat_gateway:
     enabled: true
   virtual_network:
@@ -206,7 +207,6 @@ analytics_services:
       engineering:
         config:
           enable_container_services: "true"
-          enable_ip_access_lists: "false"
         iam:
           role_assignments:
             - user_group_ref_key: admins
@@ -263,7 +263,6 @@ analytics_services:
       analytics:
         config:
           enable_container_services: "false"
-          enable_ip_access_lists: "false"
         iam:
           role_assignments:
             - user_group_ref_key: admins

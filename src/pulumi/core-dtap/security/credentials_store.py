@@ -11,6 +11,7 @@ from ingenii_azure_data_platform.logs import (
     log_diagnostic_settings,
     log_network_interfaces,
 )
+from ingenii_azure_data_platform.network import PlatformFirewall
 from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
 from logs import log_analytics_workspace
@@ -29,22 +30,38 @@ from project_config import azure_client, platform_config, platform_outputs
 outputs = platform_outputs["security"]["credentials_store"] = {}
 
 # ----------------------------------------------------------------------------------------------------------------------
-# FIREWALL IP ACCESS LIST
-# This is the global firewall access list and applies to all resources such as key vaults, storage accounts etc.
-# ----------------------------------------------------------------------------------------------------------------------
-firewall = platform_config.from_yml["network"]["firewall"]
-firewall_ip_access_list = [
-    keyvault.IPRuleArgs(value=ip_address)
-    for ip_address in firewall.get("ip_access_list", [])
-]
-
-# ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT
 # ----------------------------------------------------------------------------------------------------------------------
 key_vault_config = platform_config.from_yml["security"]["credentials_store"]
+key_vault_firewall_config = key_vault_config["network"]["firewall"]
 key_vault_name = generate_resource_name(
     resource_type="key_vault", resource_name="cred", platform_config=platform_config
 )
+
+if key_vault_firewall_config.get("enabled"):
+    firewall = platform_config.global_firewall + PlatformFirewall(
+        enabled=True,
+        ip_access_list=key_vault_firewall_config.get("ip_access_list", []),
+        vnet_access_list=key_vault_firewall_config.get("vnet_access_list", []),
+        resource_access_list=key_vault_firewall_config.get("resource_access_list", []),
+        trust_azure_services=key_vault_firewall_config.get(
+            "trust_azure_services", False
+        ),
+    )
+
+    key_vault_network_acl = keyvault.NetworkRuleSetArgs(
+        bypass=firewall.bypass_services,
+        default_action=firewall.default_action,
+        ip_rules=[
+            keyvault.IPRuleArgs(value=ip_add) for ip_add in firewall.ip_access_list
+        ],
+        virtual_network_rules=[
+            keyvault.VirtualNetworkRuleArgs(id=subnet_id)
+            for subnet_id in firewall.vnet_access_list
+        ],
+    )
+else:
+    key_vault_network_acl = KEY_VAULT_DEFAULT_FIREWALL
 
 key_vault = keyvault.Vault(
     resource_name=key_vault_name,
@@ -53,26 +70,7 @@ key_vault = keyvault.Vault(
     location=platform_config.region.long_name,
     properties=keyvault.VaultPropertiesArgs(
         enable_rbac_authorization=True,
-        network_acls=(
-            keyvault.NetworkRuleSetArgs(
-                bypass="AzureServices",
-                default_action="Deny",
-                ip_rules=(
-                    firewall_ip_access_list
-                    if len(firewall_ip_access_list) > 0
-                    else None
-                ),
-                virtual_network_rules=[
-                    keyvault.VirtualNetworkRuleArgs(id=subnet.id)
-                    for subnet in (
-                        vnet.dbw_engineering_hosts_subnet,
-                        vnet.dbw_engineering_containers_subnet,
-                    )
-                ],
-            )
-            if key_vault_config["network"]["firewall"]["enabled"] == True
-            else KEY_VAULT_DEFAULT_FIREWALL
-        ),
+        network_acls=key_vault_network_acl,
         tenant_id=azure_client.tenant_id,
         sku=keyvault.SkuArgs(family="A", name=keyvault.SkuName("standard")),
     ),
@@ -81,6 +79,7 @@ key_vault = keyvault.Vault(
         protect=platform_config.resource_protection,
     ),
 )
+
 if platform_config.resource_protection:
     lock_resource(key_vault_name, key_vault.id)
 
@@ -196,7 +195,9 @@ private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
     resource_group_name=resource_groups["infra"].name,
 )
 if platform_config.resource_protection:
-    lock_resource(private_endpoint_dns_zone_group_name, private_endpoint_dns_zone_group.id)
+    lock_resource(
+        private_endpoint_dns_zone_group_name, private_endpoint_dns_zone_group.id
+    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> PRIVATE ENDPOINT FOR DEVOPS

@@ -3,6 +3,7 @@
 # 0.2.5 (Unreleased)
 
 ### Improvements
+- [global_firewall] - We now have the ability to enable/disable global firewall that works across all major resources that support network filtering: Databricks, Storage Accounts, Key Vaults, Container Registries
 - [iam_roles] - IAM role ids are now retrieved automatically by querying the Azure Management API.
 
 ### Bugfixes

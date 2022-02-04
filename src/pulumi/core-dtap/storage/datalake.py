@@ -11,6 +11,7 @@ from ingenii_azure_data_platform.logs import (
     log_diagnostic_settings,
     log_network_interfaces,
 )
+from ingenii_azure_data_platform.network import PlatformFirewall
 from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
 from logs import log_analytics_workspace
@@ -40,6 +41,8 @@ firewall_ip_access_list = [
 # DATA LAKE
 # ----------------------------------------------------------------------------------------------------------------------
 datalake_config = platform_config.from_yml["storage"]["datalake"]
+datalake_firewall_config = datalake_config.get("network", {}).get("firewall", {})
+
 datalake_name = generate_resource_name(
     resource_type="storage_account",
     resource_name="datalake",
@@ -47,21 +50,39 @@ datalake_name = generate_resource_name(
 )
 datalake_resource_group_name = resource_groups["data"].name
 
-if datalake_config["network"]["firewall"]["enabled"] == True:
+if datalake_firewall_config.get("enabled"):
+    firewall = platform_config.global_firewall + PlatformFirewall(
+        enabled=True,
+        ip_access_list=datalake_firewall_config.get("ip_access_list", []),
+        vnet_access_list=datalake_firewall_config.get("vnet_access_list", []),
+        resource_access_list=datalake_firewall_config.get("resource_access_list", []),
+        trust_azure_services=datalake_firewall_config.get(
+            "trust_azure_services", False
+        ),
+    )
+
+    trusted_subnet_ids = [
+        subnet.id
+        for subnet in (
+            vnet.dbw_engineering_hosts_subnet,
+            vnet.dbw_engineering_containers_subnet,
+            vnet.dbw_analytics_hosts_subnet,
+            vnet.dbw_analytics_containers_subnet,
+        )
+    ]
+
     network_rule_set = storage.NetworkRuleSetArgs(
-        bypass=storage.Bypass.AZURE_SERVICES,
-        default_action=storage.DefaultAction.DENY,
-        ip_rules=firewall_ip_access_list,
+        bypass=firewall.bypass_services,
+        default_action=firewall.default_action,
+        ip_rules=[
+            storage.IPRuleArgs(i_p_address_or_range=ip_add)
+            for ip_add in firewall.ip_access_list
+        ],
         virtual_network_rules=[
             storage.VirtualNetworkRuleArgs(
-                virtual_network_resource_id=subnet.id,
+                virtual_network_resource_id=subnet_id,
             )
-            for subnet in (
-                vnet.dbw_engineering_hosts_subnet,
-                vnet.dbw_engineering_containers_subnet,
-                vnet.dbw_analytics_hosts_subnet,
-                vnet.dbw_analytics_containers_subnet,
-            )
+            for subnet_id in set(trusted_subnet_ids + firewall.vnet_access_list)
         ],
     )
 else:

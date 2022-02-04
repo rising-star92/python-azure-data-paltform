@@ -3,6 +3,7 @@ from pulumi_azure_native import containerregistry as cr
 
 from ingenii_azure_data_platform.defaults import CONTAINER_REGISTRY_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import GroupRoleAssignment
+from ingenii_azure_data_platform.network import PlatformFirewall
 from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
 from management.resource_groups import resource_groups
@@ -31,14 +32,23 @@ for ref_key, config in registry_config.items():
     )
 
     firewall_config = config.get("network", {}).get("firewall", {})
-    firewall_enabled = firewall_config.get("enabled", False)
 
-    if firewall_enabled:
+    if firewall_config.get("enabled"):
+        firewall = platform_config.global_firewall + PlatformFirewall(
+            enabled=True,
+            ip_access_list=firewall_config.get("ip_access_list", []),
+            vnet_access_list=firewall_config.get("vnet_access_list", []),
+        )
+
         network_rule_set = cr.NetworkRuleSetArgs(
-            default_action=cr.DefaultAction.DENY,
+            default_action=firewall.default_action,
             ip_rules=[
                 cr.IPRuleArgs(i_p_address_or_range=ip, action="Allow")
-                for ip in firewall_config.get("ip_access_list", [])
+                for ip in firewall.ip_access_list
+            ],
+            virtual_network_rules=[
+                cr.VirtualNetworkRuleArgs(virtual_network_resource_id=subnet_id)
+                for subnet_id in firewall.vnet_access_list
             ],
         )
     else:

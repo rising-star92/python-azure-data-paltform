@@ -8,6 +8,8 @@ import hiyapyco as hco
 from pulumi import runtime, StackReference, Output, UNKNOWN
 from pulumi.output import Unknown
 
+from .network import PlatformFirewall
+
 
 class CloudRegionException(Exception):
     ...
@@ -175,7 +177,7 @@ class PlatformConfiguration:
         ########
         # General
         ########
-        general_config = self._from_yml["general"]
+        general_config = self["general"]
         self._prefix = general_config["prefix"]
         self._region = CloudRegion(general_config["region"])
         self._tags = general_config["tags"]
@@ -185,6 +187,18 @@ class PlatformConfiguration:
         # Default here, not in .yml, so a set list replaces and not merges
         if self._stack == "shared" and not general_config.get("environments"):
             general_config["environments"] = ["dev", "test", "prod"]
+
+        ########
+        # Network
+        ########
+        firewall_config = self["network"]["firewall"]
+        self._global_firewall = PlatformFirewall(
+            enabled=firewall_config.get("enabled", False),
+            ip_access_list=firewall_config.get("ip_access_list", []),
+            vnet_access_list=firewall_config.get("vnet_access_list", []),
+            resource_access_list=firewall_config.get("resource_access_list", []),
+            trust_azure_services=firewall_config.get("trust_azure_services", False),
+        )
 
         ########
         # Other
@@ -240,10 +254,9 @@ class PlatformConfiguration:
     def metadata(self):
         return self._metadata
 
-    # TODO: Left for backward compatibility. To be deleted in future releases.
     @property
-    def yml_config(self):
-        return self.from_yml
+    def global_firewall(self):
+        return self._global_firewall
 
     def __getitem__(self, key):
         return self.from_yml[key]

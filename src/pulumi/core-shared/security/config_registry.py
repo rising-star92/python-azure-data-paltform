@@ -1,5 +1,5 @@
-import pulumi_azure_native as azure_native
 from pulumi import ResourceOptions
+from pulumi_azure_native import keyvault, network
 
 from ingenii_azure_data_platform.defaults import KEY_VAULT_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import (
@@ -11,6 +11,7 @@ from ingenii_azure_data_platform.logs import (
     log_network_interfaces,
 )
 from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
+from ingenii_azure_data_platform.network import PlatformFirewall
 
 from logs import log_analytics_workspace
 from management import resource_groups
@@ -21,54 +22,50 @@ from project_config import azure_client, platform_config, platform_outputs
 outputs = platform_outputs["security"]["config_registry"] = {}
 
 # ----------------------------------------------------------------------------------------------------------------------
-# FIREWALL IP ACCESS LIST
-# This is the global firewall access list and applies to all resources such as key vaults, storage accounts etc.
-# ----------------------------------------------------------------------------------------------------------------------
-firewall = platform_config.from_yml["network"]["firewall"]
-firewall_ip_access_list = []
-if firewall.get("ip_access_list") is not None:
-    for ip_address in firewall.get("ip_access_list"):
-        firewall_ip_access_list.append(
-            azure_native.keyvault.IPRuleArgs(value=ip_address)
-        )
-
-# ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT
 # ----------------------------------------------------------------------------------------------------------------------
 key_vault_config = platform_config.from_yml["security"]["config_registry"]
+key_vault_firewall_config = key_vault_config["network"]["firewall"]
 key_vault_name = generate_resource_name(
     resource_type="key_vault", resource_name="conf", platform_config=platform_config
 )
 
-key_vault = azure_native.keyvault.Vault(
+
+if key_vault_firewall_config.get("enabled"):
+    firewall = platform_config.global_firewall + PlatformFirewall(
+        enabled=True,
+        ip_access_list=key_vault_firewall_config.get("ip_access_list", []),
+        vnet_access_list=key_vault_firewall_config.get("vnet_access_list", []),
+        resource_access_list=key_vault_firewall_config.get("resource_access_list", []),
+        trust_azure_services=key_vault_firewall_config.get(
+            "trust_azure_services", False
+        ),
+    )
+
+    key_vault_network_acl = keyvault.NetworkRuleSetArgs(
+        bypass=firewall.bypass_services,
+        default_action=firewall.default_action,
+        ip_rules=[
+            keyvault.IPRuleArgs(value=ip_add) for ip_add in firewall.ip_access_list
+        ],
+        virtual_network_rules=[
+            keyvault.VirtualNetworkRuleArgs(id=subnet_id)
+            for subnet_id in firewall.vnet_access_list
+        ],
+    )
+else:
+    key_vault_network_acl = KEY_VAULT_DEFAULT_FIREWALL
+
+key_vault = keyvault.Vault(
     resource_name=key_vault_name,
     vault_name=key_vault_name,
     resource_group_name=resource_groups["security"].name,
     location=platform_config.region.long_name,
-    properties=azure_native.keyvault.VaultPropertiesArgs(
+    properties=keyvault.VaultPropertiesArgs(
         enable_rbac_authorization=True,
-        network_acls=(
-            azure_native.keyvault.NetworkRuleSetArgs(
-                bypass="AzureServices",
-                default_action="Deny",
-                ip_rules=(
-                    firewall_ip_access_list
-                    if len(firewall_ip_access_list) > 0
-                    else None
-                ),
-                virtual_network_rules=[
-                    azure_native.keyvault.VirtualNetworkRuleArgs(
-                        id=vnet.hosted_services_subnet.id,
-                    )
-                ],
-            )
-            if key_vault_config["network"]["firewall"]["enabled"] == True
-            else KEY_VAULT_DEFAULT_FIREWALL
-        ),
+        network_acls=key_vault_network_acl,
         tenant_id=azure_client.tenant_id,
-        sku=azure_native.keyvault.SkuArgs(
-            family="A", name=azure_native.keyvault.SkuName("standard")
-        ),
+        sku=keyvault.SkuArgs(family="A", name=keyvault.SkuName("standard")),
     ),
     tags=platform_config.tags,
     opts=ResourceOptions(protect=platform_config.resource_protection),
@@ -91,12 +88,12 @@ private_endpoint_name = generate_resource_name(
     resource_name="for-conf-registry",
     platform_config=platform_config,
 )
-private_endpoint = azure_native.network.PrivateEndpoint(
+private_endpoint = network.PrivateEndpoint(
     resource_name=private_endpoint_name,
     private_endpoint_name=private_endpoint_name,
     location=platform_config.region.long_name,
     private_link_service_connections=[
-        azure_native.network.PrivateLinkServiceConnectionArgs(
+        network.PrivateLinkServiceConnectionArgs(
             name=vnet.vnet.name,
             group_ids=["vault"],
             private_link_service_id=key_vault.id,
@@ -105,7 +102,7 @@ private_endpoint = azure_native.network.PrivateEndpoint(
     ],
     resource_group_name=resource_groups["infra"].name,
     custom_dns_configs=[],
-    subnet=azure_native.network.SubnetArgs(id=vnet.privatelink_subnet.id),
+    subnet=network.SubnetArgs(id=vnet.privatelink_subnet.id),
 )
 
 if platform_config.resource_protection:
@@ -128,10 +125,10 @@ private_endpoint_dns_zone_group_name = generate_resource_name(
     resource_name="for-conf-registry",
     platform_config=platform_config,
 )
-private_endpoint_dns_zone_group = azure_native.network.PrivateDnsZoneGroup(
+private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
     resource_name=private_endpoint_dns_zone_group_name,
     private_dns_zone_configs=[
-        azure_native.network.PrivateDnsZoneConfigArgs(
+        network.PrivateDnsZoneConfigArgs(
             name=private_endpoint_name,
             private_dns_zone_id=dns.key_vault_private_dns_zone.id,
         )

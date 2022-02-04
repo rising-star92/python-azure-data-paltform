@@ -14,6 +14,7 @@ from ingenii_azure_data_platform.iam import (
     ServicePrincipalRoleAssignment,
 )
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
+from ingenii_azure_data_platform.network import PlatformFirewall
 from ingenii_azure_data_platform.utils import (
     generate_hash,
     generate_resource_name,
@@ -33,6 +34,7 @@ workspace_short_name = "analytics"
 workspace_config = platform_config["analytics_services"]["databricks"]["workspaces"][
     workspace_short_name
 ]
+workspace_firewall_config = workspace_config.get("network", {}).get("firewall", {})
 shared_workspace_config = shared_platform_config["analytics_services"]["databricks"][
     "workspaces"
 ][workspace_short_name]
@@ -145,12 +147,29 @@ databricks.WorkspaceConf(
         "enableDcs": workspace_config["config"].get(
             "enable_container_services", "false"
         ),
-        "enableIpAccessLists": workspace_config["config"].get(
-            "enable_ip_access_lists", "false"
-        ),
+        "enableIpAccessLists": str(
+            workspace_firewall_config.get("enabled", "false")
+        ).lower(),
     },
     opts=ResourceOptions(provider=databricks_provider),
 )
+
+# ----------------------------------------------------------------------------------------------------------------------
+# ANALYTICS DATABRICKS WORKSPACE -> FIREWALL
+# ----------------------------------------------------------------------------------------------------------------------
+
+if workspace_firewall_config.get("enabled"):
+    firewall = platform_config.global_firewall + PlatformFirewall(
+        enabled=True, ip_access_list=workspace_firewall_config.get("ip_access_list", [])
+    )
+
+    databricks.IPAccessList(
+        resource_name=f"{workspace_name}-firewall",
+        label="allow_in",
+        list_type="ALLOW",
+        ip_addresses=firewall.ip_access_list,
+        opts=ResourceOptions(provider=databricks_provider),
+    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS DATABRICKS WORKSPACE -> SECRETS & TOKENS
