@@ -64,5 +64,6 @@ class UserGroup(Group):
             resource_name=name.lower(),
             display_name=name,
             description=description,
+            security_enabled=True,
             opts=ResourceOptions(protect=platform_config.resource_protection),
         )

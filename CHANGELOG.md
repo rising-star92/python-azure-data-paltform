@@ -1,5 +1,11 @@
 # 0.2.6 (Unreleased)
 
+### Improvements
+- [pulumi_azure_ad] - Bump provider version to 5.16.0 (latest)
+
+### Bugfixes
+- [devops_automation] - Make sure the random generated password always matches the complexity requirements.
+
 # 0.2.5 (2022-02-04)
 
 ### Improvements

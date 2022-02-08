@@ -71,6 +71,10 @@ admin_password = pulumi_random.RandomPassword(
         platform_config=platform_config,
     ),
     length=16,
+    min_lower=3,
+    min_upper=3,
+    min_special=3,
+    min_numeric=3,
     special=True,
     override_special="_%@",
 )
