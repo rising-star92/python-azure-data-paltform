@@ -1,4 +1,4 @@
-# 0.2.6 (Unreleased)
+# 0.2.6 (2022-02-09)
 
 ### Improvements
 - [pulumi_azure_ad] - Bump provider version to 5.16.0 (latest)
