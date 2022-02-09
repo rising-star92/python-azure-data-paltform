@@ -5,6 +5,7 @@
 
 ### Bugfixes
 - [devops_automation] - Make sure the random generated password always matches the complexity requirements.
+- [container_registry] - Private endpoints can be created and approved in cross-subscription deployments.
 
 # 0.2.5 (2022-02-04)
 

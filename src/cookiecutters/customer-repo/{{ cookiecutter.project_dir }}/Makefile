@@ -34,11 +34,11 @@ include platform.cfg	# Import platform config
 # Functions and Helpers
 #####################################################################################################################
 define pulumi_init
-	@pulumi --cwd $(1) stack select $(2) --create --color always --non-interactive $(3)
+	pulumi --cwd $(1) stack select $(2) --create --color always --non-interactive $(3)
 endef
 
 define pulumi_preview
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA_FILE} \
+	ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA_FILE} \
 	ADP_DEFAULT_CONFIG_FILE_PATH=$(4) \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=$(5) \
 	ADP_METADATA_FILE_PATH=${PLATFORM_CONF_METADATA_FILE} \
@@ -46,7 +46,7 @@ define pulumi_preview
 endef
 
 define pulumi_refresh
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA_FILE} \
+	ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA_FILE} \
 	ADP_DEFAULT_CONFIG_FILE_PATH=$(4) \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=$(5) \
 	ADP_METADATA_FILE_PATH=${PLATFORM_CONF_METADATA_FILE} \
@@ -54,7 +54,7 @@ define pulumi_refresh
 endef
 
 define pulumi_apply
-	@ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA_FILE} \
+	ADP_CONFIG_SCHEMA_FILE_PATH=${PLATFORM_CONF_SCHEMA_FILE} \
 	ADP_DEFAULT_CONFIG_FILE_PATH=$(4) \
 	ADP_CUSTOM_CONFIGS_FILE_PATH=$(5) \
 	ADP_METADATA_FILE_PATH=${PLATFORM_CONF_METADATA_FILE} \
@@ -62,20 +62,20 @@ define pulumi_apply
 endef
 
 define pulumi_destroy
-	@pulumi destroy --cwd $(1) --stack $(2) --parallel ${PULUMI_PARALLELISM} --color always $(3)
-	@pulumi stack rm --cwd $(1) --stack $(2) --non-interactive --yes $(3)
+	pulumi destroy --cwd $(1) --stack $(2) --parallel ${PULUMI_PARALLELISM} --color always $(3)
+	pulumi stack rm --cwd $(1) --stack $(2) --non-interactive --yes $(3)
 endef
 
 define pulumi_export_stack
-	@pulumi --cwd $(1) stack export --stack $(2) --file $(4) $(3) 
+	pulumi --cwd $(1) stack export --stack $(2) --file $(4) $(3) 
 endef
 
 define pulumi_import_stack
-	@pulumi --cwd $(1) stack import --stack $(2) --file $(4) $(3) 
+	pulumi --cwd $(1) stack import --stack $(2) --file $(4) $(3) 
 endef
 
 define pulumi_export_stack_outputs
-	@pulumi --cwd $(1) stack output --stack $(2) --json > $(4) $(3) 
+	pulumi --cwd $(1) stack output --stack $(2) --json > $(4) $(3) 
 endef
 
 define pulumi_destroy_role_assignments
@@ -145,16 +145,48 @@ init-core-shared: _check-for-cust-code-var
 	@$(call pulumi_init,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS})
 
 preview-core-shared:
+ifdef SHARED_ARM_CLIENT_ID
+	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
+	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
+	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
+	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
+	&& $(call pulumi_preview,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+else
 	@$(call pulumi_preview,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+endif
 
-refresh-core-shared: 
-	@$(call pulumi_refresh,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+refresh-core-shared:
+ifdef SHARED_ARM_CLIENT_ID
+	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
+	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
+	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
+	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
+	&& $(call pulumi_refresh,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+else
+	$(call pulumi_refresh,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+endif
 
-apply-core-shared: 
-	@$(call pulumi_apply,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+apply-core-shared:
+ifdef SHARED_ARM_CLIENT_ID
+	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
+	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
+	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
+	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
+	&& $(call pulumi_apply,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+else
+	$(call pulumi_apply,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+endif
 
-destroy-core-shared: 
+destroy-core-shared:
+ifdef SHARED_ARM_CLIENT_ID
+	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
+	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
+	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
+	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
+	&& @$(call pulumi_destroy,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS})
+else
 	@$(call pulumi_destroy,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS})
+endif
 
 CORE_SHARED_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.shared.json
 export-stack-core-shared: 
@@ -185,17 +217,53 @@ init-core-shared-extensions: _check-for-cust-code-var
 	@sed -i 's|ingenii-|${CUSTOMER_CODE}-|g' ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
 	@$(call pulumi_init,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS})
 
-preview-core-shared-extensions: 
+preview-core-shared-extensions:
+ifdef SHARED_ARM_CLIENT_ID
+	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
+	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
+	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
+	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
+	&& $(call pulumi_preview,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+else
 	@$(call pulumi_preview,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+endif
+	
 
-refresh-core-shared-extensions: 
+refresh-core-shared-extensions:
+ifdef SHARED_ARM_CLIENT_ID
+	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
+	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
+	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
+	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
+	&& $(call pulumi_refresh,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+else
 	@$(call pulumi_refresh,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+endif
+	
 
-apply-core-shared-extensions: 
+apply-core-shared-extensions:
+ifdef SHARED_ARM_CLIENT_ID
+	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
+	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
+	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
+	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
+	&& $(call pulumi_apply,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+else
 	@$(call pulumi_apply,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
+endif
+	
 
-destroy-core-shared-extensions: 
+destroy-core-shared-extensions:
+ifdef SHARED_ARM_CLIENT_ID
+	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
+	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
+	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
+	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
+	&& $(call pulumi_destroy,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS})
+else
 	@$(call pulumi_destroy,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS})
+endif
+	
 
 CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.shared.extensions.json
 export-stack-core-shared-extensions: 

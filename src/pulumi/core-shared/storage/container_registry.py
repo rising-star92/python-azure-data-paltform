@@ -1,5 +1,6 @@
 from pulumi.resource import ResourceOptions
 from pulumi_azure_native import containerregistry as cr
+from pulumi_azure_native import authorization as auth
 
 from ingenii_azure_data_platform.defaults import CONTAINER_REGISTRY_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import GroupRoleAssignment
@@ -12,7 +13,7 @@ from project_config import platform_config, platform_outputs
 
 outputs = platform_outputs["storage"]["container_registry"] = {}
 
-resource_group_name = resource_groups["data"].name
+resource_group = resource_groups["data"]
 
 registry_config = platform_config.from_yml.get("storage", {}).get(
     "container_registry", {}
@@ -58,7 +59,7 @@ for ref_key, config in registry_config.items():
         resource_name=resource_name,
         location=platform_config.region.long_name,
         registry_name=config["display_name"],
-        resource_group_name=resource_group_name,
+        resource_group_name=resource_group.name,
         admin_user_enabled=config.get("admin_user_enabled", False),
         network_rule_set=network_rule_set,
         sku=cr.SkuArgs(name=sku_map[config.get("sku", "standard")]),
@@ -94,5 +95,5 @@ for ref_key, config in registry_config.items():
         "id": registry.id,
         "url": registry.login_server,
         "display_name": config["display_name"],
-        "resource_group_name": resource_group_name.apply(lambda name: name),
+        "resource_group_name": resource_group.name.apply(lambda name: name),
     }
