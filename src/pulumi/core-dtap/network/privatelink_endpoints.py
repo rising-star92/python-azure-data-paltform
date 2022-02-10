@@ -44,7 +44,7 @@ for ref_key, config in container_registry_private_endpoint_configs.items():
     container_registry_role_definition_id = SHARED_OUTPUTS.get(
         "iam",
         "role_definitions",
-        "container_registry_private_endpoint_connection_approver",
+        "container_registry_private_endpoint_connection_creator",
         "id",
         preview="/subscriptions/preview-only/providers/Microsoft.Authorization/roleDefinitions/preview-only",
     )
