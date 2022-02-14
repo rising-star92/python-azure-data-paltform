@@ -21,6 +21,8 @@ PLATFORM_CONF_SHARED_DEFAULTS_FILE  := ${SOURCE_DIR}/platform-config/defaults.sh
 
 PLATFORM_CONF_METADATA_FILE 		:= ${CONFIGS_DIR}/metadata.yml
 
+UI_PULUMI_STACK_NAME := "ingenii/test"
+
 # This variable is intentionally left empty.
 EXTRA_ARGS :=
 
@@ -90,7 +92,7 @@ define pulumi_destroy_role_assignments
 endef
 
 define upload_outputs_to_azure_table_storage
-	$(shell python ${SOURCE_DIR}/scripts/export_outputs_for_ui.py --connection-string "$(1)" --table-name $(2) --outputs-file $(3) --env-name $(4))
+	@python ${SOURCE_DIR}/scripts/export_outputs_for_ui.py --outputs-file "$(1)" --env-name $(2) --ui-stack-name ${UI_PULUMI_STACK_NAME}
 endef
 
 _check-for-stack-var:
@@ -207,8 +209,8 @@ export-stack-outputs-core-shared:
 	@$(call pulumi_export_stack_outputs,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${SHARED_OUTPUTS_FILE_PATH})
 
 upload-stack-outputs-core-shared:
-	@$(info Uploading stack outputs to Azure Table: ${AZURE_TABLE_NAME} on the Ingenii UI side.)
-	@$(call upload_outputs_to_azure_table_storage,${AZURE_TABLE_CONNECTION_STRING},${AZURE_TABLE_NAME},${SHARED_OUTPUTS_FILE_PATH}, "shared")
+	@$(info Uploading stack outputs to Azure Table...)
+	@$(call upload_outputs_to_azure_table_storage,${SHARED_OUTPUTS_FILE_PATH}, "shared")
 
 # Shared Stack Extensions
 CORE_SHARED_EXTENSIONS_STACK := ${PULUMI_ORGANIZATION}/shared
@@ -323,8 +325,8 @@ export-stack-outputs-core-dtap:
 	@$(call pulumi_export_stack_outputs,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${DTAP_OUTPUTS_FILE_PATH})
 
 upload-stack-outputs-core-dtap:
-	@$(info Uploading stack outputs to Azure Table: ${AZURE_TABLE_NAME} on the Ingenii UI side.)
-	@$(call upload_outputs_to_azure_table_storage,${AZURE_TABLE_CONNECTION_STRING},${AZURE_TABLE_NAME},${DTAP_OUTPUTS_FILE_PATH}, "${STACK}")
+	@$(info Uploading stack outputs to Azure Table...)
+	@$(call upload_outputs_to_azure_table_storage,${DTAP_OUTPUTS_FILE_PATH}, "${STACK}")
 
 # DTAP Stack Extensions
 init-core-dtap-extensions: _check-for-stack-var _check-for-cust-code-var
