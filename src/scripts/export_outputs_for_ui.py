@@ -129,8 +129,8 @@ def parse_platform_outputs(file: str, env_name: str) -> Dict[Any, Any]:
 def save_platform_outputs(parsed_outputs: dict[str, Any], client: TableClient) -> None:
 
     new_entity = {
-        "PartitionKey": parsed_outputs["org_id"],
-        "RowKey": parsed_outputs["project_id"],
+        "PartitionKey": str(parsed_outputs["org_id"]),
+        "RowKey": str(parsed_outputs["project_id"]),
         "payload": parsed_outputs["payload"],
     }
 
