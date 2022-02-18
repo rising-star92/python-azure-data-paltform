@@ -50,7 +50,7 @@ for ref_key, config in container_registry_private_endpoint_configs.items():
     )
 
     role_assignment = ServicePrincipalRoleAssignment(
-        principal_id=azure_client.client_id,
+        principal_id=azure_client.object_id,
         principal_name=f"{platform_config.stack_short_name}-provider",
         role_id=container_registry_role_definition_id,
         scope=container_registry_resource_id,
