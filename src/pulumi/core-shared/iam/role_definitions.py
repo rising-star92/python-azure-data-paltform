@@ -12,7 +12,9 @@ if cr.registries.items():
         permissions=[
             auth.PermissionArgs(
                 actions=[
-                    "Microsoft.ContainerRegistry/registries/privateEndpointConnections/write"
+                    "Microsoft.ContainerRegistry/registries/privateEndpointConnections/write",
+                    "Microsoft.ContainerRegistry/registries/privateEndpointConnections/delete",
+                    "Microsoft.ContainerRegistry/registries/privateEndpointConnections/read"
                 ]
             )
         ],
