@@ -21,10 +21,10 @@ from platform_shared import (
     shared_services_provider,
     SHARED_OUTPUTS,
 )
-from platform_shared import azure_client as shared_azure_client
 from management import resource_groups
 from management.user_groups import user_groups
 from network import dns, vnet
+from platform_shared import shared_azure_client
 from project_config import azure_client, platform_config, platform_outputs
 
 outputs = platform_outputs["security"]["credentials_store"] = {}

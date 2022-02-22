@@ -146,22 +146,19 @@ class PlatformConfiguration:
         ########
         # Config files
         ########
-        # If no custom config file path is provided, we'll use the default config.
-        custom_config_file_path = custom_config_file_path or default_config_file_path
+        # Start with the default
+        merge_files = [default_config_file_path]
 
+        # If there is a default specific to the stack, merge this on top
         stack_default_config_file_path = default_config_file_path.replace(
             "defaults.yml", f"defaults.{stack}.yml"
         )
-
-        # Merge the default + custom configs. The custom configs will override any defaults.
-        if path.isfile(stack_default_config_file_path):
-            merge_files = [
-                default_config_file_path,
-                stack_default_config_file_path,
-                custom_config_file_path,
-            ]
-        else:
-            merge_files = [default_config_file_path, custom_config_file_path]
+        if path.isfile(stack_default_config_file_path) and stack_default_config_file_path not in merge_files:
+            merge_files += [stack_default_config_file_path]
+        
+        # If no custom config file path is provided, we'll use the default config.
+        if custom_config_file_path:
+            merge_files += [custom_config_file_path]
 
         self._from_yml = dict(
             hco.load(

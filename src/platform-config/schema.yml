@@ -9,6 +9,7 @@ logs: include('logs', required=False)
 network: include('network', required=False)
 storage: include('storage', required=False)
 security: include('security', required=False)
+shared_kubernetes_cluster: include('shared_kubernetes_cluster', required=False)
 analytics_services: include('analytics_services', required=False)
 packages: include('packages', required=False)
 automation: include('automation', required=False)
@@ -157,12 +158,45 @@ _credentials_store:
   metrics: include('_metrics', required=False)
 
 #----------------------------------------------------------------------------------------------------------------------
+# SHARED KUBERNETES CLUSTER
+#----------------------------------------------------------------------------------------------------------------------
+shared_kubernetes_cluster: # Shared only
+  cluster:
+    iam: include('_iam')
+    linux_agent_pools: list(include('_kubernetes_pool_details_linux'), required=False)
+    windows_agent_pools: list(include('_kubernetes_pool_details_windows'), required=False)
+  resource_group:
+    display_name: str()
+    iam: include('_iam')
+
+_kubernetes_pool_details_linux:
+  availability_zones: list(enum("1", "2", "3"), required=False)
+  auto_scaling: bool(required=False)
+  count: int(min=1, required=False)
+  labels: map(str(), key=str(), required=False)
+  max_count: int(min=1, required=False)
+  min_count: int(min=0, required=False)
+  name: str(required=False)
+  vm_size: str(required=False)
+
+_kubernetes_pool_details_windows:
+  availability_zones: list(enum("1", "2", "3"), required=False)
+  auto_scaling: bool(required=False)
+  count: int(min=1, required=False)
+  labels: map(str(), key=str(), required=False)
+  max_count: int(min=1, required=False)
+  min_count: int(min=0, required=False)
+  name: str(max=6, required=False)
+  vm_size: str(required=False)
+
+#----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS SERVICES
 #----------------------------------------------------------------------------------------------------------------------
 analytics_services:
   databricks: include('_databricks')
   datafactory: include('_datafactory')
   dbt: include('_dbt', required=False)
+  jupyterlab: include('_jupyterlab', required=False) # Shared only
 
 _databricks:
   workspaces: map(include('_databricks_workspace'),key=str())
@@ -272,7 +306,6 @@ _datafactory_integration_runtime:
 
 _integrated_self_hosted_runtime:
   enabled: bool()
-  iam: include('_iam')
   image: str()
 
 _shared_self_hosted_runtime_factory:
@@ -294,6 +327,11 @@ _dbt_documentation:
 _dbt_documentation_custom_domain:
   domain: str()
   validation: enum("cname-delegation", "dns-txt-token", required=False)
+
+_jupyterlab:
+  enabled: bool()
+  require_assignment: bool(required=False)
+  version: str()
 
 #----------------------------------------------------------------------------------------------------------------------
 # PACKAGES

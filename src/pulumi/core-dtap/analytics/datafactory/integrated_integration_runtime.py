@@ -1,14 +1,13 @@
-from base64 import b64decode, b64encode
-from pulumi import InvokeOptions, ResourceOptions
-from pulumi_azure_native import containerservice
+from base64 import b64encode
+from pulumi import ResourceOptions
 from pulumi_azure import datafactory as adf
-from pulumi_kubernetes import Provider, apps, core, meta
+from pulumi_azure_native import containerservice
+from pulumi_kubernetes import apps, core, meta
 
 from analytics.datafactory.datafactories import data_datafactories, datafactory_resource_group
 from platform_shared import (
-    SHARED_OUTPUTS,
-    shared_services_provider,
-    shared_platform_config,
+    shared_kubernetes_cluster_configs,
+    shared_kubernetes_provider,
 )
 from project_config import platform_config, platform_outputs
 
@@ -16,36 +15,11 @@ from project_config import platform_config, platform_outputs
 # DATA FACTORY -> INTEGRATED INTEGRATION RUNTIME
 # ----------------------------------------------------------------------------------------------------------------------
 
-runtime_config = shared_platform_config["analytics_services"]["datafactory"]["integrated_self_hosted_runtime"]
+runtime_config = shared_kubernetes_cluster_configs["datafactory_integrated_integration_runtime"]
 
 if runtime_config["enabled"]:
 
     overall_outputs = platform_outputs["analytics"]["datafactory"]["integrated_integration_runtime"] = {}
-
-    # ----------------------------------------------------------------------------------------------------------------------
-    # DATA FACTORY RUNTIME -> ACCESS
-    # ----------------------------------------------------------------------------------------------------------------------
-
-    # Use the admin credential as it's static
-    # TODO: Don't do this - add Pulumi service principal as Azure Kubernetes Service RBAC Cluster Admin
-
-    def get_credentials(cluster_details):
-        if cluster_details is None:
-            return "Preview Kubernetes Config"
-        return b64decode(
-            containerservice.list_managed_cluster_admin_credentials(
-                resource_group_name=cluster_details["resource_group_name"],
-                resource_name=cluster_details["name"],
-                opts=InvokeOptions(provider=shared_services_provider)
-            ).kubeconfigs[0].value
-        ).decode()
-
-    kube_config = SHARED_OUTPUTS.get(
-        "analytics", "shared_kubernetes_cluster").apply(get_credentials)
-
-    kubernetes_provider = Provider(
-        "datafactory_kubernetes_provider", kubeconfig=kube_config
-    )
 
     # ----------------------------------------------------------------------------------------------------------------------
     # DATA FACTORY RUNTIME -> NAMESPACE
@@ -54,7 +28,7 @@ if runtime_config["enabled"]:
     namespace = core.v1.Namespace(
         resource_name=f"datafactory-runtime-{platform_config.stack}",
         metadata={},
-        opts=ResourceOptions(provider=kubernetes_provider)
+        opts=ResourceOptions(provider=shared_kubernetes_provider)
     )
     overall_outputs["namespace"] = namespace.metadata.name
 
@@ -94,7 +68,7 @@ if runtime_config["enabled"]:
                 labels=labels, 
                 namespace=namespace.id
             ),
-            opts=ResourceOptions(provider=kubernetes_provider, ignore_changes=["data"])
+            opts=ResourceOptions(provider=shared_kubernetes_provider, ignore_changes=["data"])
         )
 
         # ----------------------------------------------------------------------------------------------------------------------
@@ -141,11 +115,11 @@ if runtime_config["enabled"]:
                                 for port in (80, 8060)
                             ],
                         )],
-                        node_selector={"OS": "Windows"},
+                        node_selector={"OS": containerservice.OSType.WINDOWS},
                     ),
                 ),
             ),
-            opts=ResourceOptions(provider=kubernetes_provider, depends_on=[auth_key_secret])
+            opts=ResourceOptions(provider=shared_kubernetes_provider, depends_on=[auth_key_secret])
         )
 
         outputs["deployment"] = deployment.metadata.name

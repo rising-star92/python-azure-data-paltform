@@ -1,5 +1,8 @@
 # 0.2.6 (2022-02-09)
 
+### New Features
+- [jupyterlab] - Deploy JupyterLab as part of the shared Kubernetes cluster
+
 ### Improvements
 - [pulumi_azure_ad] - Bump provider version to 5.16.0 (latest)
 

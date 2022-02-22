@@ -26,11 +26,7 @@ from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet
-from platform_shared import (
-    add_config_registry_secret,
-    SHARED_OUTPUTS,
-    shared_platform_config,
-)
+from platform_shared import add_config_registry_secret, shared_platform_config
 from project_config import DTAP_ROOT, azure_client, platform_config, platform_outputs
 from security import credentials_store
 from storage.datalake import datalake, datalake_containers

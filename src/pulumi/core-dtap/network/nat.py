@@ -26,8 +26,8 @@ if is_gateway_enabled:
         gateway_public_ip_resource_name,
         idle_timeout_in_minutes=10,
         public_ip_address_name=gateway_public_ip_resource_name,
-        public_ip_address_version="IPv4",
-        public_ip_allocation_method="Static",
+        public_ip_address_version=azure_native.network.IPVersion.I_PV4,
+        public_ip_allocation_method=azure_native.network.IPAllocationMethod.STATIC,
         resource_group_name=resource_groups["infra"].name,
         sku=azure_native.network.PublicIPAddressSkuArgs(name="Standard"),
         opts=ResourceOptions(

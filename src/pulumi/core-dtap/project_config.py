@@ -30,8 +30,8 @@ SHARED_OUTPUTS = SharedOutput(
 DTAP_ROOT = getcwd()
 
 # Outputs
-platform_outputs = {}
-
-platform_outputs["metadata"] = platform_config.metadata
+platform_outputs = {
+    "metadata": platform_config.metadata
+}
 
 pulumi.export("root", platform_outputs)

@@ -95,6 +95,30 @@ network:
     display_name: main
     address_space: 10.100.0.0/16
 
+#----------------------------------------------------------------------------------------------------------------------
+# SHARED KUBERNETES CLUSTER
+#----------------------------------------------------------------------------------------------------------------------
+shared_kubernetes_cluster: # Shared only
+  cluster:
+    iam: 
+      role_assignments:
+        - user_group_ref_key: admins
+          role_definition_name: Azure Kubernetes Service RBAC Cluster Admin
+        - user_group_ref_key: engineers
+          role_definition_name: Azure Kubernetes Service RBAC Reader
+        - user_group_ref_key: analysts
+          role_definition_name: Azure Kubernetes Service RBAC Reader
+  resource_group:
+    display_name: kubernetes
+    iam:
+      role_assignments:
+        - user_group_ref_key: admins
+          role_definition_name: Owner
+        - user_group_ref_key: engineers
+          role_definition_name: Reader
+        - user_group_ref_key: analysts
+          role_definition_name: Reader
+
 # ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS
 # ----------------------------------------------------------------------------------------------------------------------
@@ -111,14 +135,6 @@ analytics_services:
     integrated_self_hosted_runtime:
       enabled: false
       image: ingeniisolutions/adf-self-hosted-integration-runtime:1.0.1 
-      iam:
-        role_assignments:
-          - user_group_ref_key: admins
-            role_definition_name: Azure Kubernetes Service RBAC Cluster Admin
-          - user_group_ref_key: engineers
-            role_definition_name: Azure Kubernetes Service RBAC Reader
-          - user_group_ref_key: analysts
-            role_definition_name: Azure Kubernetes Service RBAC Reader
     shared_self_hosted_runtime_factory:
       enabled: false
       runtime_names:
@@ -127,6 +143,9 @@ analytics_services:
         role_assignments:
           - user_group_ref_key: engineers
             role_definition_name: Data Factory Contributor
+  jupyterlab:
+    enabled: false
+    version: "1.2.0"
 
 # ----------------------------------------------------------------------------------------------------------------------
 # AUTOMATION

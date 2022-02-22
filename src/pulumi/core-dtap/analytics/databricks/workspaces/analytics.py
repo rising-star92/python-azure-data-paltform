@@ -26,7 +26,7 @@ from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet
 from storage.datalake import datalake
-from platform_shared import SHARED_OUTPUTS, shared_platform_config
+from platform_shared import shared_platform_config
 from project_config import azure_client, platform_config, platform_outputs
 
 

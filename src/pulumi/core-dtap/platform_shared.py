@@ -1,11 +1,12 @@
+from base64 import b64decode
 from os import getenv
 
 from pulumi import InvokeOptions, ResourceOptions
-from pulumi_azure_native import Provider, keyvault
+from pulumi_azure_native import containerservice, Provider, keyvault
 from pulumi_azure_native.authorization import get_client_config
+from pulumi_kubernetes import Provider as KubernetesProvider
 
-from project_config import platform_config, SHARED_OUTPUTS
-from project_config import azure_client as dtap_azure_client
+from project_config import azure_client, platform_config, SHARED_OUTPUTS
 
 from ingenii_azure_data_platform.config import PlatformConfiguration
 
@@ -32,7 +33,8 @@ shared_platform_config = PlatformConfiguration(
     ),
 )
 
-azure_client = get_client_config(opts=InvokeOptions(provider=shared_services_provider))
+shared_azure_client = \
+    get_client_config(opts=InvokeOptions(provider=shared_services_provider))
 
 
 def get_devops_principal_id():
@@ -43,6 +45,9 @@ def get_devops_principal_id():
         preview="Preview-Devops-Principal-ID",
     )
 
+#----------------------------------------------------------------------------------------------------------------------
+# DEVOPS CONFIG REGISTRY
+#----------------------------------------------------------------------------------------------------------------------
 
 def get_devops_config_registry_resource_group():
     return SHARED_OUTPUTS.get(
@@ -75,11 +80,9 @@ def add_config_registry_secret(
         opts=ResourceOptions(provider=shared_services_provider),
     )
 
-
 add_config_registry_secret(
-    "subscription-id", dtap_azure_client.subscription_id, infrastructure_identifier=True
+    "subscription-id", azure_client.subscription_id, infrastructure_identifier=True
 )
-
 
 container_registry_configs = shared_platform_config.from_yml.get("storage", {}).get(
     "container_registry", {}
@@ -91,3 +94,37 @@ container_registry_private_endpoint_configs = {
     if platform_config.stack
     in config.get("network", {}).get("private_endpoint", {}).get("enabled_in", [])
 }
+
+#----------------------------------------------------------------------------------------------------------------------
+# SHARED KUBERNETES CLUSTER
+#----------------------------------------------------------------------------------------------------------------------
+
+shared_kubernetes_cluster_configs = {
+    "datafactory_integrated_integration_runtime": \
+        shared_platform_config["analytics_services"]["datafactory"]["integrated_self_hosted_runtime"],
+    "jupyterlab": shared_platform_config["analytics_services"]["jupyterlab"]
+}
+
+if any(config["enabled"] for config in shared_kubernetes_cluster_configs.values()):
+    # Use the admin credential as it's static
+    # TODO: Don't do this - add Pulumi service principal as Azure Kubernetes Service RBAC Cluster Admin
+
+    def get_credentials(cluster_details):
+        if cluster_details is None:
+            return "Preview Kubernetes Config"
+        return b64decode(
+            containerservice.list_managed_cluster_admin_credentials(
+                resource_group_name=cluster_details["cluster_resource_group_name"],
+                resource_name=cluster_details["name"],
+                opts=InvokeOptions(provider=shared_services_provider)
+            ).kubeconfigs[0].value
+        ).decode()
+
+    kube_config = SHARED_OUTPUTS.get(
+        "analytics", "shared_kubernetes_cluster").apply(get_credentials)
+
+    shared_kubernetes_provider = KubernetesProvider(
+        "datafactory_kubernetes_provider", kubeconfig=kube_config
+    )
+else:
+    shared_kubernetes_provider = None
