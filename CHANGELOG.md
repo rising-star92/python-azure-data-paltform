@@ -2,6 +2,7 @@
 
 ### New Features
 - [jupyterlab] - Deploy JupyterLab as part of the shared Kubernetes cluster
+- [quantum] - Deploy a Quantum Workspace and connect to the JupyterLab installation
 
 ### Improvements
 - [pulumi_azure_ad] - Bump provider version to 5.16.0 (latest)

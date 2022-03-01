@@ -197,6 +197,7 @@ analytics_services:
   datafactory: include('_datafactory')
   dbt: include('_dbt', required=False)
   jupyterlab: include('_jupyterlab', required=False) # Shared only
+  quantum: include('_quantum', required=False)
 
 _databricks:
   workspaces: map(include('_databricks_workspace'),key=str())
@@ -332,6 +333,14 @@ _jupyterlab:
   enabled: bool()
   require_assignment: bool(required=False)
   version: str()
+
+_quantum:
+  enabled: bool()
+  providers: list(include('_quantum_provider'))
+
+_quantum_provider:
+  id: str()
+  sku: str()
 
 #----------------------------------------------------------------------------------------------------------------------
 # PACKAGES

@@ -300,3 +300,8 @@ analytics_services:
   dbt:
     documentation:
       enabled: false
+  quantum:
+    enabled: false
+    providers:
+    - id: Microsoft
+      sku: DZH3178M639F
