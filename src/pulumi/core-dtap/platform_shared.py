@@ -6,9 +6,9 @@ from pulumi_azure_native import containerservice, Provider, keyvault
 from pulumi_azure_native.authorization import get_client_config
 from pulumi_kubernetes import Provider as KubernetesProvider
 
-from project_config import azure_client, platform_config, SHARED_OUTPUTS
-
 from ingenii_azure_data_platform.config import PlatformConfiguration
+
+from project_config import azure_client, platform_config, SHARED_OUTPUTS
 
 
 shared_services_provider = Provider(
@@ -99,13 +99,7 @@ container_registry_private_endpoint_configs = {
 # SHARED KUBERNETES CLUSTER
 #----------------------------------------------------------------------------------------------------------------------
 
-shared_kubernetes_cluster_configs = {
-    "datafactory_integrated_integration_runtime": \
-        shared_platform_config["analytics_services"]["datafactory"]["integrated_self_hosted_runtime"],
-    "jupyterlab": shared_platform_config["analytics_services"]["jupyterlab"]
-}
-
-if any(config["enabled"] for config in shared_kubernetes_cluster_configs.values()):
+if SHARED_OUTPUTS.get("analytics", "shared_kubernetes_cluster", "enabled", preview=True):
     # Use the admin credential as it's static
     # TODO: Don't do this - add Pulumi service principal as Azure Kubernetes Service RBAC Cluster Admin
 

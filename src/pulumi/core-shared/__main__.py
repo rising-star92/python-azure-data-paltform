@@ -3,6 +3,7 @@
 import iam
 import analytics
 import automation
+import kubernetes
 import management
 import network
 import storage

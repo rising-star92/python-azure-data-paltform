@@ -1,7 +1,7 @@
 # 0.2.6 (2022-02-09)
 
 ### New Features
-- [jupyterlab] - Deploy JupyterLab as part of the shared Kubernetes cluster
+- [jupyterlab] - Deploy JupyterLab as part of the shared Kubernetes cluster, add HTTPS
 - [quantum] - Deploy a Quantum Workspace and connect to the JupyterLab installation
 
 ### Improvements

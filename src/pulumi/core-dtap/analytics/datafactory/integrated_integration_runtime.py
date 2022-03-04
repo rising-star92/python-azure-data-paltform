@@ -5,17 +5,14 @@ from pulumi_azure_native import containerservice
 from pulumi_kubernetes import apps, core, meta
 
 from analytics.datafactory.datafactories import data_datafactories, datafactory_resource_group
-from platform_shared import (
-    shared_kubernetes_cluster_configs,
-    shared_kubernetes_provider,
-)
+from platform_shared import shared_kubernetes_provider, shared_platform_config
 from project_config import platform_config, platform_outputs
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY -> INTEGRATED INTEGRATION RUNTIME
 # ----------------------------------------------------------------------------------------------------------------------
 
-runtime_config = shared_kubernetes_cluster_configs["datafactory_integrated_integration_runtime"]
+runtime_config = shared_platform_config["analytics_services"]["datafactory"]["integrated_self_hosted_runtime"]
 
 if runtime_config["enabled"]:
 

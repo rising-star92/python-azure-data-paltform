@@ -330,9 +330,15 @@ _dbt_documentation_custom_domain:
   validation: enum("cname-delegation", "dns-txt-token", required=False)
 
 _jupyterlab:
-  enabled: bool()
-  require_assignment: bool(required=False)
-  version: str()
+  enabled: bool(required=False) # Shared only
+  require_assignment: bool(required=False) # Shared only
+  version: str(required=False) # Shared only
+  https: include('_jupyterlab_https', required=False) # Non-shared only
+
+_jupyterlab_https:
+  enabled: bool(required=False)
+  custom_hostname: str(required=False)
+  contact_email: str(required=False)
 
 _quantum:
   enabled: bool()

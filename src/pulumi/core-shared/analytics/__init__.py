@@ -7,4 +7,3 @@ platform_outputs["analytics"] = {"datafactory": {}}
 from . import databricks_repositories
 from . import datafactory_repositories
 from . import datafactory_shared
-from . import shared_kubernetes_cluster

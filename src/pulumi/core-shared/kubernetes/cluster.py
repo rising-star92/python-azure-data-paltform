@@ -1,7 +1,8 @@
-import platform
+from base64 import b64decode
 from pulumi import ResourceOptions
 import pulumi_random
 from pulumi_azure_native import containerservice
+from pulumi_kubernetes import Provider as KubernetesProvider
 
 from ingenii_azure_data_platform.iam import GroupRoleAssignment
 from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
@@ -10,26 +11,24 @@ from management import resource_groups, resource_group_outputs, user_groups
 from network.vnet import hosted_services_subnet
 from project_config import azure_client, platform_config, platform_outputs
 
+from kubernetes.config import cluster_required, cluster_windows_required
+
 # ----------------------------------------------------------------------------------------------------------------------
 # SHARED KUBERNETES CLUSTER -> BASE CONFIGURATIONS
 # ----------------------------------------------------------------------------------------------------------------------
 
 cluster_resource_name = "shared_cluster"
 cluster_resource_group_name = resource_groups["infra"].name
-configs = [
-    {
-        "config": platform_config["analytics_services"]["datafactory"]["integrated_self_hosted_runtime"],
-        "os": containerservice.OSType.WINDOWS,
-    },
-    {
-        "config": platform_config["analytics_services"]["jupyterlab"],
-        "os": containerservice.OSType.LINUX,
-    },
-]
-outputs = platform_outputs["analytics"]["shared_kubernetes_cluster"] = {}
+
+outputs = platform_outputs["analytics"]["shared_kubernetes_cluster"] = {
+    "enabled": False
+}
+
+# To avoid import issues
+shared_kubernetes_provider = None
 
 # Only create if a system requires it
-if any(config["config"]["enabled"] for config in configs):
+if cluster_required:
     
     # ----------------------------------------------------------------------------------------------------------------------
     # SHARED KUBERNETES CLUSTER -> NODE RESOURCE GROUP NAME
@@ -126,6 +125,7 @@ if any(config["config"]["enabled"] for config in configs):
 
     outputs.update({
         "cluster_resource_group_name": cluster_resource_group_name.apply(lambda name: name),
+        "enabled": True,
         "fqdn": kubernetes_cluster.fqdn,
         "id": kubernetes_cluster.id,
         "name": kubernetes_cluster.name,
@@ -208,12 +208,8 @@ if any(config["config"]["enabled"] for config in configs):
         )
 
     # Check if any of the enabled features need Windows machines
-    need_windows = any(
-        config["config"]["enabled"] and config["os"] == containerservice.OSType.WINDOWS
-        for config in configs
-    )
     windows_pools = platform_config["shared_kubernetes_cluster"]["cluster"].get("windows_agent_pools", [])
-    if need_windows and not windows_pools:
+    if cluster_windows_required and not windows_pools:
         windows_pools = [{
             "labels": {"addedBy": "platform"},
             "name": "win1"
@@ -247,3 +243,18 @@ if any(config["config"]["enabled"] for config in configs):
             vm_size=pool.get("vm_size", "Standard_B2ms"),
             vnet_subnet_id=hosted_services_subnet.id,
         )
+
+    # ----------------------------------------------------------------------------------------------------------------------
+    # SHARED KUBERNETES CLUSTER -> CREDENTIALS
+    # ----------------------------------------------------------------------------------------------------------------------
+
+    kube_config = b64decode(
+        containerservice.list_managed_cluster_admin_credentials(
+            resource_group_name=cluster_resource_group_name,
+            resource_name=kubernetes_cluster.name,
+        ).kubeconfigs[0].value
+    ).decode()
+
+    shared_kubernetes_provider = KubernetesProvider(
+        "shared_kubernetes_provider", kubeconfig=kube_config
+    )

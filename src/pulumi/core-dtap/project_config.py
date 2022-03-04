@@ -1,6 +1,7 @@
-import pulumi
 from os import getcwd, getenv
-from pulumi_azure_native.authorization import get_client_config
+import pulumi
+from pulumi_azure_native import authorization, Provider
+
 from ingenii_azure_data_platform.config import PlatformConfiguration, SharedOutput
 
 # Load the config files.
@@ -17,7 +18,7 @@ platform_config = PlatformConfiguration(
 )
 
 # Load the current Azure auth session metadata
-azure_client = get_client_config()
+azure_client = authorization.get_client_config()
 
 PULUMI_ORG_NAME = "ingenii"
 CURRENT_STACK_NAME = pulumi.get_stack()
@@ -35,3 +36,12 @@ platform_outputs = {
 }
 
 pulumi.export("root", platform_outputs)
+
+# Ingenii provided workspace DNS
+ingenii_workspace_dns_provider = Provider(
+    resource_name="ingenii-dns",
+    client_id=getenv("WORKSPACE_DNS_ARM_CLIENT_ID"),
+    client_secret=getenv("WORKSPACE_DNS_ARM_CLIENT_SECRET"),
+    tenant_id=getenv("WORKSPACE_DNS_ARM_TENANT_ID"),
+    subscription_id=getenv("WORKSPACE_DNS_ARM_SUBSCRIPTION_ID"),
+)

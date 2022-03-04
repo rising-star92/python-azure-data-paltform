@@ -1,3 +1,4 @@
+from os import getcwd, environ
 import pulumi_azuread as azuread
 from pulumi import ResourceOptions, Output
 from pulumi_azure_native import network, containerservice
@@ -8,14 +9,14 @@ from ingenii_azure_data_platform.utils import generate_resource_name
 
 from analytics.quantum.workspace import outputs as quantum_outputs
 from platform_shared import (
-    shared_kubernetes_cluster_configs,
     shared_kubernetes_provider,
+    shared_platform_config,
     shared_services_provider,
 )
-from project_config import azure_client, DTAP_ROOT, platform_config, \
-    platform_outputs, SHARED_OUTPUTS
+from project_config import azure_client, DTAP_ROOT, ingenii_workspace_dns_provider, \
+    platform_config, platform_outputs, SHARED_OUTPUTS
 
-jupyterlab_config = shared_kubernetes_cluster_configs["jupyterlab"]
+jupyterlab_config = shared_platform_config["analytics_services"]["jupyterlab"]
 
 if jupyterlab_config["enabled"]:
 
@@ -28,6 +29,10 @@ if jupyterlab_config["enabled"]:
         "node_resource_group_name",
         preview="Preview-Kubernetes-Resource-Group-Name",
     )
+
+    #----------------------------------------------------------------------------------------------------------------------
+    # JUPYTERLAB -> IP ADDRESS AND HTTPS
+    #----------------------------------------------------------------------------------------------------------------------
 
     hub_public_ip = network.PublicIPAddress(
         resource_name=generate_resource_name(
@@ -46,8 +51,52 @@ if jupyterlab_config["enabled"]:
         opts=ResourceOptions(provider=shared_services_provider),
     )
 
-    callback_url = hub_public_ip.ip_address.apply(
-        lambda ip: f"http://{ip}/hub/oauth_callback")
+    https_settings = platform_config["analytics_services"].get("jupyterlab", {}).get("https", {})
+    # HTTPS is on by default
+    if https_settings.get("custom_hostname"):
+        # Client has provided custom hostname details
+        hostname = https_settings["custom_hostname"].strip("/")
+        contact_email = https_settings["contact_email"]
+        record_set = None
+    else:
+        # Ingenii provides the hostname
+        relative_name = f"{platform_config.unique_id}-{platform_config.prefix}-{platform_config.stack}"
+        zone_name = "workspace.ingenii.io"
+        record_set = network.RecordSet(
+            generate_resource_name(
+                resource_type="dns_zone",
+                resource_name=zone_name,
+                platform_config=platform_config,
+            ),
+            a_records=[network.ARecordArgs(
+                ipv4_address=hub_public_ip.ip_address,
+            )],
+            metadata={
+                "env": platform_config.stack,
+                "prefix": platform_config.prefix,
+                "unique_id": platform_config.unique_id,
+            },
+            record_type="A",
+            relative_record_set_name=relative_name,
+            resource_group_name=environ["WORKSPACE_DNS_RESOURCE_GROUP_NAME"],
+            ttl=3600,
+            zone_name=zone_name,
+            opts=ResourceOptions(provider=ingenii_workspace_dns_provider),
+        )
+        hostname = f"{relative_name}.{zone_name}"
+        contact_email = "support@ingenii.dev"
+    callback_url = f"https://{hostname}/hub/oauth_callback"
+
+    if not https_settings.get("enabled", True):
+        # Client has turned off HTTPS
+        # If Ingenii provided, record set will still be created
+        hostname, contact_email, record_set = None, None, None
+        callback_url = hub_public_ip.ip_address.apply(
+            lambda ip: f"http://{ip}/hub/oauth_callback")
+
+    #----------------------------------------------------------------------------------------------------------------------
+    # JUPYTERLAB -> AUTHENTICATION -> APPLICATION
+    #----------------------------------------------------------------------------------------------------------------------
 
     auth_application = azuread.Application(
         resource_name=resource_name,
@@ -75,6 +124,10 @@ if jupyterlab_config["enabled"]:
         service_principal_id=auth_service_principal.object_id,
     )
 
+    #----------------------------------------------------------------------------------------------------------------------
+    # JUPYTERLAB -> AUTHENTICATION -> ENCRYPTION 
+    #----------------------------------------------------------------------------------------------------------------------
+
     # Encryption key to persis the auth state
     encryption_key = pulumi_random.RandomString(
         resource_name=generate_resource_name(
@@ -87,6 +140,10 @@ if jupyterlab_config["enabled"]:
     encryption_key_hex = encryption_key.result.apply(
         lambda rstring: rstring.encode("utf-8").hex()
     )
+
+    #----------------------------------------------------------------------------------------------------------------------
+    # JUPYTERLAB -> CHART AND DEPLOYMENT
+    #----------------------------------------------------------------------------------------------------------------------
 
     # Get the extra configurations
     with open(DTAP_ROOT + "/analytics/jupyterlab/configs/token_passing_authenticator.py") as auth_conf:
@@ -151,29 +208,36 @@ if jupyterlab_config["enabled"]:
                 "WORKSPACE_NAME": quantum_workspace_name,
             }
             values["singleuser"]["image"] = {"name": "ingeniisolutions/jupyterhub-singleuser"}
+        if hostname:
+            values["proxy"]["https"] = {
+                "enabled": True,
+                "hosts": [hostname],
+                "letsencrypt": {"contactEmail": contact_email,},
+            }
 
         return values
 
     chart_values = Output.all(
         callback_url=callback_url, public_ip=hub_public_ip.ip_address,
-        encryption_key=encryption_key_hex,
+        record_set=record_set, encryption_key=encryption_key_hex,
         quantum_workspace_name=quantum_outputs.get("workspace", {}).get("name"),
     ).apply(create_chart_values)
     jupyterlab = helm.v3.Release(
         resource_name=resource_name,
-        chart="jupyterhub",
+        chart=f"{getcwd()}/../../helm_charts/jupyterhub",
         create_namespace=True,
         namespace=resource_name,
-        repository_opts=helm.v3.RepositoryOptsArgs(repo="https://jupyterhub.github.io/helm-chart/"),
         timeout=600,
         values=chart_values,
         version=jupyterlab_config["version"],
         opts=ResourceOptions(provider=shared_kubernetes_provider)
     )
+    #     chart="jupyterhub",
+    #     repository_opts=helm.v3.RepositoryOptsArgs(repo="https://jupyterhub.github.io/helm-chart/"),
 
     outputs.update({
         "id": jupyterlab.id,
         "name": jupyterlab.name,
         "namespace": jupyterlab.namespace,
-        "public_ip": hub_public_ip.ip_address.apply(lambda ip: ip)
+        "url": hostname or hub_public_ip.ip_address
     })
