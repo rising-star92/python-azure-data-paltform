@@ -99,7 +99,9 @@ container_registry_private_endpoint_configs = {
 # SHARED KUBERNETES CLUSTER
 #----------------------------------------------------------------------------------------------------------------------
 
-if SHARED_OUTPUTS.get("analytics", "shared_kubernetes_cluster", "enabled", preview=True):
+cluster_created = SHARED_OUTPUTS.get("analytics", "shared_kubernetes_cluster", "enabled", preview=True)
+
+if cluster_created:
     # Use the admin credential as it's static
     # TODO: Don't do this - add Pulumi service principal as Azure Kubernetes Service RBAC Cluster Admin
 

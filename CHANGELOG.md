@@ -1,8 +1,11 @@
-# 0.2.6 (2022-02-09)
+# 0.2.7 (TBC)
 
 ### New Features
 - [jupyterlab] - Deploy JupyterLab as part of the shared Kubernetes cluster, add HTTPS
 - [quantum] - Deploy a Quantum Workspace and connect to the JupyterLab installation
+- [quantum] - Example notebooks in the JupyterLab installation
+
+# 0.2.6 (2022-02-09)
 
 ### Improvements
 - [pulumi_azure_ad] - Bump provider version to 5.16.0 (latest)

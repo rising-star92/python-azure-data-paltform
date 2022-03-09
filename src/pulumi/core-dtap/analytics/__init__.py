@@ -7,3 +7,4 @@ from . import datafactory
 from . import databricks
 from . import dbt
 from . import jupyterlab
+from . import kubernetes

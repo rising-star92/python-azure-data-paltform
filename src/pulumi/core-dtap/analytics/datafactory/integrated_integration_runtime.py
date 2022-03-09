@@ -5,118 +5,115 @@ from pulumi_azure_native import containerservice
 from pulumi_kubernetes import apps, core, meta
 
 from analytics.datafactory.datafactories import data_datafactories, datafactory_resource_group
-from platform_shared import shared_kubernetes_provider, shared_platform_config
+from configs import datafactory_runtime_config
+from platform_shared import shared_kubernetes_provider
 from project_config import platform_config, platform_outputs
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY -> INTEGRATED INTEGRATION RUNTIME
 # ----------------------------------------------------------------------------------------------------------------------
 
-runtime_config = shared_platform_config["analytics_services"]["datafactory"]["integrated_self_hosted_runtime"]
+overall_outputs = platform_outputs["analytics"]["datafactory"]["integrated_integration_runtime"] = {}
 
-if runtime_config["enabled"]:
+# ----------------------------------------------------------------------------------------------------------------------
+# DATA FACTORY RUNTIME -> NAMESPACE
+# ----------------------------------------------------------------------------------------------------------------------
 
-    overall_outputs = platform_outputs["analytics"]["datafactory"]["integrated_integration_runtime"] = {}
+namespace = core.v1.Namespace(
+    resource_name=f"datafactory-runtime-{platform_config.stack}",
+    metadata={},
+    opts=ResourceOptions(provider=shared_kubernetes_provider)
+)
+overall_outputs["namespace"] = namespace.metadata.name
 
-    # ----------------------------------------------------------------------------------------------------------------------
-    # DATA FACTORY RUNTIME -> NAMESPACE
-    # ----------------------------------------------------------------------------------------------------------------------
 
-    namespace = core.v1.Namespace(
-        resource_name=f"datafactory-runtime-{platform_config.stack}",
-        metadata={},
-        opts=ResourceOptions(provider=shared_kubernetes_provider)
+# A container per Data Factory
+for ref_key, datafactory in data_datafactories.items():
+
+    outputs = overall_outputs[ref_key] = {}
+
+    integrated_integration_runtime = adf.IntegrationRuntimeSelfHosted(
+        resource_name=f"datafactory_integrated_runtime_{platform_config.stack}",
+        data_factory_id=datafactory["obj"].id,
+        name="IntegratedIntegrationRuntime",
+        description="Integrated integration runtime provided by Ingenii",
+        resource_group_name=datafactory_resource_group.name,
     )
-    overall_outputs["namespace"] = namespace.metadata.name
 
+    labels = {
+        "data_factory": datafactory["name"],
+        "type": "DataFactorySelfHostedIntegrationRuntime",
+        "system": "IngeniiDataPlatform"
+    }
 
-    # A container per Data Factory
-    for ref_key, datafactory in data_datafactories.items():
+    # ----------------------------------------------------------------------------------------------------------------------
+    # DATA FACTORY RUNTIME -> SECRET -> AUTH KEY
+    # ----------------------------------------------------------------------------------------------------------------------
 
-        outputs = overall_outputs[ref_key] = {}
-
-        integrated_integration_runtime = adf.IntegrationRuntimeSelfHosted(
-            resource_name=f"datafactory_integrated_runtime_{platform_config.stack}",
-            data_factory_id=datafactory["obj"].id,
-            name="IntegratedIntegrationRuntime",
-            description="Integrated integration runtime provided by Ingenii",
-            resource_group_name=datafactory_resource_group.name,
-        )
-
-        labels = {
-            "data_factory": datafactory["name"],
-            "type": "DataFactorySelfHostedIntegrationRuntime",
-            "system": "IngeniiDataPlatform"
-        }
-
-        # ----------------------------------------------------------------------------------------------------------------------
-        # DATA FACTORY RUNTIME -> SECRET -> AUTH KEY
-        # ----------------------------------------------------------------------------------------------------------------------
-
-        auth_key_secret_name = f"data-factory-runtime-auth-key-{ref_key}-{platform_config.stack}"
-        auth_key_secret = core.v1.Secret(
-            resource_name=auth_key_secret_name,
-            data={
-                auth_key_secret_name: integrated_integration_runtime.auth_key1.apply(
-                    lambda key: b64encode(key.encode()).decode()
-                ),
-            },
-            metadata=meta.v1.ObjectMetaArgs(
-                labels=labels, 
-                namespace=namespace.id
+    auth_key_secret_name = f"data-factory-runtime-auth-key-{ref_key}-{platform_config.stack}"
+    auth_key_secret = core.v1.Secret(
+        resource_name=auth_key_secret_name,
+        data={
+            auth_key_secret_name: integrated_integration_runtime.auth_key1.apply(
+                lambda key: b64encode(key.encode()).decode()
             ),
-            opts=ResourceOptions(provider=shared_kubernetes_provider, ignore_changes=["data"])
-        )
+        },
+        metadata=meta.v1.ObjectMetaArgs(
+            labels=labels, 
+            namespace=namespace.id
+        ),
+        opts=ResourceOptions(provider=shared_kubernetes_provider, ignore_changes=["data"])
+    )
 
-        # ----------------------------------------------------------------------------------------------------------------------
-        # DATA FACTORY RUNTIME -> RUNTIME CONTAINER
-        # ----------------------------------------------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------------------------------------------
+    # DATA FACTORY RUNTIME -> RUNTIME CONTAINER
+    # ----------------------------------------------------------------------------------------------------------------------
 
-        deployment = apps.v1.Deployment(
-            resource_name=f"datafactory-runtime-deployment-{ref_key}-{platform_config.stack}",
-            metadata=meta.v1.ObjectMetaArgs(
-                labels=labels,
-                namespace=namespace.id
+    deployment = apps.v1.Deployment(
+        resource_name=f"datafactory-runtime-deployment-{ref_key}-{platform_config.stack}",
+        metadata=meta.v1.ObjectMetaArgs(
+            labels=labels,
+            namespace=namespace.id
+        ),
+        spec=apps.v1.DeploymentSpecArgs(
+            replicas=1,
+            selector=meta.v1.LabelSelectorArgs(
+                match_labels=labels,
             ),
-            spec=apps.v1.DeploymentSpecArgs(
-                replicas=1,
-                selector=meta.v1.LabelSelectorArgs(
-                    match_labels=labels,
+            template=core.v1.PodTemplateSpecArgs(
+                metadata=meta.v1.ObjectMetaArgs(
+                    labels=labels,
                 ),
-                template=core.v1.PodTemplateSpecArgs(
-                    metadata=meta.v1.ObjectMetaArgs(
-                        labels=labels,
-                    ),
-                    spec=core.v1.PodSpecArgs(
-                        containers=[core.v1.ContainerArgs(
-                            name=f"datafactory-runtime-{ref_key}-{platform_config.stack}",
-                            image=runtime_config["image"],
-                            env=[
-                                core.v1.EnvVarArgs(
-                                    name="NODE_NAME", 
-                                    value=f"kubernetes_node_{ref_key}_{platform_config.stack}"
-                                ),
-                                core.v1.EnvVarArgs(
-                                    name="AUTH_KEY",
-                                    value_from=core.v1.EnvVarSourceArgs(
-                                        secret_key_ref=core.v1.SecretKeySelectorArgs(
-                                            key=auth_key_secret_name,
-                                            name=auth_key_secret.metadata.name,
-                                        )
+                spec=core.v1.PodSpecArgs(
+                    containers=[core.v1.ContainerArgs(
+                        name=f"datafactory-runtime-{ref_key}-{platform_config.stack}",
+                        image=datafactory_runtime_config["image"],
+                        env=[
+                            core.v1.EnvVarArgs(
+                                name="NODE_NAME", 
+                                value=f"kubernetes_node_{ref_key}_{platform_config.stack}"
+                            ),
+                            core.v1.EnvVarArgs(
+                                name="AUTH_KEY",
+                                value_from=core.v1.EnvVarSourceArgs(
+                                    secret_key_ref=core.v1.SecretKeySelectorArgs(
+                                        key=auth_key_secret_name,
+                                        name=auth_key_secret.metadata.name,
                                     )
-                                ),
-                                core.v1.EnvVarArgs(name="ENABLE_HA", value="true"),
-                            ],
-                            ports=[
-                                core.v1.ContainerPortArgs(container_port=port)
-                                for port in (80, 8060)
-                            ],
-                        )],
-                        node_selector={"OS": containerservice.OSType.WINDOWS},
-                    ),
+                                )
+                            ),
+                            core.v1.EnvVarArgs(name="ENABLE_HA", value="true"),
+                        ],
+                        ports=[
+                            core.v1.ContainerPortArgs(container_port=port)
+                            for port in (80, 8060)
+                        ],
+                    )],
+                    node_selector={"OS": containerservice.OSType.WINDOWS},
                 ),
             ),
-            opts=ResourceOptions(provider=shared_kubernetes_provider, depends_on=[auth_key_secret])
-        )
+        ),
+        opts=ResourceOptions(provider=shared_kubernetes_provider, depends_on=[auth_key_secret])
+    )
 
-        outputs["deployment"] = deployment.metadata.name
+    outputs["deployment"] = deployment.metadata.name
