@@ -43,6 +43,7 @@ jobs:
   shared:
     name: Shared Stack
     runs-on: [self-hosted, linux, x64]
+    if: "!contains(github.event.head_commit.message, '#action:destroy-platform')"
     container:
       image: ingeniisolutions/azure-data-platform-iac-runtime:{{ cookiecutter.platform_version }}
       credentials:
@@ -72,6 +73,7 @@ jobs:
     name: DTAP Stacks
     needs: shared
     runs-on: [self-hosted, linux, x64]
+    if: "!contains(github.event.head_commit.message, '#action:destroy-platform')"
     container:
       image: ingeniisolutions/azure-data-platform-iac-runtime:{{ cookiecutter.platform_version }}
       credentials:
@@ -125,6 +127,7 @@ jobs:
     name: Extension Stacks
     needs: dtap
     runs-on: [self-hosted, linux, x64]
+    if: "!contains(github.event.head_commit.message, '#action:destroy-platform')"
     container:
       image: ingeniisolutions/azure-data-platform-iac-runtime:{{ cookiecutter.platform_version }}
       credentials:
@@ -192,3 +195,42 @@ jobs:
       - name: Run Pulumi Up
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && matrix.stack != 'shared'
         run: make cicd-apply-dtap-ext
+  destroy-platform:
+    name: Destroy Platform
+    runs-on: [self-hosted, linux, x64]
+    if: "contains(github.event.head_commit.message, '#action:destroy-platform')"
+    container:
+      image: ingeniisolutions/azure-data-platform-iac-runtime:{{ cookiecutter.platform_version }}
+      credentials:
+        username: {% raw %}${{ secrets.INGENII_DOCKER_HUB_USERNAME }}{%- endraw %}
+        password: {% raw %}${{ secrets.INGENII_DOCKER_HUB_PASSWORD }}{%- endraw %}
+    env:
+      ARM_CLIENT_ID: {% raw %}${{ secrets.ARM_CLIENT_ID }}{%- endraw %}
+      ARM_CLIENT_SECRET: {% raw %}${{ secrets.ARM_CLIENT_SECRET }}{%- endraw %}
+      ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets.ARM_SUBSCRIPTION_ID }}{%- endraw %}
+      ARM_TENANT_ID: {% raw %}${{ secrets.ARM_TENANT_ID }}{%- endraw %}
+      SHARED_ARM_CLIENT_ID: {% raw %}${{ secrets.SHARED_ARM_CLIENT_ID }}{%- endraw %}
+      SHARED_ARM_CLIENT_SECRET: {% raw %}${{ secrets.SHARED_ARM_CLIENT_SECRET }}{%- endraw %}
+      SHARED_ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets.SHARED_ARM_SUBSCRIPTION_ID }}{%- endraw %}
+      SHARED_ARM_TENANT_ID: {% raw %}${{ secrets.SHARED_ARM_TENANT_ID }}{%- endraw %}
+    steps:
+      #---------------------------------
+      - name: Checkout Customer Repo
+        uses: actions/checkout@v2
+      #---------------------------------
+      - name: Show Banner
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo
+          echo "====================================================================="
+          echo "PLEASE READ THIS CAREFULLY"
+          echo "====================================================================="
+          echo "make cicd-destroy will be executed as soon as this PR is merged"
+          echo "All platform resources will be deleted."
+          echo "The process is irreversible and will result in the loss of all data."
+          echo "====================================================================="
+          echo
+      #---------------------------------
+      - name: Run Ingeniictl Destroy
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: make cicd-destroy

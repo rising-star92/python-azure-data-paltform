@@ -104,6 +104,19 @@ _check-for-output-file-var:
 _check-for-cust-code-var:
 	@if test -z "${CUSTOMER_CODE}"; then echo "CUSTOMER_CODE variable not set. Check if platform.cfg exist in the current directory."; exit 1; fi
 
+_TITLE := "\033[32m[%s]\033[0m %s\n" # Green text for "printf"
+_ERROR := "\033[31m[%s]\033[0m %s\n" # Red text for "printf"
+_confirm:
+	@REPLY="" ; \
+	read -p "⚠ Are you sure? [y/n] > " -r ; \
+	if [[ ! $$REPLY =~ ^[Yy]$$ ]]; then \
+		printf $(_ERROR) "KO" "Stopping" ; \
+		exit 1 ; \
+	else \
+		printf $(_TITLE) "OK" "Continuing" ; \
+		exit 0; \
+	fi
+
 #####################################################################################################################
 # Post-Deployment
 #####################################################################################################################
@@ -185,9 +198,9 @@ ifdef SHARED_ARM_CLIENT_ID
 	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
 	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
 	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
-	&& $(call pulumi_destroy,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS})
+	&& ingeniictl infra destroy ${CORE_SHARED_STACK} --pulumi-project-dir ${PULUMI_CORE_SHARED_SRC_DIR}
 else
-	@$(call pulumi_destroy,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS})
+	@ingeniictl infra destroy ${CORE_SHARED_STACK} --pulumi-project-dir ${PULUMI_CORE_SHARED_SRC_DIR}
 endif
 
 CORE_SHARED_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.shared.json
@@ -261,9 +274,9 @@ ifdef SHARED_ARM_CLIENT_ID
 	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
 	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
 	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
-	&& $(call pulumi_destroy,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS})
+	&& ingeniictl infra destroy ${CORE_SHARED_EXTENSIONS_STACK} --pulumi-project-dir ${PULUMI_CORE_EXTENSIONS_SRC_DIR}
 else
-	@$(call pulumi_destroy,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS})
+	@ingeniictl infra destroy ${CORE_SHARED_EXTENSIONS_STACK} --pulumi-project-dir ${PULUMI_CORE_EXTENSIONS_SRC_DIR}
 endif
 	
 
@@ -304,7 +317,7 @@ post-deploy-core-dtap: az_login _check-for-stack-var
 	@$(call enable_trigger,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS})
 
 destroy-core-dtap: _check-for-stack-var
-	@$(call pulumi_destroy,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS})
+	@ingeniictl infra destroy ${PULUMI_ORGANIZATION}/${STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR}
 
 CORE_DTAP_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.json
 export-stack-core-dtap: _check-for-stack-var
@@ -344,7 +357,7 @@ apply-core-dtap-extensions: _check-for-stack-var
 	@$(call pulumi_apply,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
 destroy-core-dtap-extensions: _check-for-stack-var
-	@$(call pulumi_destroy,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS})
+	@ingeniictl infra destroy ${PULUMI_ORGANIZATION}/${STACK} --pulumi-project-dir ${PULUMI_CORE_EXTENSIONS_SRC_DIR}
 
 CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.extensions.json
 export-stack-core-dtap-extensions: _check-for-stack-var
@@ -409,33 +422,39 @@ init-shared-extensions: init-core-shared-extensions
 preview-shared-extensions: preview-core-shared-extensions
 refresh-shared-extensions: refresh-core-shared-extensions
 apply-shared-extensions: apply-core-shared-extensions
-destroy-shared-extensions: destroy-core-shared-extensions
+destroy-shared-extensions:
+	-make destroy-core-shared-extensions
 
 init-dtap: init-core-dtap
 preview-dtap: preview-core-dtap
 refresh-dtap: refresh-core-dtap
 apply-dtap: apply-core-dtap
 post-deploy-dtap: post-deploy-core-dtap
-destroy-dtap: destroy-core-dtap
+destroy-dtap:
+	-make destroy-core-dtap STACK=dev
+	-make destroy-core-dtap STACK=test
+	-make destroy-core-dtap STACK=prod
 
 init-dtap-extensions: init-core-dtap-extensions
 preview-dtap-extensions: preview-core-dtap-extensions
 refresh-dtap-extensions: refresh-core-dtap-extensions
 apply-dtap-extensions: apply-core-dtap-extensions
-destroy-dtap-extensions: destroy-core-dtap-extensions
+destroy-dtap-extensions:
+	-make destroy-core-dtap-extensions STACK=dev 
+	-make destroy-core-dtap-extensions STACK=test
+	-make destroy-core-dtap-extensions STACK=prod
 
 init-extensions: init-core-dtap-extensions init-core-shared-extensions
 preview-extensions: preview-core-dtap-extensions preview-core-shared-extensions
 refresh-extensions: refresh-core-dtap-extensions refresh-core-shared-extensions
 apply-extensions: apply-core-dtap-extensions apply-core-shared-extensions
-destroy-extensions: destroy-core-dtap-extensions destroy-core-shared-extensions
+destroy-extensions: destroy-dtap-extensions destroy-shared-extensions
 
 init: _check-for-stack-var init-shared init-dtap init-extensions
 preview: _check-for-stack-var preview-shared preview-dtap preview-extensions
 refresh: _check-for-stack-var refresh-shared refresh-dtap refresh-extensions
 apply: _check-for-stack-var apply-shared apply-dtap apply-extensions
-destroy: _check-for-stack-var destroy-extensions destroy-dtap
-	@($info You need to run 'make destroy-shared' after you have destroyed all DTAP environments.)
+destroy: _confirm destroy-extensions destroy-dtap destroy-shared
 
 
 #####################################################################################################################
@@ -490,3 +509,14 @@ cicd-apply-dtap-ext:
 	@make _check_if_ci \
 	&& ENABLE_RESOURCE_PROTECTION=0 make apply-core-dtap-extensions  EXTRA_ARGS="-f" \
 	&& ENABLE_RESOURCE_PROTECTION=1 make apply-core-dtap-extensions  EXTRA_ARGS="-f"
+
+# Platform Destroy
+cicd-destroy: _check_if_ci
+	-make destroy-core-dtap-extensions STACK=dev 
+	-make destroy-core-dtap-extensions STACK=test
+	-make destroy-core-dtap-extensions STACK=prod
+	-make destroy-core-shared-extensions
+	-make destroy-core-dtap STACK=dev
+	-make destroy-core-dtap STACK=test
+	-make destroy-core-dtap STACK=prod
+	-make destroy-core-shared

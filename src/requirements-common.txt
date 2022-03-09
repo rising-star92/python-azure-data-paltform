@@ -15,4 +15,4 @@ wheel>=0.36.2
 cruft>=2.9.0
 markupsafe==2.0.1 # Temporary until https://github.com/pallets/markupsafe/issues/286 is resolved.
 pip
-ingeniictl
+ingeniictl==0.2.0
