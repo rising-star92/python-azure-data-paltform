@@ -106,6 +106,7 @@ def parse_platform_outputs(file: str, env_name: str) -> Dict[Any, Any]:
         datafactory = outputs["analytics"]["datafactory"]["factories"]
         datalake = outputs["storage"]["datalake"]
         dbt = outputs["analytics"]["dbt"]["documentation"]
+        jupyterlab = outputs["analytics"].get("jupyterlab", {})
 
         payload[env_name] = {
             "databricks_eng_workspace_url": databricks.get("engineering", {}).get(
@@ -115,6 +116,7 @@ def parse_platform_outputs(file: str, env_name: str) -> Dict[Any, Any]:
             "datafactory_data_studio_url": datafactory.get("data", {}).get("url"),
             "datalake_containers_view_url": datalake.get("containers_view_url"),
             "dbt_docs_url": dbt.get("url"),
+            "jupyterlab_url": jupyterlab.get("url", {})
         }
     elif env_name == "shared":
         payload[env_name] = {
