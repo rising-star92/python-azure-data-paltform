@@ -35,6 +35,11 @@ env:
   PULUMI_SKIP_CONFIRMATIONS: true
   AZURE_TABLE_NAME: "CustomerUrls"
   AZURE_TABLE_CONNECTION_STRING: {% raw %}${{ secrets.UI_CUSTOMER_URLS_AZURE_TABLE_STORAGE_CONNECTION_STRING }}{%- endraw %}
+  WORKSPACE_DNS_ARM_CLIENT_ID: {% raw %}${{ secrets.WORKSPACE_DNS_ARM_CLIENT_ID }}{%- endraw %}
+  WORKSPACE_DNS_ARM_CLIENT_SECRET: {% raw %}${{ secrets.WORKSPACE_DNS_ARM_CLIENT_SECRET }}{%- endraw %}
+  WORKSPACE_DNS_ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets.WORKSPACE_DNS_ARM_SUBSCRIPTION_ID }}{%- endraw %}
+  WORKSPACE_DNS_ARM_TENANT_ID: {% raw %}${{ secrets.WORKSPACE_DNS_ARM_TENANT_ID }}{%- endraw %}
+  WORKSPACE_DNS_RESOURCE_GROUP_NAME: {% raw %}${{ secrets.WORKSPACE_DNS_RESOURCE_GROUP_NAME }}{%- endraw %}
 
 #----------------------------------------------------------------------------------------------------------------------
 # Jobs
