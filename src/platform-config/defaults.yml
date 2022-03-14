@@ -305,3 +305,5 @@ analytics_services:
     providers:
     - id: Microsoft
       sku: DZH3178M639F
+    - id: ionq
+      sku: pay-as-you-go-cred
