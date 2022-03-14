@@ -11,7 +11,7 @@ from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.orchestration import AdfSelfHostedIntegrationRuntime
 from ingenii_azure_data_platform.utils import generate_resource_name
 
-from analytics.databricks.workspaces import engineering as databricks_engineering
+from analytics.databricks import engineering_workspace as databricks_engineering
 from logs import log_analytics_workspace
 from management import action_groups, resource_groups, user_groups
 

@@ -1,4 +1,12 @@
 # Databricks notebook source
+
+# MAGIC %md
+# MAGIC ### Mount containers to the workspace
+# MAGIC To be run once on the initial platform deployment
+# MAGIC This is always safe to run
+
+# COMMAND ----------
+
 from os import environ
 
 configs = {

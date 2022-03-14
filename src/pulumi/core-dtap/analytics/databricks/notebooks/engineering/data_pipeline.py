@@ -69,6 +69,10 @@ source_details = get_source(dbt_root_folder, source)
 # Check that the schema for this particular source is acceptable
 check_source_schema(source_details)
 
+if table_name not in source_details["tables"]:
+    raise Exception(
+        f"Table schema '{table_name}' not found for source '{source}'"
+    )
 table_schema = source_details["tables"][table_name]
 
 # COMMAND ----------

@@ -86,12 +86,14 @@ workspace = azure_native.databricks.Workspace(
 if platform_config.resource_protection:
     lock_resource(workspace_name, workspace.id)
 
-outputs["name"] = workspace.name
-outputs["id"] = workspace.workspace_id
-outputs["short_url"] = workspace.workspace_url
-outputs["url"] = workspace.workspace_url.apply(
-    lambda url: f"https://{url}/login.html?o={url.split('adb-')[1].split('.')[0]}"
-)
+outputs.update({
+    "hostname": workspace.workspace_url,
+    "id": workspace.workspace_id,
+    "name": workspace.name,
+    "url": workspace.workspace_url.apply(
+        lambda url: f"https://{url}/login.html?o={url.split('adb-')[1].split('.')[0]}"
+    ),
+})
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS DATABRICKS WORKSPACE -> LOGGING

@@ -88,12 +88,14 @@ workspace = azure_native.databricks.Workspace(
 if platform_config.resource_protection:
     lock_resource(workspace_name, workspace.id)
 
-outputs["name"] = workspace.name
-outputs["id"] = workspace.workspace_id
-outputs["short_url"] = workspace.workspace_url
-outputs["url"] = workspace.workspace_url.apply(
-    lambda url: f"https://{url}/login.html?o={url.split('adb-')[1].split('.')[0]}"
-)
+outputs.update({
+    "hostname": workspace.workspace_url,
+    "id": workspace.workspace_id,
+    "name": workspace.name,
+    "url": workspace.workspace_url.apply(
+        lambda url: f"https://{url}/login.html?o={url.split('adb-')[1].split('.')[0]}"
+    ),
+})
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> LOGGING
@@ -368,9 +370,8 @@ storage_mounts_datalake_role_assignment = ServicePrincipalRoleAssignment(
 # STORAGE MOUNTS
 # If no storage mounts are defined in the YAML files, we'll not attempt
 # to create any.
-storage_mounts = {}
-for definition in workspace_config.get("storage_mounts", []):
-    storage_mounts[definition["mount_name"]] = databricks.AzureAdlsGen2Mount(
+storage_mounts = {
+    definition["mount_name"]: databricks.AzureAdlsGen2Mount(
         resource_name=f'{workspace_name}-{definition["mount_name"]}',
         client_id=storage_mounts_sp.application_id,
         client_secret_key=storage_mounts_dbw_password.key,
@@ -386,6 +387,8 @@ for definition in workspace_config.get("storage_mounts", []):
             delete_before_replace=True,
         ),
     )
+    for definition in workspace_config.get("storage_mounts", [])
+}
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> PRE-PROCESSING PACKAGE

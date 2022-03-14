@@ -5,6 +5,9 @@
 - [quantum] - Deploy a Quantum Workspace and connect to the JupyterLab installation
 - [quantum] - Example notebooks in the JupyterLab installation
 
+### Bugfixes
+- [databricks] - Rework orchestration pipeline to alert users when they need to mount tables in Analytics workspace
+
 # 0.2.6 (2022-02-09)
 
 ### Improvements

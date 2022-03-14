@@ -2,8 +2,8 @@ from pulumi_azure_native import datafactory as adf
 
 from ingenii_azure_data_platform.iam import ServicePrincipalRoleAssignment
 
-from analytics.databricks.workspaces import analytics as databricks_analytics, \
-    engineering as databricks_engineering
+from analytics.databricks import analytics_workspace as databricks_analytics, \
+    engineering_workspace as databricks_engineering
 from analytics.datafactory.orchestration import datafactory, datafactory_name
 from management import resource_groups
 from security import credentials_store

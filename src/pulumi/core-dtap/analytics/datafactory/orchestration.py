@@ -11,10 +11,8 @@ from ingenii_azure_data_platform.utils import generate_resource_name
 
 from logs import log_analytics_workspace
 from management import action_groups, resource_groups, user_groups
-
 from project_config import platform_config, platform_outputs, azure_client
 from platform_shared import get_devops_principal_id
-
 from storage.datalake import datalake
 
 outputs = platform_outputs["analytics"]["datafactory"]["factories"][

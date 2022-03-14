@@ -1,5 +1,12 @@
 # Databricks notebook source
 
+# MAGIC %md
+# MAGIC ### Create tables for any new data
+# MAGIC To be run whenever new tables are created in the engineering workspace and are needed here
+# MAGIC This is always safe to run
+
+# COMMAND ----------
+
 # MAGIC %sql
 # MAGIC CREATE DATABASE IF NOT EXISTS orchestration ;
 # MAGIC CREATE TABLE IF NOT EXISTS orchestration.import_file USING DELTA LOCATION '/mnt/orchestration/import_file' ;

@@ -100,6 +100,15 @@ default_policy = adf.ActivityPolicyArgs(
     secure_input=False,
 )
 
+def depends_successful(*activity_names):
+    return [
+        adf.ActivityDependencyArgs(
+            activity=activity_name,
+            dependency_conditions=[adf.DependencyCondition.SUCCEEDED]
+        )
+        for activity_name in activity_names
+    ]
+
 def per_container_activities(container_name):
     return [
         adf.GetMetadataActivityArgs(
@@ -124,10 +133,7 @@ def per_container_activities(container_name):
         adf.ForEachActivityArgs(
             name=f"Find new {container_name} table folders",
             type="ForEach",
-            depends_on=[adf.ActivityDependencyArgs(
-                activity=f"Get {container_name} top-level folders",
-                dependency_conditions=[adf.DependencyCondition.SUCCEEDED]
-            )],
+            depends_on=depends_successful(f"Get {container_name} top-level folders"),
             items=adf.ExpressionArgs(
                 type="Expression",
                 value=f"@activity('Get {container_name} top-level folders').output.childItems"
@@ -167,10 +173,7 @@ def per_container_activities(container_name):
                     type="Filter",
                     name=f"Find only {container_name} table folders",
                     description=None,
-                    depends_on=[adf.ActivityDependencyArgs(
-                        activity=f"List {container_name} table folders",
-                        dependency_conditions=[adf.DependencyCondition.SUCCEEDED]
-                    )],
+                    depends_on=depends_successful(f"List {container_name} table folders"),
                     items=adf.ExpressionArgs(
                         type="Expression",
                         value=f"@activity('List {container_name} table folders').output.childItems"
@@ -184,10 +187,7 @@ def per_container_activities(container_name):
                     type="IfCondition",
                     name=f"If new {container_name} tables",
                     description=None,
-                    depends_on=[adf.ActivityDependencyArgs(
-                        activity=f"Find only {container_name} table folders",
-                        dependency_conditions=[adf.DependencyCondition.SUCCEEDED]
-                    )],
+                    depends_on=depends_successful(f"Find only {container_name} table folders"),
                     expression=adf.ExpressionArgs(
                         type="Expression",
                         value=f"@greater(length(activity('Find only {container_name} table folders').output.Value), 0)"
@@ -195,15 +195,60 @@ def per_container_activities(container_name):
                     if_true_activities=[
                         adf.SetVariableActivityArgs(
                             type="SetVariable",
+                            name=f"Set found {container_name} folders temp",
+                            description=None,
+                            variable_name=f"{container_name}TablesTemp",
+                            value=adf.ExpressionArgs(
+                                type="Expression",
+                                value=f"@union(variables('{container_name}Tables'), array(concat('/mnt/{container_name}/', item().Name, '|', join(activity('Find only {container_name} table folders').output.Value, ';'))))"
+                            )
+                        ),
+                        adf.SetVariableActivityArgs(
+                            type="SetVariable",
                             name=f"Set found {container_name} folders",
                             description=None,
+                            depends_on=depends_successful(f"Set found {container_name} folders temp"),
                             variable_name=f"{container_name}Tables",
                             value=adf.ExpressionArgs(
                                 type="Expression",
-                                value=f"@activity('Find only {container_name} table folders').output.Value"
+                                value=f"@variables('{container_name}TablesTemp')"
                             )
-                        )
+                        ),
                     ]
+                )
+            ]
+        ),
+        adf.ForEachActivityArgs(
+            name=f"For each new {container_name} schema",
+            type="ForEach",
+            depends_on=depends_successful(f"Find new {container_name} table folders"),
+            is_sequential=True,
+            items=adf.ExpressionArgs(
+                type="Expression",
+                value=f"@variables('{container_name}Tables')"
+            ),
+            activities=[
+                adf.DatabricksNotebookActivityArgs(
+                    name=f"Check {container_name} tables exist in Analytics workspace",
+                    notebook_path="/Shared/Ingenii Engineering/check_tables_exist_adf",
+                    type="DatabricksNotebook",
+                    base_parameters={
+                        "table_details": {
+                            "value": "@item()",
+                            "type": "Expression",
+                        },
+                    },
+                    linked_service_name=adf.LinkedServiceReferenceArgs(
+                        reference_name=databricks_analytics_compute_linked_service.name,
+                        type="LinkedServiceReference",
+                    ),
+                    policy=adf.ActivityPolicyArgs(
+                        timeout="0.00:20:00",
+                        retry=0,
+                        retry_interval_in_seconds=30,
+                        secure_output=False,
+                        secure_input=False,
+                    ),
                 )
             ]
         )
@@ -219,52 +264,16 @@ databricks_workspace_syncing_pipeline = adf.Pipeline(
         per_container_activity
         for container in containers
         for per_container_activity in per_container_activities(container)
-    ] + [
-        adf.IfConditionActivityArgs(
-            type="IfCondition",
-            name="If new tables",
-            description=None,
-            depends_on=[
-                adf.ActivityDependencyArgs(
-                    activity=f"Find new {container} table folders",
-                    dependency_conditions=[adf.DependencyCondition.SUCCEEDED]
-                )
-                for container in containers
-            ],
-            expression=adf.ExpressionArgs(
-                type="Expression",
-                value="@greater(length(union(" + 
-                      ", ".join([
-                          f"variables('{container}Tables')"
-                          for container in containers
-                          ]) + 
-                      ")), 0)"
-            ),
-            if_true_activities=[
-                adf.DatabricksNotebookActivityArgs(
-                    name="Sync tables to Analytics workspace",
-                    notebook_path="/Shared/Ingenii Engineering/mount_tables",
-                    type="DatabricksNotebook",
-                    linked_service_name=adf.LinkedServiceReferenceArgs(
-                        reference_name=databricks_analytics_compute_linked_service.name,
-                        type="LinkedServiceReference",
-                    ),
-                    policy=adf.ActivityPolicyArgs(
-                        timeout="0.00:20:00",
-                        retry=0,
-                        retry_interval_in_seconds=30,
-                        secure_output=False,
-                        secure_input=False,
-                    ),
-                )
-            ]
-        ),
     ],
     variables={
-        f"{container}Tables": adf.VariableSpecificationArgs(
-            type=adf.VariableType.ARRAY
-        )
-        for container in containers
+        **{
+            f"{container}Tables": adf.VariableSpecificationArgs(type=adf.VariableType.ARRAY)
+            for container in containers
+        },
+        **{
+            f"{container}TablesTemp": adf.VariableSpecificationArgs(type=adf.VariableType.ARRAY)
+            for container in containers
+        }
     },
     policy=adf.PipelinePolicyArgs(),
     annotations=["Created by Ingenii"],
