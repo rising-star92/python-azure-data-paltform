@@ -337,7 +337,6 @@ _jupyterlab:
 
 _jupyterlab_https:
   enabled: bool(required=False)
-  custom_hostname: str(required=False)
   contact_email: str(required=False)
 
 _quantum:

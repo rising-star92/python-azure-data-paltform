@@ -55,44 +55,37 @@ hub_public_ip = network.PublicIPAddress(
 )
 
 https_settings = platform_config["analytics_services"].get("jupyterlab", {}).get("https", {})
-# HTTPS is on by default
-if https_settings.get("custom_hostname"):
-    # Client has provided custom hostname details
-    hostname = https_settings["custom_hostname"].strip("/")
-    contact_email = https_settings["contact_email"]
-    record_set = None
-else:
-    # Ingenii provides the hostname
-    relative_name = f"{platform_config.unique_id}-{platform_config.prefix}-{platform_config.stack}"
-    zone_name = "workspace.ingenii.io"
-    record_set = network.RecordSet(
-        generate_resource_name(
-            resource_type="dns_zone",
-            resource_name=zone_name,
-            platform_config=platform_config,
-        ),
-        a_records=[network.ARecordArgs(
-            ipv4_address=hub_public_ip.ip_address,
-        )],
-        metadata={
-            "env": platform_config.stack,
-            "prefix": platform_config.prefix,
-            "unique_id": platform_config.unique_id,
-        },
-        record_type="A",
-        relative_record_set_name=relative_name,
-        resource_group_name=environ["WORKSPACE_DNS_RESOURCE_GROUP_NAME"],
-        ttl=3600,
-        zone_name=zone_name,
-        opts=ResourceOptions(provider=ingenii_workspace_dns_provider),
-    )
-    hostname = f"{relative_name}.{zone_name}"
-    contact_email = "support@ingenii.dev"
+# HTTPS is on by default, Ingenii provides the hostname
+relative_name = f"{platform_config.unique_id}-{platform_config.prefix}-{platform_config.stack}"
+zone_name = "workspace.ingenii.io"
+record_set = network.RecordSet(
+    generate_resource_name(
+        resource_type="dns_zone",
+        resource_name=zone_name,
+        platform_config=platform_config,
+    ),
+    a_records=[network.ARecordArgs(
+        ipv4_address=hub_public_ip.ip_address,
+    )],
+    metadata={
+        "env": platform_config.stack,
+        "prefix": platform_config.prefix,
+        "unique_id": platform_config.unique_id,
+    },
+    record_type="A",
+    relative_record_set_name=relative_name,
+    resource_group_name=environ["WORKSPACE_DNS_RESOURCE_GROUP_NAME"],
+    ttl=3600,
+    zone_name=zone_name,
+    opts=ResourceOptions(provider=ingenii_workspace_dns_provider),
+)
+hostname = f"{relative_name}.{zone_name}"
+contact_email = "support@ingenii.dev"
 callback_url = f"https://{hostname}/hub/oauth_callback"
 
 if not https_settings.get("enabled", True):
     # Client has turned off HTTPS
-    # If Ingenii provided, record set will still be created
+    # Ingenii record set will still be created
     hostname, contact_email, record_set = None, None, None
     callback_url = hub_public_ip.ip_address.apply(
         lambda ip: f"http://{ip}/hub/oauth_callback")

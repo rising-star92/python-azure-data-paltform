@@ -1,4 +1,4 @@
-# 0.2.7 (2022-03-09)
+# 0.2.7 (2022-03-14)
 
 ### New Features
 - [jupyterlab] - Deploy JupyterLab as part of the shared Kubernetes cluster, add HTTPS
