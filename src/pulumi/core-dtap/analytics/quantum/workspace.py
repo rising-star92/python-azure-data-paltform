@@ -4,9 +4,8 @@ from pulumi_azure_native import quantum, storage
 from ingenii_azure_data_platform.iam import ServicePrincipalRoleAssignment
 from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
-from configs import quantum_workspace_config
 from management import resource_groups
-from project_config import platform_config, platform_outputs
+from project_config import platform_config, platform_outputs, quantum_workspace_config
 
 platform_outputs["analytics"]["quantum"] = outputs = {}
 

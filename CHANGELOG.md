@@ -1,3 +1,8 @@
+# 0.2.8 (TBC)
+
+### Bugfixes
+- [kubernetes] - Resolve issue when previewing DTAP when shared Kubernetes cluster not yet deployed
+
 # 0.2.7 (2022-03-14)
 
 ### New Features

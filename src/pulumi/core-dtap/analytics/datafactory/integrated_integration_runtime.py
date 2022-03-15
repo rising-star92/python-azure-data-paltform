@@ -5,8 +5,7 @@ from pulumi_azure_native import containerservice
 from pulumi_kubernetes import apps, core, meta
 
 from analytics.datafactory.datafactories import data_datafactories, datafactory_resource_group
-from configs import datafactory_runtime_config
-from platform_shared import shared_kubernetes_provider
+from platform_shared import datafactory_runtime_config, shared_kubernetes_provider
 from project_config import platform_config, platform_outputs
 
 # ----------------------------------------------------------------------------------------------------------------------

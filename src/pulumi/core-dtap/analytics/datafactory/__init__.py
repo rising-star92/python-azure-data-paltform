@@ -1,6 +1,6 @@
 # Init the platform outputs
-from configs import datafactory_runtime_config
 from project_config import platform_outputs
+from platform_shared import datafactory_runtime_config
 
 platform_outputs["analytics"]["datafactory"] = {"factories": {}}
 

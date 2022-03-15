@@ -30,6 +30,9 @@ SHARED_OUTPUTS = SharedOutput(
 
 DTAP_ROOT = getcwd()
 
+# Particular configs
+quantum_workspace_config = platform_config["analytics_services"]["quantum"]
+
 # Outputs
 platform_outputs = {
     "metadata": platform_config.metadata

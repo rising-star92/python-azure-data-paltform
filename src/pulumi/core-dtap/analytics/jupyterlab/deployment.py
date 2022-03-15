@@ -12,8 +12,7 @@ from analytics.kubernetes.storage import add_storage_account_secret, \
     kubernetes_storage_account_secret_name
 from analytics.quantum.workspace import quantum_workspace_config, \
     outputs as quantum_outputs
-from configs import jupyterlab_config
-from platform_shared import shared_kubernetes_provider, shared_services_provider
+from platform_shared import jupyterlab_config, shared_kubernetes_provider, shared_services_provider
 from project_config import azure_client, DTAP_ROOT, ingenii_workspace_dns_provider, \
     platform_config, platform_outputs, SHARED_OUTPUTS
 

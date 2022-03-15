@@ -5,30 +5,28 @@ from pulumi_azure_native import containerservice
 from pulumi_kubernetes import Provider as KubernetesProvider
 
 from ingenii_azure_data_platform.iam import GroupRoleAssignment
+from ingenii_azure_data_platform.kubernetes import get_cluster_config
 from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
 from management import resource_groups, resource_group_outputs, user_groups
 from network.vnet import hosted_services_subnet
 from project_config import azure_client, platform_config, platform_outputs
 
-from kubernetes.config import cluster_required, cluster_windows_required
-
 # ----------------------------------------------------------------------------------------------------------------------
 # SHARED KUBERNETES CLUSTER -> BASE CONFIGURATIONS
 # ----------------------------------------------------------------------------------------------------------------------
 
+cluster_details = get_cluster_config(platform_config)
 cluster_resource_name = "shared_cluster"
 cluster_resource_group_name = resource_groups["infra"].name
-
-outputs = platform_outputs["analytics"]["shared_kubernetes_cluster"] = {
-    "enabled": False
-}
 
 # To avoid import issues
 shared_kubernetes_provider = None
 
 # Only create if a system requires it
-if cluster_required:
+if cluster_details["enabled"]:
+
+    outputs = platform_outputs["analytics"]["shared_kubernetes_cluster"] = {}
     
     # ----------------------------------------------------------------------------------------------------------------------
     # SHARED KUBERNETES CLUSTER -> NODE RESOURCE GROUP NAME
@@ -104,7 +102,10 @@ if cluster_required:
             network_policy=containerservice.NetworkPolicy.AZURE,
         ),
         node_resource_group=node_resource_group_name,
-        opts=ResourceOptions(delete_before_replace=True),
+        opts=ResourceOptions(
+            delete_before_replace=True,
+            ignore_changes=["agent_pool_profiles"]
+        ),
         resource_group_name=cluster_resource_group_name,
         sku=containerservice.ManagedClusterSKUArgs(
             name=containerservice.ManagedClusterSKUName.BASIC,
@@ -181,6 +182,10 @@ if cluster_required:
 
     for idx, pool in enumerate(platform_config["shared_kubernetes_cluster"]["cluster"].get("linux_agent_pools", [])):
         agent_pool_name = pool.get("name", f"linux{idx}")
+        autoscaling = pool.get("auto_scaling", True)
+        ignore_changes = []
+        if autoscaling:
+            ignore_changes.append("count")
         containerservice.AgentPool(
             resource_name=generate_resource_name(
                 resource_type="kubernetes_agent_pool",
@@ -190,7 +195,7 @@ if cluster_required:
             agent_pool_name=agent_pool_name,
             availability_zones=pool.get("availability_zones", ["1"]),
             count=pool.get("count", 1),
-            enable_auto_scaling=pool.get("auto_scaling", True),
+            enable_auto_scaling=autoscaling,
             max_count=pool.get("max_count", 1),
             min_count=pool.get("min_count", 1),
             mode=containerservice.AgentPoolMode.USER,
@@ -205,11 +210,12 @@ if cluster_required:
             type=containerservice.AgentPoolType.VIRTUAL_MACHINE_SCALE_SETS,
             vm_size=pool.get("vm_size", "Standard_B2ms"),
             vnet_subnet_id=hosted_services_subnet.id,
+            opts=ResourceOptions(ignore_changes=ignore_changes),
         )
 
     # Check if any of the enabled features need Windows machines
     windows_pools = platform_config["shared_kubernetes_cluster"]["cluster"].get("windows_agent_pools", [])
-    if cluster_windows_required and not windows_pools:
+    if cluster_details["windows"] and not windows_pools:
         windows_pools = [{
             "labels": {"addedBy": "platform"},
             "name": "win1"
@@ -218,6 +224,10 @@ if cluster_required:
     for idx, pool in enumerate(windows_pools):
         # Note: Windows pool names must be 6 characters or fewer: https://docs.microsoft.com/en-us/azure/aks/windows-container-cli#limitations
         agent_pool_name = pool.get("name", f"win{idx}")
+        autoscaling = pool.get("auto_scaling", True)
+        ignore_changes = []
+        if autoscaling:
+            ignore_changes.append("count")
         containerservice.AgentPool(
             resource_name=generate_resource_name(
                 resource_type="kubernetes_agent_pool",
@@ -227,7 +237,7 @@ if cluster_required:
             agent_pool_name=agent_pool_name,
             availability_zones=pool.get("availability_zones", ["1"]),
             count=pool.get("count", 1),
-            enable_auto_scaling=pool.get("auto_scaling", True),
+            enable_auto_scaling=autoscaling,
             max_count=pool.get("max_count", 1),
             min_count=pool.get("min_count", 1),
             mode=containerservice.AgentPoolMode.USER,
@@ -242,18 +252,22 @@ if cluster_required:
             type=containerservice.AgentPoolType.VIRTUAL_MACHINE_SCALE_SETS,
             vm_size=pool.get("vm_size", "Standard_B2ms"),
             vnet_subnet_id=hosted_services_subnet.id,
+            opts=ResourceOptions(ignore_changes=ignore_changes),
         )
 
     # ----------------------------------------------------------------------------------------------------------------------
     # SHARED KUBERNETES CLUSTER -> CREDENTIALS
     # ----------------------------------------------------------------------------------------------------------------------
 
-    kube_config = b64decode(
-        containerservice.list_managed_cluster_admin_credentials(
-            resource_group_name=cluster_resource_group_name,
-            resource_name=kubernetes_cluster.name,
-        ).kubeconfigs[0].value
-    ).decode()
+    kube_config = kubernetes_cluster.name.apply(
+        lambda name:
+        b64decode(
+            containerservice.list_managed_cluster_admin_credentials(
+                resource_group_name=cluster_resource_group_name,
+                resource_name=name,
+            ).kubeconfigs[0].value
+        ).decode()
+    )
 
     shared_kubernetes_provider = KubernetesProvider(
         "shared_kubernetes_provider", kubeconfig=kube_config
