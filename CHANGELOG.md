@@ -1,8 +1,5 @@
 # 0.2.8 (TBC)
 
-### Bugfixes
-- [kubernetes] - Resolve issue when previewing DTAP when shared Kubernetes cluster not yet deployed
-
 # 0.2.7 (2022-03-14)
 
 ### New Features
@@ -12,6 +9,7 @@
 
 ### Bugfixes
 - [databricks] - Rework orchestration pipeline to alert users when they need to mount tables in Analytics workspace
+- [kubernetes] - Resolve issue when previewing DTAP when shared Kubernetes cluster not yet deployed
 
 # 0.2.6 (2022-02-09)
 
