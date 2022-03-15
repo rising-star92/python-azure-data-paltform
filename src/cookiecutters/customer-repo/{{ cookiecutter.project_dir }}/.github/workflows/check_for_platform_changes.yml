@@ -36,11 +36,26 @@ env:
 # Jobs
 #----------------------------------------------------------------------------------------------------------------------
 jobs:
+  find_version:
+    name: Find platform version
+    runs-on: ubuntu-latest
+    outputs:
+      version: {% raw %}${{ steps.find-version.outputs.version }}{%- endraw %}
+    steps:
+      - name: Checkout Customer Repo
+        uses: actions/checkout@v2
+      - name: Find version
+        id: find-version
+        run: |
+          PLATFORM_VERSION=$(cat platform.cfg | grep PLATFORM_VERSION | awk -F '=' '{ print $2 }')
+          echo "Platform version: $PLATFORM_VERSION"
+          echo "::set-output name=version::$PLATFORM_VERSION"
   shared:
     name: Shared Stack
+    needs: find_version
     runs-on: [self-hosted, linux, x64]
     container:
-      image: ingeniisolutions/azure-data-platform-iac-runtime:{{ cookiecutter.platform_version }}
+      image: ingeniisolutions/azure-data-platform-iac-runtime:{% raw %}${{ needs.find_version.outputs.version }}{%- endraw %}
       credentials:
         username: {% raw %}${{ secrets.INGENII_DOCKER_HUB_USERNAME }}{%- endraw %}
         password: {% raw %}${{ secrets.INGENII_DOCKER_HUB_PASSWORD }}{%- endraw %}
@@ -75,10 +90,10 @@ jobs:
           timezone: {% raw %}${{ env.NOTIFICATION_TIMEZONE }}{%- endraw %}
   dtap:
     name: DTAP Stacks
-    needs: shared
+    needs: [find_version, shared]
     runs-on: [self-hosted, linux, x64]
     container:
-      image: ingeniisolutions/azure-data-platform-iac-runtime:{{ cookiecutter.platform_version }}
+      image: ingeniisolutions/azure-data-platform-iac-runtime:{% raw %}${{ needs.find_version.outputs.version }}{%- endraw %}
       credentials:
         username: {% raw %}${{ secrets.INGENII_DOCKER_HUB_USERNAME }}{%- endraw %}
         password: {% raw %}${{ secrets.INGENII_DOCKER_HUB_PASSWORD }}{%- endraw %}
@@ -137,10 +152,10 @@ jobs:
           timezone: {% raw %}${{ env.NOTIFICATION_TIMEZONE }}{%- endraw %}
   extensions:
     name: Extension Stacks
-    needs: dtap
+    needs: [find_version, dtap]
     runs-on: [self-hosted, linux, x64]
     container:
-      image: ingeniisolutions/azure-data-platform-iac-runtime:{{ cookiecutter.platform_version }}
+      image: ingeniisolutions/azure-data-platform-iac-runtime:{% raw %}${{ needs.find_version.outputs.version }}{%- endraw %}
       credentials:
         username: {% raw %}${{ secrets.INGENII_DOCKER_HUB_USERNAME }}{%- endraw %}
         password: {% raw %}${{ secrets.INGENII_DOCKER_HUB_PASSWORD }}{%- endraw %}
