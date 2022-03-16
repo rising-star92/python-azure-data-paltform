@@ -8,6 +8,9 @@
 - [quantum] - Example notebooks in the JupyterLab installation
 
 ### Bugfixes
+- [kubernetes] - Resolve issue when previewing DTAP when shared Kubernetes cluster not yet deployed
+- [kubernetes] - Resolve issue where Kubernetes cluster gets replaced after pulumi refresh.
+- [kubernetes] - Resolve issue where Windows node pool is not possible to bring up with a specific instance type (Standard_B2ms)
 - [databricks] - Rework orchestration pipeline to alert users when they need to mount tables in Analytics workspace
 - [kubernetes] - Resolve issue when previewing DTAP when shared Kubernetes cluster not yet deployed
 

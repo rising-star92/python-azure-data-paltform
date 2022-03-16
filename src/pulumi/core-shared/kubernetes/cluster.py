@@ -102,10 +102,6 @@ if cluster_details["enabled"]:
             network_policy=containerservice.NetworkPolicy.AZURE,
         ),
         node_resource_group=node_resource_group_name,
-        opts=ResourceOptions(
-            delete_before_replace=True,
-            ignore_changes=["agent_pool_profiles"]
-        ),
         resource_group_name=cluster_resource_group_name,
         sku=containerservice.ManagedClusterSKUArgs(
             name=containerservice.ManagedClusterSKUName.BASIC,
@@ -115,6 +111,10 @@ if cluster_details["enabled"]:
         windows_profile=containerservice.ManagedClusterWindowsProfileArgs(
             admin_password=windows_admin_password.result,
             admin_username="runtimeclusteradmin",
+        ),
+        opts=ResourceOptions(
+            delete_before_replace=True,
+            ignore_changes=["agent_pool_profiles"]
         ),
     )
     if platform_config.resource_protection:
@@ -250,7 +250,7 @@ if cluster_details["enabled"]:
             resource_name_=kubernetes_cluster.name,
             tags=platform_config.tags,
             type=containerservice.AgentPoolType.VIRTUAL_MACHINE_SCALE_SETS,
-            vm_size=pool.get("vm_size", "Standard_B2ms"),
+            vm_size=pool.get("vm_size", "Standard_D2_v4"),
             vnet_subnet_id=hosted_services_subnet.id,
             opts=ResourceOptions(ignore_changes=ignore_changes),
         )
