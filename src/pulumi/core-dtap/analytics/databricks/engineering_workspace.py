@@ -371,17 +371,19 @@ storage_mounts_datalake_role_assignment = ServicePrincipalRoleAssignment(
 # If no storage mounts are defined in the YAML files, we'll not attempt
 # to create any.
 storage_mounts = {
-    definition["mount_name"]: databricks.AzureAdlsGen2Mount(
+    definition["mount_name"]: databricks.DatabricksMount(
         resource_name=f'{workspace_name}-{definition["mount_name"]}',
-        client_id=storage_mounts_sp.application_id,
-        client_secret_key=storage_mounts_dbw_password.key,
-        tenant_id=azure_client.tenant_id,
-        client_secret_scope=secret_scope.name,
-        storage_account_name=datalake.name,
-        initialize_file_system=False,
-        container_name=definition["container_name"],
-        mount_name=definition["mount_name"],
+        name=definition["mount_name"],
         cluster_id=system_cluster.id,
+        abfs=databricks.DatabricksMountAbfsArgs(
+            client_id=storage_mounts_sp.application_id,
+            client_secret_key=storage_mounts_dbw_password.key,
+            tenant_id=azure_client.tenant_id,
+            client_secret_scope=secret_scope.name,
+            storage_account_name=datalake.name,
+            container_name=definition["container_name"],
+            initialize_file_system=False
+        ),
         opts=ResourceOptions(
             provider=databricks_provider,
             delete_before_replace=True,

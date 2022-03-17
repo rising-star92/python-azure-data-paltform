@@ -283,6 +283,18 @@ analytics_services:
           - type: datalake
             container_name: utilities
             mount_name: utilities
+          - type: datalake_passthrough
+            container_name: source
+            mount_name: source
+          - type: datalake_passthrough
+            container_name: models
+            mount_name: models
+          - type: datalake_passthrough
+            container_name: snapshots
+            mount_name: snapshots
+          - type: datalake_passthrough
+            container_name: orchestration
+            mount_name: orchestration
   datafactory:
     factories:
       orchestration:

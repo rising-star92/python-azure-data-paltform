@@ -1,5 +1,9 @@
 # 0.2.8 (TBC)
 
+### Improvements
+- [databricks] - Bump provider version to 0.2.0 (corresponding to Terraform provider version 0.5.3)
+- [databricks] - Replace deprecated ADLS2 mounts with generic Databricks Mount resource.
+
 # 0.2.7 (2022-03-14)
 
 ### New Features

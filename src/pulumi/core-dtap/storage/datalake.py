@@ -5,6 +5,7 @@ from pulumi_azure_native import keyvault, network, storage
 from ingenii_azure_data_platform.defaults import STORAGE_ACCOUNT_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
+    ServicePrincipalRoleAssignment,
     UserAssignedIdentityRoleAssignment,
 )
 from ingenii_azure_data_platform.logs import (
@@ -296,6 +297,15 @@ for assignment in datalake_config["iam"].get("role_assignments", {}):
             scope=datalake.id,
             scope_description="datalake",
         )
+
+# Service principal, for mounting containers
+service_principal_access = ServicePrincipalRoleAssignment(
+    principal_id=azure_client.object_id,
+    principal_name="deployment_principal",
+    role_name="Storage Blob Data Reader",
+    scope=datalake.id,
+    scope_description="datalake",
+)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA LAKE -> CONTAINERS

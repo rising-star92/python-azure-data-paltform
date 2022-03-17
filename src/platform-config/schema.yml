@@ -221,7 +221,7 @@ _databricks_workspace_config:
   enable_container_services: str(required=False)
 
 _databricks_storage_mount:
-  type: str()
+  type: enum("datalake", "datalake_passthrough")
   mount_name: str()
   container_name: str(required=False)
 

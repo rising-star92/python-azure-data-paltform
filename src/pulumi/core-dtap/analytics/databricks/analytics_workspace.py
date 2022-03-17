@@ -1,8 +1,7 @@
 from os import getenv
+from pulumi import Output, ResourceOptions
 import pulumi_azure_native as azure_native
 import pulumi_azuread as azuread
-
-from pulumi import ResourceOptions
 from pulumi_databricks import (
     Provider as DatabricksProvider,
     ProviderArgs as DatabricksProviderArgs,
@@ -25,7 +24,7 @@ from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet
-from storage.datalake import datalake
+from storage.datalake import datalake, service_principal_access
 from platform_shared import shared_platform_config
 from project_config import azure_client, platform_config, platform_outputs
 
@@ -420,19 +419,43 @@ storage_mounts_datalake_role_assignment = ServicePrincipalRoleAssignment(
 # STORAGE MOUNTS
 # If no storage mounts are defined in the YAML files, we'll not attempt to create any.
 for definition in workspace_config.get("storage_mounts", []):
-    resource = databricks.AzureAdlsGen2Mount(
-        resource_name=f'{workspace_name}-{definition["mount_name"]}',
-        client_id=storage_mounts_sp.application_id,
-        client_secret_key=storage_mounts_dbw_password.key,
-        tenant_id=azure_client.tenant_id,
-        client_secret_scope=secret_scope.name,
-        storage_account_name=datalake.name,
-        initialize_file_system=False,
-        container_name=definition["container_name"],
-        mount_name=definition["mount_name"],
-        cluster_id=clusters["default"].id,
-        opts=ResourceOptions(
-            provider=databricks_provider,
-            delete_before_replace=True,
-        ),
-    )
+    if definition["type"] == "datalake":
+        databricks.DatabricksMount(
+            resource_name=f'{workspace_name}-{definition["mount_name"]}',
+            name=definition["mount_name"],
+            cluster_id=clusters["default"].id,
+            abfs=databricks.DatabricksMountAbfsArgs(
+                client_id=storage_mounts_sp.application_id,
+                client_secret_key=storage_mounts_dbw_password.key,
+                tenant_id=azure_client.tenant_id,
+                client_secret_scope=secret_scope.name,
+                storage_account_name=datalake.name,
+                container_name=definition["container_name"],
+                initialize_file_system=False
+            ),
+            opts=ResourceOptions(
+                provider=databricks_provider,
+                delete_before_replace=True,
+            ),
+        )
+    elif definition["type"] == "datalake_passthrough":
+        databricks.DatabricksMount(
+            resource_name=f'{workspace_name}-{definition["mount_name"]}',
+            name=definition["mount_name"],
+            cluster_id=clusters["default"].id,
+            extra_configs={
+                "fs.azure.account.auth.type": "CustomAccessToken",
+                # "fs.azure.account.custom.token.provider.class": spark.conf.get("spark.databricks.passthrough.adls.gen2.tokenProviderClassName"),
+                "fs.azure.account.custom.token.provider.class": "com.databricks.backend.daemon.data.client.adl.AdlGen2CredentialContextTokenProvider"
+            },
+            uri=Output.all(datalake=datalake.name, container_name=definition['container_name']).apply(
+                lambda args:
+                f"abfss://{args['container_name']}@{args['datalake']}.dfs.core.windows.net/"
+            ),
+            opts=ResourceOptions(
+                delete_before_replace=True,
+                depends_on=[service_principal_access],
+                provider=databricks_provider,
+                replace_on_changes=["*"],
+            ),
+        )
