@@ -338,6 +338,7 @@ storage_mounts_sp = azuread.ServicePrincipal(
     resource_name=storage_mounts_sp_name,
     application_id=storage_mounts_sp_app.application_id,
     app_role_assignment_required=False,
+    owners=[azure_client.object_id]
 )
 
 storage_mounts_sp_password = azuread.ServicePrincipalPassword(

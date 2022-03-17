@@ -113,6 +113,7 @@ auth_service_principal = azuread.ServicePrincipal(
     resource_name=resource_name,
     application_id=auth_application.application_id,
     app_role_assignment_required=jupyterlab_config.get("require_assignment", True),
+    owners=[azure_client.object_id]
 )
 auth_service_principal_password = azuread.ServicePrincipalPassword(
     resource_name=resource_name,
