@@ -1,4 +1,6 @@
-# 0.2.8 (TBC)
+# 0.2.9 (TBC)
+
+# 0.2.8 (2022-03-17)
 
 ### Improvements
 - [databricks] - Bump provider version to 0.2.0 (corresponding to Terraform provider version 0.5.3)
