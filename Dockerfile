@@ -14,6 +14,9 @@ RUN cd /tmp && curl -fsSL https://get.pulumi.com | sh -s -- --version ${PULUMI_V
     && echo "export PULUMI_SKIP_UPDATE_CHECK=false" >> /root/.zshrc
 ENV PATH="/root/.pulumi/bin:${PATH}"
 
+# Pulumi Plugins
+RUN ${HOME}/.pulumi/bin/pulumi plugin install resource databricks 0.1.0 --server https://github.com/ingenii-solutions/pulumi-databricks/releases/download/v0.1.0
+
 # Copy the platform source code to the container
 COPY src /platform/src
 
