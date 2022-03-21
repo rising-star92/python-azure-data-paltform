@@ -1,4 +1,7 @@
-# 0.2.9 (TBC)
+
+# 0.2.10 (TBD)
+
+# 0.2.9 (2022-03-22)
 
 ### Improvements
 - [ingeniictl] - Bump version to 0.2.2 to make use of the latest changes and bug fixes.
