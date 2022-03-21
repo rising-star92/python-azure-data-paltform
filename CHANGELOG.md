@@ -1,5 +1,11 @@
 # 0.2.9 (TBC)
 
+### Improvements
+- [ingeniictl] - Bump version to 0.2.2 to make use of the latest changes and bug fixes.
+
+### Bugfixes
+- [workflows] - Fix destroy workflow.
+
 # 0.2.8 (2022-03-17)
 
 ### Improvements

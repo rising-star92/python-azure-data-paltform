@@ -176,7 +176,7 @@ else
 	$(call pulumi_apply,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
 endif
 
-destroy-core-shared:
+destroy-core-shared: init-core-shared
 ifdef SHARED_ARM_CLIENT_ID
 	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
 	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
@@ -252,7 +252,7 @@ else
 endif
 	
 
-destroy-core-shared-extensions:
+destroy-core-shared-extensions: init-core-shared-extensions
 ifdef SHARED_ARM_CLIENT_ID
 	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
 	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
@@ -299,7 +299,7 @@ apply-core-dtap: _check-for-stack-var
 post-deploy-core-dtap: az_login _check-for-stack-var
 	@$(call enable_trigger,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS})
 
-destroy-core-dtap: _check-for-stack-var
+destroy-core-dtap: _check-for-stack-var init-core-dtap
 	@ingeniictl infra destroy ${PULUMI_ORGANIZATION}/${STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR}
 
 CORE_DTAP_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.json
@@ -339,7 +339,7 @@ refresh-core-dtap-extensions: _check-for-stack-var
 apply-core-dtap-extensions: _check-for-stack-var
 	@$(call pulumi_apply,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
-destroy-core-dtap-extensions: _check-for-stack-var
+destroy-core-dtap-extensions: _check-for-stack-var init-core-dtap-extensions
 	@ingeniictl infra destroy ${PULUMI_ORGANIZATION}/${STACK} --pulumi-project-dir ${PULUMI_CORE_EXTENSIONS_SRC_DIR}
 
 CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.extensions.json
@@ -495,11 +495,11 @@ cicd-apply-dtap-ext:
 
 # Platform Destroy
 cicd-destroy: _check_if_ci
-	-make destroy-core-dtap-extensions STACK=dev 
-	-make destroy-core-dtap-extensions STACK=test
-	-make destroy-core-dtap-extensions STACK=prod
-	-make destroy-core-shared-extensions
-	-make destroy-core-dtap STACK=dev
-	-make destroy-core-dtap STACK=test
-	-make destroy-core-dtap STACK=prod
-	-make destroy-core-shared
+	@-make destroy-core-dtap-extensions STACK=dev 
+	@-make destroy-core-dtap-extensions STACK=test
+	@-make destroy-core-dtap-extensions STACK=prod
+	@-make destroy-core-shared-extensions
+	@-make destroy-core-dtap STACK=dev
+	@-make destroy-core-dtap STACK=test
+	@-make destroy-core-dtap STACK=prod
+	@-make destroy-core-shared
