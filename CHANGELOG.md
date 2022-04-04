@@ -9,6 +9,9 @@
 ### Bugfixes
 - [workflows] - Fix destroy workflow.
 
+### New Features
+- [jupyterlab] - Databricks Connect Docker images and configuration
+
 # 0.2.8 (2022-03-17)
 
 ### Improvements

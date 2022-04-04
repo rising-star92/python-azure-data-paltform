@@ -100,23 +100,23 @@ container_registry_private_endpoint_configs = {
 # SHARED KUBERNETES CLUSTER
 #----------------------------------------------------------------------------------------------------------------------
 
-cluster_details = get_cluster_config(shared_platform_config)
-cluster_created = cluster_details["enabled"]
-datafactory_runtime_config = cluster_details["configs"]["datafactory_runtime"]
-jupyterlab_config = cluster_details["configs"]["jupyterlab"]
+cluster_config = get_cluster_config(shared_platform_config)
+cluster_created = cluster_config["enabled"]
+datafactory_runtime_config = cluster_config["configs"]["datafactory_runtime"]
+jupyterlab_config = cluster_config["configs"]["jupyterlab"]
 
 # Only create if required
 if cluster_created:
     # Use the admin credential as it's static
     # TODO: Don't do this - add Pulumi service principal as Azure Kubernetes Service RBAC Cluster Admin
 
-    def get_credentials(cluster_details):
-        if cluster_details is None:
+    def get_credentials(cluster_config):
+        if cluster_config is None:
             return "Preview Kubernetes Config"
         return b64decode(
             containerservice.list_managed_cluster_admin_credentials(
-                resource_group_name=cluster_details["cluster_resource_group_name"],
-                resource_name=cluster_details["name"],
+                resource_group_name=cluster_config["cluster_resource_group_name"],
+                resource_name=cluster_config["name"],
                 opts=InvokeOptions(provider=shared_services_provider)
             ).kubeconfigs[0].value
         ).decode()

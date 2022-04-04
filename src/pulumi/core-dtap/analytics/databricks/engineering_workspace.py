@@ -10,6 +10,7 @@ from pulumi_databricks import (
     databricks,
 )
 
+from ingenii_azure_data_platform.databricks import create_cluster
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
@@ -264,7 +265,7 @@ for ref_key, config in workspace_config.get("instance_pools", {}).items():
     )
 
 # ----------------------------------------------------------------------------------------------------------------------
-# ANALYTICS DATABRICKS WORKSPACE -> AZURE DEVOPS REPOSITORIES
+# ENGINEERING DATABRICKS WORKSPACE -> AZURE DEVOPS REPOSITORIES
 # ----------------------------------------------------------------------------------------------------------------------
 # Unable to assign this using a servie principal
 # for repo_config in shared_workspace_config.get("devops_repositories", []):
@@ -294,29 +295,21 @@ cluster_default_tags = {"x_" + k: v for k, v in platform_config.tags.items()}
 # ENGINEERING DATABRICKS WORKSPACE -> CLUSTERS -> SYSTEM CLUSTER
 # ----------------------------------------------------------------------------------------------------------------------
 
-system_cluster_config = workspace_config["clusters"]["system"]
-system_cluster_resource_name = generate_resource_name(
-    resource_type="databricks_cluster",
+system_cluster = create_cluster(
+    databricks_provider=databricks_provider, platform_config=platform_config, 
     resource_name=f"{workspace_short_name}-system",
-    platform_config=platform_config,
+    cluster_config=workspace_config["clusters"]["system"],
+    cluster_defaults={
+        "spark_conf": {
+            "spark.databricks.cluster.profile": "singleNode",
+            "spark.master": "local[*]",
+            "spark.databricks.delta.preview.enabled": "true",
+        }
+    },
+    instance_pools=instance_pools,
+    custom_tags={"ResourceClass": "SingleNode", **cluster_default_tags}
 )
 
-system_cluster = databricks.Cluster(
-    resource_name=system_cluster_resource_name,
-    cluster_name=system_cluster_config["display_name"],
-    spark_version=system_cluster_config["spark_version"],
-    node_type_id=system_cluster_config["node_type_id"],
-    is_pinned=system_cluster_config["is_pinned"],
-    autotermination_minutes=system_cluster_config.get("autotermination_minutes", 0),
-    spark_conf={
-        "spark.databricks.cluster.profile": "singleNode",
-        "spark.master": "local[*]",
-        "spark.databricks.delta.preview.enabled": "true",
-        **system_cluster_config.get("spark_conf", {}),
-    },
-    custom_tags={"ResourceClass": "SingleNode", **cluster_default_tags},
-    opts=pulumi.ResourceOptions(provider=databricks_provider),
-)
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> STORAGE MOUNTS
 # ----------------------------------------------------------------------------------------------------------------------
@@ -422,55 +415,25 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
     if ref_key == "system":
         continue
 
-    cluster_resource_name = generate_resource_name(
-        resource_type="databricks_cluster",
-        resource_name=f"{workspace_short_name}-{ref_key}",
-        platform_config=platform_config,
-    )
-
-    # Cluster Libraries
-    libraries = cluster_config.get("libraries", {})
-    pypi_libraries = [
-        databricks.ClusterLibraryArgs(
-            pypi=databricks.ClusterLibraryPypiArgs(
-                package=lib.get("package"), repo=lib.get("repo")
-            )
-        )
-        for lib in libraries.get("pypi", [])
-    ]
-    whl_libraries_str = libraries.get("whl", [])
+    cluster_defaults = {
+        "autotermination_minutes": 15,
+        "spark_env_vars": {
+            "PYSPARK_PYTHON": "/databricks/python3/bin/python3",
+        },
+    }
 
     if ref_key == "default":
-        whl_libraries_str.append(
+        if "libraries" not in cluster_defaults:
+            cluster_defaults["libraries"] = {}
+        if "whl" not in cluster_defaults["libraries"]:
+            cluster_defaults["libraries"]["whl"] = []
+        cluster_defaults["libraries"]["whl"].append(
             "dbfs:/mnt/preprocess/pre_process-1.0.0-py3-none-any.whl"
         )
 
-    whl_libraries = [
-        databricks.ClusterLibraryArgs(whl=lib) for lib in set(whl_libraries_str)
-    ]
-
-    cluster_libraries = pypi_libraries + whl_libraries
-
-    base_cluster_configuration = {
-        "resource_name": cluster_resource_name,
-        "cluster_name": cluster_config["display_name"],
-        "spark_version": cluster_config["spark_version"],
-        "node_type_id": cluster_config.get("node_type_id"),
-        "is_pinned": cluster_config["is_pinned"],
-        "autotermination_minutes": cluster_config.get("autotermination_minutes", 0),
-        "libraries": cluster_libraries or None,
-        "spark_env_vars": {
-            "PYSPARK_PYTHON": "/databricks/python3/bin/python3",
-            **cluster_config.get("spark_env_vars", {}),
-        },
-        "opts": pulumi.ResourceOptions(
-            provider=databricks_provider, depends_on=[pre_processing_blob]
-        ),
-    }
-
     # Cluster for file ingestion
     if ref_key == "default":
-        base_cluster_configuration["spark_env_vars"].update(
+        cluster_defaults["spark_env_vars"].update(
             {
                 "DATABRICKS_WORKSPACE_HOSTNAME": workspace.workspace_url,
                 "DATABRICKS_CLUSTER_NAME": cluster_config["display_name"],
@@ -481,60 +444,35 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
             }
         )
 
-    if cluster_config.get("docker_image_url"):
-        base_cluster_configuration["docker_image"] = databricks.ClusterDockerImageArgs(
-            url=cluster_config["docker_image_url"]
-        )
-    if cluster_config.get("instance_pool_ref_key"):
-        base_cluster_configuration["instance_pool_id"] = instance_pools[
-            cluster_config["instance_pool_ref_key"]
-        ].id
-        if base_cluster_configuration.get("node_type_id") is not None:
-            del base_cluster_configuration["node_type_id"]
-    if cluster_config.get("driver_instance_pool_ref_key"):
-        base_cluster_configuration["driver_instance_pool_id"] = instance_pools[
-            cluster_config["driver_instance_pool_ref_key"]
-        ].id
-        if base_cluster_configuration.get("node_type_id") is not None:
-            del base_cluster_configuration["node_type_id"]
-
     # Single Node Cluster Type
     if cluster_config["type"] == "single_node":
-        clusters[ref_key] = databricks.Cluster(
-            **base_cluster_configuration,
-            spark_conf={
-                "spark.databricks.cluster.profile": "singleNode",
-                "spark.master": "local[*]",
-                "spark.databricks.delta.preview.enabled": "true",
-                **cluster_config.get("spark_conf", {}),
-            },
-            custom_tags={"ResourceClass": "SingleNode", **cluster_default_tags},
-        )
-    # High Concurrency Cluster Type
-    elif cluster_config["type"] == "high_concurrency":
-        clusters[ref_key] = databricks.Cluster(
-            **base_cluster_configuration,
-            autoscale=databricks.ClusterAutoscaleArgs(
-                min_workers=cluster_config["auto_scale_min_workers"],
-                max_workers=cluster_config["auto_scale_max_workers"],
-            ),
-            azure_attributes=databricks.ClusterAzureAttributesArgs(
-                availability="SPOT_WITH_FALLBACK_AZURE"
-                if cluster_config.get("use_spot_instances")
-                else "ON_DEMAND_AZURE",
-                first_on_demand=1,
-                spot_bid_max_price=100,
-            ),
-            spark_conf={
-                "spark.databricks.cluster.profile": "serverless",
-                "spark.databricks.repl.allowedLanguages": "python,sql",
-                "spark.databricks.passthrough.enabled": "true",
-                "spark.databricks.pyspark.enableProcessIsolation": "true",
-                "spark.databricks.delta.preview.enabled": "true",
-                **cluster_config.get("spark_conf", {}),
-            },
-            custom_tags={"ResourceClass": "Serverless", **cluster_default_tags},
-        )
+        cluster_defaults["spark_conf"] = {
+            "spark.databricks.cluster.profile": "singleNode",
+            "spark.master": "local[*]",
+            "spark.databricks.delta.preview.enabled": "true",
+        }
+        custom_tags = {"ResourceClass": "SingleNode", **cluster_default_tags}
+    # High Concurrency or Standard Cluster Type
+    else:
+        cluster_defaults["spark_conf"] = {
+            "spark.databricks.cluster.profile": "serverless",
+            "spark.databricks.repl.allowedLanguages": "python,sql",
+            "spark.databricks.passthrough.enabled": "true",
+            "spark.databricks.pyspark.enableProcessIsolation": "true",
+            "spark.databricks.delta.preview.enabled": "true",
+        }
+        custom_tags = {"ResourceClass": "Serverless", **cluster_default_tags}
+
+    clusters[ref_key] = create_cluster(
+        databricks_provider=databricks_provider,
+        platform_config=platform_config,
+        resource_name=f"{workspace_short_name}-{ref_key}",
+        cluster_config=cluster_config,
+        cluster_defaults=cluster_defaults,
+        custom_tags=custom_tags,
+        depends_on=[pre_processing_blob],
+        instance_pools=instance_pools,
+    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> CLUSTERS -> PERMISSIONS

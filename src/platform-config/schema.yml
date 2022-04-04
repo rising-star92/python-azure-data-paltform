@@ -203,7 +203,7 @@ _databricks:
   workspaces: map(include('_databricks_workspace'),key=str())
 
 _databricks_workspace:
-  clusters: map(include('_databricks_single_node_cluster'), include('_databricks_high_concurrency_cluster'), key=str(), required=False)
+  clusters: map(include('_databricks_cluster'), key=str(), required=False)
   config: include('_databricks_workspace_config', required=False)
   devops_repositories: list(include('_databricks_devops_repository'), required=False)
   iam: include('_iam', required=False)
@@ -225,36 +225,24 @@ _databricks_storage_mount:
   mount_name: str()
   container_name: str(required=False)
 
-_databricks_single_node_cluster:
-  type: regex('.*^single_node$')
-  display_name: str()
-  spark_version: str()
-  node_type_id: str(required=False)
-  instance_pool_ref_key: str(required=False)
-  driver_instance_pool_ref_key: str(required=False)
-  is_pinned: bool(required=False)
+_databricks_cluster:
   autotermination_minutes: int(min=10, required=False)
+  auto_scale_min_workers: int(min=1, required=False) # Ignored for single node
+  auto_scale_max_workers: int(min=2, required=False) # Ignored for single node
+  display_name: str(required=False)
   docker_image_url: str(required=False)
-  spark_env_vars: map(required=False)
-  spark_conf: map(required=False)
-  libraries: include('_databricks_cluster_libraries', required=False)
-
-_databricks_high_concurrency_cluster:
-  type: regex('.*^high_concurrency$')
-  display_name: str()
-  spark_version: str()
-  node_type_id: str(required=False)
-  instance_pool_ref_key: str(required=False)
   driver_instance_pool_ref_key: str(required=False)
+  instance_pool_ref_key: str(required=False)
   is_pinned: bool(required=False)
-  auto_scale_min_workers: int(min=1)
-  auto_scale_max_workers: int(min=2)
-  use_spot_instances: bool(required=False)
-  autotermination_minutes: int(min=10, required=False)
-  docker_image_url: str(required=False)
-  spark_env_vars: map(required=False)
-  spark_conf: map(required=False)
   libraries: include('_databricks_cluster_libraries', required=False)
+  node_type_id: str(required=False)
+  num_workers: int(required=False) # Ignored for single node
+  spark_conf: map(required=False)
+  spark_env_vars: map(required=False)
+  spark_version: str(required=False)
+  single_user_name: str(required=False)
+  type: enum('high_concurrency', 'single_node', 'standard')
+  use_spot_instances: map(required=False)
 
 _databricks_cluster_libraries:
   pypi: list(include('_databricks_cluster_library_pypi'), required=False)
@@ -330,6 +318,7 @@ _dbt_documentation_custom_domain:
   validation: enum("cname-delegation", "dns-txt-token", required=False)
 
 _jupyterlab:
+  databricks_connect: include('_jupyterlab_databricks_connect', required=False)
   enabled: bool(required=False) # Shared only
   require_assignment: bool(required=False) # Shared only
   version: str(required=False) # Shared only
@@ -337,7 +326,14 @@ _jupyterlab:
 
 _jupyterlab_https:
   enabled: bool(required=False)
-  contact_email: str(required=False)
+
+_jupyterlab_databricks_connect:
+  enabled: bool(required=False)
+  users: list(include('_jupyterlab_databricks_connect_user'), required=False)
+
+_jupyterlab_databricks_connect_user:
+  email_address: str()
+  cluster: include('_databricks_cluster', required=False)
 
 _quantum:
   enabled: bool()

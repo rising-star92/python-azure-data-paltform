@@ -4,8 +4,10 @@ import pulumi_azuread as azuread
 from pulumi_azure_native import containerservice, network, storage
 from pulumi_kubernetes import batch, core, helm, meta
 
+from ingenii_azure_data_platform.databricks import create_cluster
 from ingenii_azure_data_platform.utils import generate_resource_name
 
+from analytics.databricks.analytics_workspace import databricks_provider, workspace
 from analytics.kubernetes.storage import add_storage_account_secret, \
     kubernetes_storage_account, \
     kubernetes_storage_account_resource_group, \
@@ -15,9 +17,11 @@ from analytics.quantum.workspace import quantum_workspace_config, \
 from platform_shared import jupyterlab_config, shared_kubernetes_provider, shared_services_provider
 from project_config import azure_client, DTAP_ROOT, ingenii_workspace_dns_provider, \
     platform_config, platform_outputs, SHARED_OUTPUTS
+from storage.datalake import datalake
 
 outputs = platform_outputs["analytics"]["jupyterlab"] = {}
 
+env_jupyterlab_config = platform_config["analytics_services"].get("jupyterlab", {})
 resource_name = f"jupyterlab-{platform_config.stack}"
 kubernetes_cluster_resource_group_name = SHARED_OUTPUTS.get(
     "analytics",
@@ -53,7 +57,6 @@ hub_public_ip = network.PublicIPAddress(
     opts=ResourceOptions(provider=shared_services_provider),
 )
 
-https_settings = platform_config["analytics_services"].get("jupyterlab", {}).get("https", {})
 # HTTPS is on by default, Ingenii provides the hostname
 relative_name = f"{platform_config.unique_id}-{platform_config.prefix}-{platform_config.stack}"
 zone_name = "workspace.ingenii.io"
@@ -82,7 +85,7 @@ hostname = f"{relative_name}.{zone_name}"
 contact_email = "support@ingenii.dev"
 callback_url = f"https://{hostname}/hub/oauth_callback"
 
-if not https_settings.get("enabled", True):
+if not env_jupyterlab_config.get("https", {}).get("enabled", True):
     # Client has turned off HTTPS
     # Ingenii record set will still be created
     hostname, contact_email, record_set = None, None, None
@@ -131,6 +134,56 @@ namespace = core.v1.Namespace(
 #----------------------------------------------------------------------------------------------------------------------
 
 node_selector = {"OS": containerservice.OSType.LINUX}
+
+#----------------------------------------------------------------------------------------------------------------------
+# JUPYTERLAB -> DATABRICKS CONNECT
+#----------------------------------------------------------------------------------------------------------------------
+
+databricks_connect = any([
+    jupyterlab_config.get("databricks_connect", {}).get("enabled", False),
+    env_jupyterlab_config.get("databricks_connect", {}).get("enabled", False)
+])
+single_user_clusters = {}
+if databricks_connect:
+    for user in env_jupyterlab_config.get("databricks_connect", {}).get("users", []):
+
+        cluster = user.get("cluster", {})
+
+        if not cluster.get("spark_version", "9.1").startswith("9.1"):
+            raise Exception(
+                f"Databricks Connect, user {user['email_address']}. "
+                f"Spark version set to {cluster.get('spark_version')}, "
+                "but needs to be set to '9.1.x-scala2.12' to support "
+                "Databricks Connect and match the python version 3.8. "
+                "See https://docs.microsoft.com/en-us/azure/databricks/dev-tools/databricks-connect#requirements"
+            )
+
+        user_name = user["email_address"].split("@")[0]
+
+        single_user_clusters[user_name] = create_cluster(
+            databricks_provider=databricks_provider,
+            platform_config=platform_config,
+            resource_name=f"analytics-singleuser-{user_name}",
+            cluster_name=f"singleuser-{user_name}",
+            cluster_config=cluster,
+            cluster_defaults={
+                "autotermination_minutes": 15,
+                "node_type_id": "Standard_F4s",
+                "num_workers": 1,
+                "single_user_name": user["email_address"],
+                "spark_env_vars": {
+                    "PYSPARK_PYTHON": "/databricks/python3/bin/python3",
+                    "DATABRICKS_WORKSPACE_HOSTNAME": workspace.workspace_url,
+                    "DATABRICKS_CLUSTER_NAME": f"singleuser-{user_name}",
+                    "DATA_LAKE_NAME": datalake.name,
+                },
+                "spark_conf": {
+                    "spark.databricks.delta.preview.enabled": "true",
+                    "spark.databricks.passthrough.enabled": "true"
+                },
+                "spark_version": "9.1.x-scala2.12",
+            },
+        )
 
 #----------------------------------------------------------------------------------------------------------------------
 # JUPYTERLAB -> STARTUP SCRIPTS
@@ -191,16 +244,15 @@ def upload_startup_file(title, file_name):
 
 install_packages_blob = upload_startup_file(
     "README", "README")
-install_packages_blob = upload_startup_file(
-    "install_packages_file", "10_install_packages.py")
 startup_files = [install_packages_blob]
+if databricks_connect:
+    databricks_connect_blob = upload_startup_file(
+        "databricks_connect", "10_databricks_connect.py")
+    startup_files.append(databricks_connect_blob)
+
 if quantum_workspace_config["enabled"]:
-    quantum_package_blob = upload_startup_file(
-        "quantum_package", "ingenii_azure_quantum-0.0.5-py3-none-any.whl")
-    startup_files.append(quantum_package_blob)
-    
     quantum_examples_blob = upload_startup_file(
-        "quantum_examples", "00_quantum.py")
+        "quantum_examples", "10_quantum.py")
     startup_files.append(quantum_examples_blob)
 
 # Move files to be mounted
@@ -313,6 +365,7 @@ def create_chart_values(kwargs):
             }
         },
         "singleuser": {
+            "extraEnv": {},
             "nodeSelector": node_selector,
             "storage": {
                 "extraVolumes": [
@@ -334,13 +387,6 @@ def create_chart_values(kwargs):
             }
         },
     }
-    if quantum_workspace_config["enabled"]:
-        values["singleuser"]["extraEnv"] = {
-            "WORKSPACE_SUBSCRIPTION_ID": azure_client.subscription_id,
-            "WORKSPACE_RESOURCE_GROUP": quantum_outputs["workspace"]["resource_group_name"],
-            "WORKSPACE_LOCATION": quantum_outputs["workspace"]["location"],
-            "WORKSPACE_NAME": kwargs["quantum_workspace_name"],
-        }
     if hostname:
         values["proxy"]["https"] = {
             "enabled": True,
@@ -348,11 +394,37 @@ def create_chart_values(kwargs):
             "letsencrypt": {"contactEmail": contact_email,},
         }
 
+    custom_extensions = ""
+    if databricks_connect:
+        # Need to check the Databricks version (9.1)
+        values["singleuser"]["extraEnv"].update({
+            "DATABRICKS_ADDRESS": "https://" + kwargs["databricks_url"],
+            "DATABRICKS_SUBSCRIPTION_ID": azure_client.subscription_id,
+            "DATABRICKS_ORG_ID": kwargs["databricks_id"],
+            "DATABRICKS_PORT": "15001",
+        })
+        custom_extensions += "-databricks"
+    if quantum_workspace_config["enabled"]:
+        values["singleuser"]["extraEnv"].update({
+            "WORKSPACE_SUBSCRIPTION_ID": azure_client.subscription_id,
+            "WORKSPACE_RESOURCE_GROUP": quantum_outputs["workspace"]["resource_group_name"],
+            "WORKSPACE_LOCATION": quantum_outputs["workspace"]["location"],
+            "WORKSPACE_NAME": kwargs["quantum_workspace_name"],
+        })
+        custom_extensions += "-quantum"
+    if custom_extensions:
+        values["singleuser"]["image"] = {
+            "name": "ingeniisolutions/jupyterlab-single-user" + custom_extensions,
+            "tag": "0.1.0",
+            "pullPolicy": "Always",
+        }
+
     return values
 
 chart_values = Output.all(
     callback_url=callback_url, public_ip=hub_public_ip.ip_address,
     record_set=record_set,
+    databricks_url=workspace.workspace_url, databricks_id=workspace.workspace_id,
     quantum_workspace_name=quantum_outputs.get("workspace", {}).get("name"),
 ).apply(create_chart_values)
 jupyterlab = helm.v3.Release(

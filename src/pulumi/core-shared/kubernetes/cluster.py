@@ -16,7 +16,7 @@ from project_config import azure_client, platform_config, platform_outputs
 # SHARED KUBERNETES CLUSTER -> BASE CONFIGURATIONS
 # ----------------------------------------------------------------------------------------------------------------------
 
-cluster_details = get_cluster_config(platform_config)
+cluster_config = get_cluster_config(platform_config)
 cluster_resource_name = "shared_cluster"
 cluster_resource_group_name = resource_groups["infra"].name
 
@@ -24,7 +24,7 @@ cluster_resource_group_name = resource_groups["infra"].name
 shared_kubernetes_provider = None
 
 # Only create if a system requires it
-if cluster_details["enabled"]:
+if cluster_config["enabled"]:
 
     outputs = platform_outputs["analytics"]["shared_kubernetes_cluster"] = {}
     
@@ -215,7 +215,7 @@ if cluster_details["enabled"]:
 
     # Check if any of the enabled features need Windows machines
     windows_pools = platform_config["shared_kubernetes_cluster"]["cluster"].get("windows_agent_pools", [])
-    if cluster_details["windows"] and not windows_pools:
+    if cluster_config["windows"] and not windows_pools:
         windows_pools = [{
             "labels": {"addedBy": "platform"},
             "name": "win1"
