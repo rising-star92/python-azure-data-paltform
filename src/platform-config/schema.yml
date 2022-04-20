@@ -323,6 +323,7 @@ _jupyterlab:
   require_assignment: bool(required=False) # Shared only
   version: str(required=False) # Shared only
   https: include('_jupyterlab_https', required=False) # Non-shared only
+  single_user_image_version: str(required=False)
 
 _jupyterlab_https:
   enabled: bool(required=False)

@@ -415,7 +415,7 @@ def create_chart_values(kwargs):
     if custom_extensions:
         values["singleuser"]["image"] = {
             "name": "ingeniisolutions/jupyterlab-single-user" + custom_extensions,
-            "tag": "0.1.0",
+            "tag": env_jupyterlab_config["single_user_image_version"],
             "pullPolicy": "Always",
         }
 

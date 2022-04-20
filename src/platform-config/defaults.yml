@@ -312,6 +312,8 @@ analytics_services:
   dbt:
     documentation:
       enabled: false
+  jupyterlab:
+    single_user_image_version: "0.1.0"
   quantum:
     enabled: false
     providers:
