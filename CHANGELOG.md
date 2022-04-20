@@ -1,6 +1,7 @@
+# 1.0.0 (TBD)
 
-# 0.2.10 (TBD)
 ### Improvements
+- [permissions] - Add deployment SP as 'owner' to all service principals.
 - [quantum] - Bump Ingenii Azure Quantum package to 0.1.0.
 
 # 0.2.9 (2022-03-22)

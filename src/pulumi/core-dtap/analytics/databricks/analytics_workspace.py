@@ -335,6 +335,7 @@ storage_mounts_sp_app = azuread.Application(
 storage_mounts_sp = azuread.ServicePrincipal(
     resource_name=storage_mounts_sp_name,
     application_id=storage_mounts_sp_app.application_id,
+    owners=[azure_client.object_id],
     app_role_assignment_required=False,
 )
 
