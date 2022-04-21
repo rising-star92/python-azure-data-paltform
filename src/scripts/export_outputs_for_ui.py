@@ -102,6 +102,7 @@ def parse_platform_outputs(file: str, env_name: str) -> Dict[Any, Any]:
     payload = parsed["payload"]
 
     if env_name in ["dev", "test", "prod"]:
+        credentials_store = outputs["security"]["credentials_store"]
         databricks = outputs["analytics"]["databricks"]["workspaces"]
         datafactory = outputs["analytics"]["datafactory"]["factories"]
         datalake = outputs["storage"]["datalake"]
@@ -109,6 +110,7 @@ def parse_platform_outputs(file: str, env_name: str) -> Dict[Any, Any]:
         jupyterlab = outputs["analytics"].get("jupyterlab", {})
 
         payload[env_name] = {
+            "credentials_store_name": credentials_store["name"],
             "databricks_eng_workspace_url": databricks.get("engineering", {}).get(
                 "url"
             ),
