@@ -110,7 +110,7 @@ def parse_platform_outputs(file: str, env_name: str) -> Dict[Any, Any]:
         jupyterlab = outputs["analytics"].get("jupyterlab", {})
 
         payload[env_name] = {
-            "credentials_store_name": credentials_store["name"],
+            "credentials_store_name": credentials_store["key_vault_name"],
             "databricks_eng_workspace_url": databricks.get("engineering", {}).get(
                 "url"
             ),
