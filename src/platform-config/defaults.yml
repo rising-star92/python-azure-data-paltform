@@ -296,19 +296,11 @@ analytics_services:
             container_name: orchestration
             mount_name: orchestration
   datafactory:
-    factories:
-      orchestration:
-        display_name: orchestration
-        iam:
-          role_assignments:
-            - user_group_ref_key: engineers
-              role_definition_name: Data Factory Contributor
+    user_factories:
       data:
         display_name: data
-        iam:
-          role_assignments:
-            - user_group_ref_key: engineers
-              role_definition_name: Data Factory Contributor
+    user_factories_contributors:
+      - user_group_ref_key: engineers
   dbt:
     documentation:
       enabled: false

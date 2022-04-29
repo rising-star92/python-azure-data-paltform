@@ -15,20 +15,17 @@ from project_config import platform_config, platform_outputs, azure_client
 from platform_shared import get_devops_principal_id
 from storage.datalake import datalake
 
-outputs = platform_outputs["analytics"]["datafactory"]["factories"][
-    "orchestration"
-] = {}
+datafactory_config = platform_config["analytics_services"]["datafactory"].get(
+    "orchestration_factory", {})
+outputs = platform_outputs["analytics"]["datafactory"]["orchestration_factory"] = {}
 
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY
 # ----------------------------------------------------------------------------------------------------------------------
-datafactory_config = platform_config.from_yml["analytics_services"]["datafactory"][
-    "factories"
-]["orchestration"]
 
 datafactory_name = generate_resource_name(
     resource_type="datafactory",
-    resource_name=datafactory_config["display_name"],
+    resource_name=datafactory_config.get("display_name", "orchestration"),
     platform_config=platform_config,
 )
 datafactory_resource_group = resource_groups["infra"].name
@@ -60,7 +57,7 @@ outputs["url"] = Output.all(datafactory_resource_group, datafactory.name).apply(
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Create role assignments defined in the YAML files
-for assignment in datafactory_config["iam"].get("role_assignments", []):
+for assignment in datafactory_config.get("iam", {}).get("role_assignments", []):
     # User Group Assignment
     user_group_ref_key = assignment.get("user_group_ref_key")
     if user_group_ref_key is not None:

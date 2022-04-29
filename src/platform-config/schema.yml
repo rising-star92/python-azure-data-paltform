@@ -270,9 +270,11 @@ _databricks_devops_repository:
   name: str()
 
 _datafactory:
-  factories: map(include('_datafactory_factory'),key=str(), required=False)
   integrated_self_hosted_runtime: include('_integrated_self_hosted_runtime', required=False) # Shared only
+  orchestration_factory: include('_orchestration_factory', required=False)
   shared_self_hosted_runtime_factory: include('_shared_self_hosted_runtime_factory', required=False) # Shared only
+  user_factories: map(include('_datafactory_factory'), key=str(), required=False)
+  user_factories_contributors: list(include('_group_reference'), required=False)
 
 _datafactory_factory:
   display_name: str()
@@ -296,6 +298,10 @@ _datafactory_integration_runtime:
 _integrated_self_hosted_runtime:
   enabled: bool()
   image: str()
+
+_orchestration_factory:
+  display_name: str(required=False)
+  iam: include('_iam')
 
 _shared_self_hosted_runtime_factory:
   enabled: bool()
@@ -366,6 +372,10 @@ automation: any()
 # COMMON
 # These are common definitions that are reused across the schema.
 #----------------------------------------------------------------------------------------------------------------------
+_group_reference:
+  object_id: str(required=False)
+  user_group_ref_key: str(required=False)
+
 _iam:
   role_assignments: list(include('_iam_role_assignment'))
 

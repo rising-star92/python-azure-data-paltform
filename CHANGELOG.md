@@ -1,8 +1,13 @@
 # 1.0.0 (TBD)
 
+# 0.3.0 (2022-03-28)
+
 ### Improvements
 - [permissions] - Add deployment SP as 'owner' to all service principals.
 - [quantum] - Bump Ingenii Azure Quantum package to 0.1.0.
+
+### Bugfixes
+- [data_factory] - Move permissions to be against the resource group, as required by Azure https://docs.microsoft.com/en-us/azure/data-factory/concepts-roles-permissions#roles-and-requirements
 
 # 0.2.9 (2022-03-22)
 

@@ -4,7 +4,7 @@ from pulumi_azure import datafactory as adf
 from pulumi_azure_native import containerservice
 from pulumi_kubernetes import apps, core, meta
 
-from analytics.datafactory.datafactories import data_datafactories, datafactory_resource_group
+from analytics.datafactory.user_datafactories import datafactory_resource_group, user_datafactories
 from platform_shared import datafactory_runtime_config, shared_kubernetes_provider
 from project_config import platform_config, platform_outputs
 
@@ -27,7 +27,7 @@ overall_outputs["namespace"] = namespace.metadata.name
 
 
 # A container per Data Factory
-for ref_key, datafactory in data_datafactories.items():
+for ref_key, datafactory in user_datafactories.items():
 
     outputs = overall_outputs[ref_key] = {}
 

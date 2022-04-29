@@ -10,11 +10,8 @@ from project_config import platform_config, platform_outputs
 repositories_needed = set()
 
 for env, config in dtap_configs.items():
-    factory_configs = config["analytics_services"]["datafactory"]["factories"]
+    factory_configs = config["analytics_services"]["datafactory"]["user_factories"]
     for factory_ref_key, factory_confg in factory_configs.items():
-        if factory_ref_key == "orchestration":
-            continue
-
         if factory_confg.get("repository", {}).get("devops_integrated"):
             repositories_needed.add(factory_ref_key)
 

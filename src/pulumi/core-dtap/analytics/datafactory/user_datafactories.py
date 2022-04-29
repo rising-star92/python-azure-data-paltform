@@ -26,7 +26,8 @@ from project_config import azure_client, platform_config, platform_outputs
 from security.credentials_store import key_vault
 from storage.datalake import datalake
 
-factory_outputs = platform_outputs["analytics"]["datafactory"]["factories"]
+user_datafactory_configs = platform_config["analytics_services"]["datafactory"]["user_factories"]
+user_datafactory_outputs = platform_outputs["analytics"]["datafactory"]["user_factories"] = {}
 
 datafactory_resource_group = resource_groups["data"]
 devops_organization_name = getenv("AZDO_ORG_SERVICE_URL").strip(" /").split("/")[-1]
@@ -34,15 +35,13 @@ devops_organization_name = getenv("AZDO_ORG_SERVICE_URL").strip(" /").split("/")
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORIES
 # ----------------------------------------------------------------------------------------------------------------------
-datafactory_configs = platform_config.from_yml["analytics_services"]["datafactory"][
-    "factories"
-]
 datafactory_repositories = SHARED_OUTPUTS.get(
     "analytics",
     "datafactory",
     "repositories",
     preview={
-        key: {"name": f"Preview Repository name: {key}"} for key in datafactory_configs
+        key: {"name": f"Preview Repository name: {key}"}
+        for key in user_datafactory_configs
     },
 )
 devops_project = SHARED_OUTPUTS.get(
@@ -62,18 +61,16 @@ if platform_config.stack != "dev":
         scope_description="datafactory-deployer",
     )
 
-data_datafactories = {}
-for ref_key, datafactory_config in datafactory_configs.items():
-    if ref_key == "orchestration":
-        continue
+user_datafactories = {}
+for ref_key, datafactory_config in user_datafactory_configs.items():
 
     datafactory_name = generate_resource_name(
         resource_type="datafactory",
-        resource_name=datafactory_config["display_name"],
+        resource_name=datafactory_config.get("display_name", ref_key),
         platform_config=platform_config,
     )
 
-    outputs = factory_outputs[ref_key] = {}
+    outputs = user_datafactory_outputs[ref_key] = {}
 
     # ----------------------------------------------------------------------------------------------------------------------
     # DATA FACTORY -> DEVOPS REPOSITORY
@@ -111,7 +108,7 @@ for ref_key, datafactory_config in datafactory_configs.items():
         ),
     )
 
-    data_datafactories[ref_key] = {"name": datafactory_name, "obj": datafactory}
+    user_datafactories[ref_key] = {"name": datafactory_name, "obj": datafactory}
 
     outputs["id"] = datafactory.id
     outputs["name"] = datafactory.name
@@ -130,7 +127,7 @@ for ref_key, datafactory_config in datafactory_configs.items():
     # ----------------------------------------------------------------------------------------------------------------------
 
     # Create role assignments defined in the YAML files
-    for assignment in datafactory_config["iam"].get("role_assignments", []):
+    for assignment in datafactory_config.get("iam", {}).get("role_assignments", []):
         # User Group Assignment
         user_group_ref_key = assignment.get("user_group_ref_key")
         if user_group_ref_key is not None:
@@ -251,4 +248,23 @@ for ref_key, datafactory_config in datafactory_configs.items():
         datafactory_name,
         logs_config=datafactory_config.get("logs", {}),
         metrics_config=datafactory_config.get("metrics", {}),
+    )
+
+# Permissions must be granted against the resource group, not the individual resource
+# https://docs.microsoft.com/en-us/azure/data-factory/concepts-roles-permissions#roles-and-requirements
+for group_ref in platform_config["analytics_services"]["datafactory"].get("user_factories_contributors", []):
+    if group_ref.get("user_group_ref_key"):
+        group_object_id = user_groups[group_ref["user_group_ref_key"]]["object_id"]
+        group_name = group_ref["user_group_ref_key"]
+    elif group_ref.get("object_id"):
+        group_object_id = group_ref["object_id"]
+        group_name = group_ref["object_id"]
+    else:
+        raise Exception("No group reference key or object ID in user_factories_contributors setting!")
+    GroupRoleAssignment(
+        principal_id=group_object_id,
+        principal_name=group_name,
+        role_name="Data Factory Contributor",
+        scope=datafactory_resource_group.id,
+        scope_description="datafactory-resourcegroup",
     )
