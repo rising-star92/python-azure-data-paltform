@@ -104,7 +104,7 @@ def parse_platform_outputs(file: str, env_name: str) -> Dict[Any, Any]:
     if env_name in ["dev", "test", "prod"]:
         credentials_store = outputs["security"]["credentials_store"]
         databricks = outputs["analytics"]["databricks"]["workspaces"]
-        datafactory = outputs["analytics"]["datafactory"]["factories"]
+        datafactory = outputs["analytics"]["datafactory"]["user_factories"]
         datalake = outputs["storage"]["datalake"]
         dbt = outputs["analytics"]["dbt"]["documentation"]
         jupyterlab = outputs["analytics"].get("jupyterlab", {})
