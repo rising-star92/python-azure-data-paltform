@@ -4,7 +4,7 @@
 
 * Blob to Share Version: 0.1.0
 * JupyterLab Base Notebook Version: 0.1.0
-* JupyterLab Single User Version: 0.1.0
+* JupyterLab Single User Version: 0.2.0
 
 ## Image details
 

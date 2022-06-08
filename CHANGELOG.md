@@ -1,5 +1,8 @@
 # 1.0.0 (TBD)
 
+### Improvements
+- [quantum] - Bump Ingenii Azure Quantum package to 0.2.0.
+
 # 0.3.0 (2022-03-28)
 
 ### Improvements

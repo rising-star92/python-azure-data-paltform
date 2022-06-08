@@ -57,6 +57,8 @@ push-jupyterlab-single-user-databricks-quantum:
 	docker push ${JUPYTERLAB_SINGLE_USER_DATABRICKS_QUANTUM_NAME}:${JUPYTERLAB_SINGLE_USER_VERSION}
 
 all-single-user:
+	make build-jupyterlab-single-user
+	make push-jupyterlab-single-user
 	make build-jupyterlab-single-user-databricks
 	make push-jupyterlab-single-user-databricks
 	make build-jupyterlab-single-user-quantum
