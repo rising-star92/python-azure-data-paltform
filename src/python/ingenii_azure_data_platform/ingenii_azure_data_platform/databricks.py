@@ -42,6 +42,11 @@ def create_cluster(
     configuration = {
         "autotermination_minutes": get_config("autotermination_minutes", 15),
         "cluster_name": cluster_name or get_config("display_name"),
+        "cluster_log_conf": databricks.ClusterClusterLogConfArgs(
+            dbfs=databricks.ClusterClusterLogConfDbfsArgs(
+                destination="dbfs:/mnt/cluster_logs"
+            )
+        ),
         "is_pinned": is_pinned or get_config("is_pinned", True),
         "libraries": cluster_libraries or None,
         "node_type_id": get_config("node_type_id"),

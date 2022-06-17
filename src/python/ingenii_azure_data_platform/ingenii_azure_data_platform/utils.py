@@ -69,6 +69,7 @@ def generate_resource_name(
         "storage_blob": "sb",
         "storage_blob_container": "sbc",
         "storage_file_share": "sfs",
+        "storage_management_policy": "smp",
         "subnet": "snet",
         "user_assigned_managed_identity": "uami",
         "virtual_machine_scale_set": "vmss",

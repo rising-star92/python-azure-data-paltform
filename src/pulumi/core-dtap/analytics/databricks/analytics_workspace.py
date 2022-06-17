@@ -11,6 +11,7 @@ from pulumi_databricks import (
 from ingenii_azure_data_platform.databricks import create_cluster
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
+    RoleAssignment,
     ServicePrincipalRoleAssignment,
 )
 from ingenii_azure_data_platform.logs import log_diagnostic_settings
@@ -25,16 +26,17 @@ from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet
-from storage.datalake import datalake, service_principal_access
+from storage import storage_accounts
+from storage.databricks import databricks_logs_writer_role
 from platform_shared import shared_platform_config
 from project_config import azure_client, platform_config, platform_outputs
-
 
 workspace_short_name = "analytics"
 workspace_config = platform_config["analytics_services"]["databricks"]["workspaces"][
     workspace_short_name
 ]
-workspace_firewall_config = workspace_config.get("network", {}).get("firewall", {})
+workspace_firewall_config = workspace_config.get(
+    "network", {}).get("firewall", {})
 shared_workspace_config = shared_platform_config["analytics_services"]["databricks"][
     "workspaces"
 ][workspace_short_name]
@@ -265,7 +267,7 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
             "PYSPARK_PYTHON": "/databricks/python3/bin/python3",
             "DATABRICKS_WORKSPACE_HOSTNAME": workspace.workspace_url,
             "DATABRICKS_CLUSTER_NAME": cluster_config["display_name"],
-            "DATA_LAKE_NAME": datalake.name,
+            "DATA_LAKE_NAME": storage_accounts["datalake"]["account"].name,
         }
     }
 
@@ -358,37 +360,29 @@ storage_mounts_dbw_password = databricks.Secret(
 
 # IAM ROLE ASSIGNMENT
 # Allow the Storage Mounts service principal to access the Datalake.
-storage_mounts_datalake_role_assignment = ServicePrincipalRoleAssignment(
-    principal_id=storage_mounts_sp.object_id,
-    principal_name="analytics-storage-mounts-service-principal",
-    role_name="Storage Blob Data Contributor",
-    scope=datalake.id,
-    scope_description="datalake",
-)
+mounting_role_assignments = [
+    ServicePrincipalRoleAssignment(
+        principal_id=storage_mounts_sp.object_id,
+        principal_name="analytics-storage-mounts-service-principal",
+        role_name="Storage Blob Data Contributor",
+        scope=storage_accounts["datalake"]["account"].id,
+        scope_description="datalake",
+    ),
+    RoleAssignment(
+        principal_id=storage_mounts_sp.object_id,
+        principal_name="analytics-storage-mounts-service-principal",
+        principal_type="ServicePrincipal",
+        role_id=databricks_logs_writer_role.id,
+        role_name="DatabricksLogWriter",
+        scope=storage_accounts["databricks"]["account"].id,
+        scope_description="databricks",
+    )
+]
 
 # STORAGE MOUNTS
 # If no storage mounts are defined in the YAML files, we'll not attempt to create any.
 for definition in workspace_config.get("storage_mounts", []):
-    if definition["type"] == "datalake":
-        databricks.DatabricksMount(
-            resource_name=f'{workspace_name}-{definition["mount_name"]}',
-            name=definition["mount_name"],
-            cluster_id=clusters["default"].id,
-            abfs=databricks.DatabricksMountAbfsArgs(
-                client_id=storage_mounts_sp.application_id,
-                client_secret_key=storage_mounts_dbw_password.key,
-                tenant_id=azure_client.tenant_id,
-                client_secret_scope=secret_scope.name,
-                storage_account_name=datalake.name,
-                container_name=definition["container_name"],
-                initialize_file_system=False
-            ),
-            opts=ResourceOptions(
-                provider=databricks_provider,
-                delete_before_replace=True,
-            ),
-        )
-    elif definition["type"] == "datalake_passthrough":
+    if definition["type"] == "datalake_passthrough":
         databricks.DatabricksMount(
             resource_name=f'{workspace_name}-{definition["mount_name"]}',
             name=definition["mount_name"],
@@ -398,14 +392,39 @@ for definition in workspace_config.get("storage_mounts", []):
                 # "fs.azure.account.custom.token.provider.class": spark.conf.get("spark.databricks.passthrough.adls.gen2.tokenProviderClassName"),
                 "fs.azure.account.custom.token.provider.class": "com.databricks.backend.daemon.data.client.adl.AdlGen2CredentialContextTokenProvider"
             },
-            uri=Output.all(datalake=datalake.name, container_name=definition['container_name']).apply(
+            uri=Output.all(
+                datalake=storage_accounts["datalake"]["account"].name,
+                container_name=definition['container_name']
+            ).apply(
                 lambda args:
                 f"abfss://{args['container_name']}@{args['datalake']}.dfs.core.windows.net/"
             ),
             opts=ResourceOptions(
                 delete_before_replace=True,
-                depends_on=[service_principal_access],
+                depends_on=[storage_accounts["datalake"]
+                            ["service_principal_access"]],
                 provider=databricks_provider,
                 replace_on_changes=["*"],
+            ),
+        )
+    else:
+        databricks.DatabricksMount(
+            resource_name=f'{workspace_name}-{definition["mount_name"]}',
+            name=definition["mount_name"],
+            cluster_id=clusters["default"].id,
+            abfs=databricks.DatabricksMountAbfsArgs(
+                client_id=storage_mounts_sp.application_id,
+                client_secret_key=storage_mounts_dbw_password.key,
+                tenant_id=azure_client.tenant_id,
+                client_secret_scope=secret_scope.name,
+                storage_account_name=storage_accounts[
+                    definition["type"]]["account"].name,
+                container_name=definition["container_name"],
+                initialize_file_system=False
+            ),
+            opts=ResourceOptions(
+                depends_on=mounting_role_assignments,
+                provider=databricks_provider,
+                delete_before_replace=True,
             ),
         )

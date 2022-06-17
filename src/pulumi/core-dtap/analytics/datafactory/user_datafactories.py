@@ -104,7 +104,7 @@ for ref_key, datafactory_config in user_datafactory_configs.items():
         repo_configuration=repo_configuration,
         opts=ResourceOptions(
             protect=platform_config.resource_protection,
-            ignore_changes=["repo_configuration.last_commit_id"],
+            ignore_changes=["repoConfiguration.lastCommitId"],
         ),
     )
 

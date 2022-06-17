@@ -30,7 +30,7 @@ from network import vnet
 from platform_shared import add_config_registry_secret, shared_platform_config
 from project_config import DTAP_ROOT, azure_client, platform_config, platform_outputs
 from security import credentials_store
-from storage.datalake import datalake, datalake_containers
+from storage import storage_accounts
 
 workspace_short_name = "engineering"
 workspace_config = platform_config["analytics_services"]["databricks"]["workspaces"][
@@ -353,19 +353,26 @@ storage_mounts_dbw_password = databricks.Secret(
 
 # IAM ROLE ASSIGNMENT
 # Allow the Storage Mounts service principal to access the Datalake.
-storage_mounts_datalake_role_assignment = ServicePrincipalRoleAssignment(
-    principal_id=storage_mounts_sp.object_id,
-    principal_name="engineering-storage-mounts-service-principal",
-    role_name="Storage Blob Data Contributor",
-    scope=datalake.id,
-    scope_description="datalake",
-)
+mounting_role_assignments = [
+    ServicePrincipalRoleAssignment(
+        principal_id=storage_mounts_sp.object_id,
+        principal_name="engineering-storage-mounts-service-principal",
+        role_name="Storage Blob Data Contributor",
+        scope=account_details["account"].id,
+        scope_description=account_key,
+    )
+    for account_key, account_details in storage_accounts.items()
+]
 
 # STORAGE MOUNTS
 # If no storage mounts are defined in the YAML files, we'll not attempt
 # to create any.
-storage_mounts = {
-    definition["mount_name"]: databricks.DatabricksMount(
+storage_mounts = {}
+for definition in workspace_config.get("storage_mounts", []):
+    storage_account = storage_accounts[
+        definition["type"].split("_")[0]
+    ]["account"]
+    storage_mounts[definition["mount_name"]] = databricks.DatabricksMount(
         resource_name=f'{workspace_name}-{definition["mount_name"]}',
         name=definition["mount_name"],
         cluster_id=system_cluster.id,
@@ -374,17 +381,16 @@ storage_mounts = {
             client_secret_key=storage_mounts_dbw_password.key,
             tenant_id=azure_client.tenant_id,
             client_secret_scope=secret_scope.name,
-            storage_account_name=datalake.name,
+            storage_account_name=storage_account.name,
             container_name=definition["container_name"],
             initialize_file_system=False
         ),
         opts=ResourceOptions(
+            depends_on=mounting_role_assignments,
             provider=databricks_provider,
             delete_before_replace=True,
         ),
     )
-    for definition in workspace_config.get("storage_mounts", [])
-}
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> PRE-PROCESSING PACKAGE
@@ -394,9 +400,9 @@ blob_name = "pre_process-1.0.0-py3-none-any.whl"
 pre_processing_package = FileAsset(f"{DTAP_ROOT}/assets/{blob_name}")
 pre_processing_blob = azure_native.storage.Blob(
     resource_name=f"{workspace_name}-pre_processing_package",
-    account_name=datalake.name,
+    account_name=storage_accounts["datalake"]["account"].name,
     blob_name=blob_name,
-    container_name=datalake_containers["preprocess"].name,
+    container_name=storage_accounts["datalake"]["containers"]["preprocess"].name,
     resource_group_name=resource_groups["data"].name,
     source=pre_processing_package,
     opts=ResourceOptions(
@@ -423,6 +429,7 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
         },
     }
 
+    # Cluster for file ingestion
     if ref_key == "default":
         if "libraries" not in cluster_defaults:
             cluster_defaults["libraries"] = {}
@@ -431,9 +438,6 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
         cluster_defaults["libraries"]["whl"].append(
             "dbfs:/mnt/preprocess/pre_process-1.0.0-py3-none-any.whl"
         )
-
-    # Cluster for file ingestion
-    if ref_key == "default":
         cluster_defaults["spark_env_vars"].update(
             {
                 "DATABRICKS_WORKSPACE_HOSTNAME": workspace.workspace_url,

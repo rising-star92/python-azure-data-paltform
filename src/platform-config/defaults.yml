@@ -108,6 +108,26 @@ network:
 # STORAGE
 # ----------------------------------------------------------------------------------------------------------------------
 storage:
+  databricks:
+    display_name: databricks
+    network:
+      firewall:
+        enabled: false
+    iam:
+      role_assignments:
+        - user_group_ref_key: admins
+          role_definition_name: "Storage Blob Data Contributor"
+        - user_group_ref_key: engineers
+          role_definition_name: "Storage Blob Data Contributor"
+    containers:
+      cluster_logs_analytics: # Mount in DBW Engineering(RW)
+        display_name: cluster-logs-analytics
+      cluster_logs_engineering: # Mount in DBW Engineering(RW)
+        display_name: cluster-logs-engineering
+    lifecycle_management:
+      archive_after: 10
+      cool_after: 1
+      delete_after: 30
   datalake:
     display_name: datalake
     network:
@@ -260,6 +280,9 @@ analytics_services:
           - type: datalake
             container_name: orchestration
             mount_name: orchestration
+          - type: databricks
+            container_name: cluster-logs-engineering
+            mount_name: cluster_logs
       analytics:
         config:
           enable_container_services: "false"
@@ -295,6 +318,9 @@ analytics_services:
           - type: datalake_passthrough
             container_name: orchestration
             mount_name: orchestration
+          - type: databricks
+            container_name: cluster-logs-analytics
+            mount_name: cluster_logs
   datafactory:
     user_factories:
       data:

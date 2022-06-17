@@ -1,6 +1,8 @@
 # 1.0.0 (TBD)
 
+# 0.3.1 (2022-06-17)
 ### Improvements
+- [databricks] - Persist cluster logs.
 - [quantum] - Bump Ingenii Azure Quantum package to 0.2.0.
 
 # 0.3.0 (2022-03-28)
