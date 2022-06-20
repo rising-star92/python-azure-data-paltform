@@ -28,7 +28,7 @@ from management import resource_groups
 from management.user_groups import user_groups
 from network import vnet
 from platform_shared import add_config_registry_secret, shared_platform_config
-from project_config import DTAP_ROOT, azure_client, platform_config, platform_outputs
+from project_config import azure_client, platform_config, platform_outputs
 from security import credentials_store
 from storage import storage_accounts
 
@@ -397,7 +397,7 @@ for definition in workspace_config.get("storage_mounts", []):
 # ----------------------------------------------------------------------------------------------------------------------
 
 blob_name = "pre_process-1.0.0-py3-none-any.whl"
-pre_processing_package = FileAsset(f"{DTAP_ROOT}/assets/{blob_name}")
+pre_processing_package = FileAsset(f"assets/{blob_name}")
 pre_processing_blob = azure_native.storage.Blob(
     resource_name=f"{workspace_name}-pre_processing_package",
     account_name=storage_accounts["datalake"]["account"].name,

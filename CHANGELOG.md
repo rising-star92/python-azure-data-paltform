@@ -5,6 +5,9 @@
 - [databricks] - Persist cluster logs.
 - [quantum] - Bump Ingenii Azure Quantum package to 0.2.0.
 
+### Bugfixes
+- [databricks] - Notebook paths are now relative, not absolute
+
 # 0.3.0 (2022-03-28)
 
 ### Improvements

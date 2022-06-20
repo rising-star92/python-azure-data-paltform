@@ -28,8 +28,6 @@ SHARED_OUTPUTS = SharedOutput(
     PULUMI_ORG_NAME, CURRENT_PROJECT_NAME.replace("dtap", "shared"), "shared"
 )
 
-DTAP_ROOT = getcwd()
-
 # Particular configs
 quantum_workspace_config = platform_config["analytics_services"]["quantum"]
 

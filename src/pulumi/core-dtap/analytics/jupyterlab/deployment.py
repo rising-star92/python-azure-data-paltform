@@ -15,7 +15,7 @@ from analytics.kubernetes.storage import add_storage_account_secret, \
 from analytics.quantum.workspace import quantum_workspace_config, \
     outputs as quantum_outputs
 from platform_shared import jupyterlab_config, shared_kubernetes_provider, shared_services_provider
-from project_config import azure_client, DTAP_ROOT, ingenii_workspace_dns_provider, \
+from project_config import azure_client, ingenii_workspace_dns_provider, \
     platform_config, platform_outputs, SHARED_OUTPUTS
 from storage.datalake import datalake
 
@@ -227,7 +227,7 @@ startup_blob_container = storage.BlobContainer(
 )
 
 def upload_startup_file(title, file_name):
-    file_asset = FileAsset(f"{DTAP_ROOT}/analytics/jupyterlab/files/{file_name}")
+    file_asset = FileAsset(f"analytics/jupyterlab/files/{file_name}")
     return storage.Blob(
         resource_name=generate_resource_name(
             resource_type="storage_blob",

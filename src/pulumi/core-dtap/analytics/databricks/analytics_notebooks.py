@@ -5,7 +5,7 @@ from pulumi_databricks import databricks
 from ingenii_azure_data_platform.utils import generate_resource_name
 
 from analytics.databricks.analytics_workspace import databricks_provider
-from project_config import platform_config, DTAP_ROOT
+from project_config import platform_config
 
 folder_path = "/Shared/Ingenii Engineering"
 
@@ -22,7 +22,7 @@ ingenii_engineering_directory = databricks.Directory(
     ),
 )
 
-notebooks_root = f"{DTAP_ROOT}/analytics/databricks/notebooks/analytics"
+notebooks_root = "analytics/databricks/notebooks/analytics"
 for file_name in listdir(notebooks_root):
     if not file_name.endswith(".py"):
         continue
