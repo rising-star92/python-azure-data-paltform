@@ -4,7 +4,7 @@ PULUMI_ORGANIZATION := ingenii
 PULUMI_PARALLELISM  := 2
 
 PROJECT_ROOT    := $(realpath .)
-SOURCE_DIR      := /platform/src
+SOURCE_DIR      := ${PROJECT_ROOT}/src
 CONFIGS_DIR     := ${PROJECT_ROOT}/configs
 VENV_DIR        := ${PROJECT_ROOT}/venv
 RUNTIME_DIR     := ${PROJECT_ROOT}/runtime
@@ -302,7 +302,7 @@ post-deploy-core-dtap: az_login _check-for-stack-var
 destroy-core-dtap: _check-for-stack-var init-core-dtap
 	@ingeniictl infra destroy ${PULUMI_ORGANIZATION}/${STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR}
 
-CORE_DTAP_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.json
+CORE_DTAP_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.${STACK}.json
 export-stack-core-dtap: _check-for-stack-var
 	@$(info Exporting stack to ${CORE_DTAP_STACK_OUTPUT_FILE})
 	@$(call pulumi_export_stack,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${CORE_DTAP_STACK_OUTPUT_FILE})

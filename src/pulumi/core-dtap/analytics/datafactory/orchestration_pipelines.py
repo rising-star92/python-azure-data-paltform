@@ -1,16 +1,28 @@
 from pulumi import ResourceOptions
 from pulumi_azure_native import datafactory as adf
 
-from analytics.datafactory.orchestration import datafactory, datafactory_name
+from analytics.datafactory.orchestration import datafactory, \
+    datafactory_config, datafactory_name
 from analytics.datafactory.orchestration_datasets import data_lake_folder
 from analytics.datafactory.orchestration_linked_services import databricks_analytics_compute_linked_service, \
     databricks_engineering_compute_linked_service, datalake_linked_service
 from management import resource_groups
 from storage.datalake import datalake
 
+def minutes_to_string(n_mins):
+    """ Take the number of minutes and return a string Data Factory understands """
+    hr = 60
+    day = 24 * hr
+    n_days, n_mins = n_mins // day, n_mins % day
+    n_hrs, n_mins = n_mins // hr, n_mins % hr
+    return f"{str(n_days)}.{str(n_hrs).zfill(2)}:{str(n_mins).zfill(2)}:00"
+
 # ----------------------------------------------------------------------------------------------------------------------
 # DATA FACTORY -> INGESTION PIPELINE AND TRIGGER
 # ----------------------------------------------------------------------------------------------------------------------
+
+ingestion_policy = datafactory_config.get("ingestion_policy", {})
+
 databricks_file_ingestion_pipeline = adf.Pipeline(
     resource_name=f"{datafactory_name}-raw-databricks-file-ingestion",
     factory_name=datafactory.name,
@@ -43,9 +55,9 @@ databricks_file_ingestion_pipeline = adf.Pipeline(
                 "increment": "0",
             },
             policy=adf.ActivityPolicyArgs(
-                timeout="0.00:20:00",
-                retry=0,
-                retry_interval_in_seconds=30,
+                timeout=minutes_to_string(ingestion_policy.get("timeout", 20)),
+                retry=ingestion_policy.get("retry", 0),
+                retry_interval_in_seconds=ingestion_policy.get("retry_interval", 30),
                 secure_output=False,
                 secure_input=False,
             ),
@@ -93,7 +105,7 @@ databricks_file_ingestion_trigger = adf.Trigger(
 containers = ["models", "snapshots", "source"]
 
 default_policy = adf.ActivityPolicyArgs(
-    timeout="0.00:01:00",
+    timeout=minutes_to_string(1),
     retry=3,
     retry_interval_in_seconds=30,
     secure_output=False,
@@ -243,7 +255,7 @@ def per_container_activities(container_name):
                         type="LinkedServiceReference",
                     ),
                     policy=adf.ActivityPolicyArgs(
-                        timeout="0.00:20:00",
+                        timeout=minutes_to_string(20),
                         retry=0,
                         retry_interval_in_seconds=30,
                         secure_output=False,
@@ -301,6 +313,7 @@ databricks_sync_workspaces_trigger = adf.Trigger(
                     reference_name=databricks_workspace_syncing_pipeline.name,
                     type="PipelineReference",
                 ),
+                parameters={},
             )
         ],
         annotations=["Created by Ingenii"],

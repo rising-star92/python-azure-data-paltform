@@ -1,7 +1,6 @@
 from base64 import b64encode
 from pulumi import ResourceOptions
-from pulumi_azure import datafactory as adf
-from pulumi_azure_native import containerservice
+from pulumi_azure_native import containerservice, datafactory
 from pulumi_kubernetes import apps, core, meta
 
 from analytics.datafactory.user_datafactories import datafactory_resource_group, user_datafactories
@@ -27,20 +26,30 @@ overall_outputs["namespace"] = namespace.metadata.name
 
 
 # A container per Data Factory
-for ref_key, datafactory in user_datafactories.items():
+for ref_key, datafactory_config in user_datafactories.items():
 
     outputs = overall_outputs[ref_key] = {}
 
-    integrated_integration_runtime = adf.IntegrationRuntimeSelfHosted(
+    factory_name = datafactory_config["name"]
+    integrated_integration_runtime = datafactory.IntegrationRuntime(
         resource_name=f"datafactory_integrated_runtime_{platform_config.stack}",
-        data_factory_id=datafactory["obj"].id,
-        name="IntegratedIntegrationRuntime",
-        description="Integrated integration runtime provided by Ingenii",
         resource_group_name=datafactory_resource_group.name,
+        factory_name=factory_name,
+        integration_runtime_name="IntegratedIntegrationRuntime",
+        properties=datafactory.SelfHostedIntegrationRuntimeArgs(
+            description="Integrated integration runtime provided by Ingenii",
+            type="SelfHosted"
+        ),
+    )
+
+    iir_keys = datafactory.list_integration_runtime_auth_keys_output(
+        resource_group_name=datafactory_resource_group.name,
+        factory_name=factory_name,
+        integration_runtime_name=integrated_integration_runtime.name,
     )
 
     labels = {
-        "data_factory": datafactory["name"],
+        "data_factory": factory_name,
         "type": "DataFactorySelfHostedIntegrationRuntime",
         "system": "IngeniiDataPlatform"
     }
@@ -53,7 +62,7 @@ for ref_key, datafactory in user_datafactories.items():
     auth_key_secret = core.v1.Secret(
         resource_name=auth_key_secret_name,
         data={
-            auth_key_secret_name: integrated_integration_runtime.auth_key1.apply(
+            auth_key_secret_name: iir_keys.auth_key1.apply(
                 lambda key: b64encode(key.encode()).decode()
             ),
         },

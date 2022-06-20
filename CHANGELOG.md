@@ -6,7 +6,8 @@
 - [quantum] - Bump Ingenii Azure Quantum package to 0.2.0.
 
 ### Bugfixes
-- [databricks] - Notebook paths are now relative, not absolute
+- [databricks] - Notebook paths are now relative, not absolute.
+- [databricks] - Mounts must always be replaced, not updated.
 
 # 0.3.0 (2022-03-28)
 

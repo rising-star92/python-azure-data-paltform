@@ -308,7 +308,13 @@ _integrated_self_hosted_runtime:
 
 _orchestration_factory:
   display_name: str(required=False)
-  iam: include('_iam')
+  iam: include('_iam', required=False)
+  ingestion_policy: include('_orchestration_factory_ingestion_policy', required=False)
+
+_orchestration_factory_ingestion_policy:
+  timeout: int(required=False)
+  retry: int(required=False)
+  retry_interval: int(required=False)
 
 _shared_self_hosted_runtime_factory:
   enabled: bool()

@@ -423,8 +423,9 @@ for definition in workspace_config.get("storage_mounts", []):
                 initialize_file_system=False
             ),
             opts=ResourceOptions(
+                delete_before_replace=True,
                 depends_on=mounting_role_assignments,
                 provider=databricks_provider,
-                delete_before_replace=True,
+                replace_on_changes=["*"],
             ),
         )
