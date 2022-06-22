@@ -6,6 +6,7 @@
 - [quantum] - Bump Ingenii Azure Quantum package to 0.2.0.
 
 ### Bugfixes
+- [container_registry] - Better networking when SKU is not Premium.
 - [databricks] - Notebook paths are now relative, not absolute.
 - [databricks] - Mounts must always be replaced, not updated.
 

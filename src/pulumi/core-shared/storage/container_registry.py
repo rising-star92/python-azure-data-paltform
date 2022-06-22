@@ -31,10 +31,13 @@ for ref_key, config in registry_config.items():
         resource_name=config["display_name"],
         platform_config=platform_config,
     )
+    registry_sku = sku_map[config.get("sku", "standard")]
 
     firewall_config = config.get("network", {}).get("firewall", {})
 
-    if firewall_config.get("enabled"):
+    if registry_sku != cr.SkuName.PREMIUM:
+        network_rule_set = None
+    elif firewall_config.get("enabled"):
         firewall = platform_config.global_firewall + PlatformFirewall(
             enabled=True,
             ip_access_list=firewall_config.get("ip_access_list", []),
@@ -62,7 +65,7 @@ for ref_key, config in registry_config.items():
         resource_group_name=resource_group.name,
         admin_user_enabled=config.get("admin_user_enabled", False),
         network_rule_set=network_rule_set,
-        sku=cr.SkuArgs(name=sku_map[config.get("sku", "standard")]),
+        sku=cr.SkuArgs(name=registry_sku),
         tags=platform_config.tags | config.get("tags", {}),
         opts=ResourceOptions(
             protect=platform_config.resource_protection,
