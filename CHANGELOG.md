@@ -9,6 +9,7 @@
 - [container_registry] - Better networking when SKU is not Premium.
 - [databricks] - Notebook paths are now relative, not absolute.
 - [databricks] - Mounts must always be replaced, not updated.
+- [deployment] - Revert incorrect deployment flow changes
 
 # 0.3.0 (2022-03-28)
 
