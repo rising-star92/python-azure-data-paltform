@@ -3,6 +3,9 @@ from os import getenv
 from pulumi_azure_native.authorization import get_client_config
 from ingenii_azure_data_platform.config import PlatformConfiguration, SharedOutput
 
+CURRENT_STACK_NAME = pulumi.get_stack()
+ENV = CURRENT_STACK_NAME.split(".")[-1]
+
 # Load the config files.
 platform_config = PlatformConfiguration(
     stack=pulumi.get_stack(),
@@ -19,19 +22,14 @@ platform_config = PlatformConfiguration(
 # Load the current Azure auth session metadata
 azure_client = get_client_config()
 
-PULUMI_ORG_NAME = "ingenii"
 CURRENT_STACK_NAME = pulumi.get_stack()
-CURRENT_PROJECT_NAME = pulumi.get_project()
 
 SHARED_OUTPUTS = SharedOutput(
-    PULUMI_ORG_NAME, CURRENT_PROJECT_NAME.replace("extensions", "shared"), "shared"
-)
+    CURRENT_STACK_NAME.replace(f".extensions.{ENV}", "shared"))
 
 if CURRENT_STACK_NAME == "shared":
     DTAP_OUTPUTS = SHARED_OUTPUTS
 else:
     DTAP_OUTPUTS = SharedOutput(
-        PULUMI_ORG_NAME,
-        CURRENT_PROJECT_NAME.replace("extensions", "dtap"),
-        CURRENT_STACK_NAME,
+        CURRENT_STACK_NAME.replace(".extensions", ""),
     )

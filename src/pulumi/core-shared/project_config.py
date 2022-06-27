@@ -5,7 +5,7 @@ from ingenii_azure_data_platform.config import PlatformConfiguration
 
 # Load the config files.
 platform_config = PlatformConfiguration(
-    stack=pulumi.get_stack(),
+    stack="shared",
     config_schema_file_path=getenv(
         "ADP_CONFIG_SCHEMA_FILE_PATH", "../../platform-config/schema.yml"
     ),

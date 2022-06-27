@@ -1,11 +1,11 @@
 SHELL := /bin/bash
 
-PULUMI_ORGANIZATION := ingenii
 PULUMI_PARALLELISM  := 2
 
 PROJECT_ROOT    := $(realpath .)
 SOURCE_DIR      := /platform/src
 CONFIGS_DIR     := ${PROJECT_ROOT}/configs
+STATES_DIR      := ${PROJECT_ROOT}/states
 VENV_DIR        := ${PROJECT_ROOT}/venv
 RUNTIME_DIR     := ${PROJECT_ROOT}/runtime
 
@@ -135,12 +135,16 @@ endef
 #####################################################################################################################
 # Stacks
 #####################################################################################################################
+CORE_SHARED_STACK := ${CUSTOMER_CODE}.shared
+CORE_SHARED_EXTENSIONS_STACK := ${CUSTOMER_CODE}.extensions.shared
+DTAP_CORE_STACK := ${CUSTOMER_CODE}.${STACK}
+DTAP_EXTENSIONS_STACK := ${CUSTOMER_CODE}.extensions.${STACK}
 
 # Shared Stack
-CORE_SHARED_STACK := ${PULUMI_ORGANIZATION}/shared
 init-core-shared: _check-for-cust-code-var
 	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-shared/Pulumi.yaml	${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
 	@sed -i 's|ingenii-|${CUSTOMER_CODE}-|g'		${PULUMI_SOURCE_DIR}/core-shared/Pulumi.yaml
+	@cp ${STATES_DIR}/shared.yaml	${PULUMI_SOURCE_DIR}/core-shared/Pulumi.${CORE_SHARED_STACK}.yaml
 	@$(call pulumi_init,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS})
 
 preview-core-shared:
@@ -210,10 +214,10 @@ upload-stack-outputs-core-shared:
 	@$(call upload_outputs_to_azure_table_storage,${SHARED_OUTPUTS_FILE_PATH}, "shared")
 
 # Shared Stack Extensions
-CORE_SHARED_EXTENSIONS_STACK := ${PULUMI_ORGANIZATION}/shared
 init-core-shared-extensions: _check-for-cust-code-var
 	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-extensions/Pulumi.yaml ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
 	@sed -i 's|ingenii-|${CUSTOMER_CODE}-|g' ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
+	@cp ${STATES_DIR}/extensions.shared.yaml	${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.${CORE_SHARED_EXTENSIONS_STACK}.yaml
 	@$(call pulumi_init,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS})
 
 preview-core-shared-extensions:
@@ -285,40 +289,41 @@ export-stack-outputs-core-shared-extensions: _check-for-output-file-var
 init-core-dtap: _check-for-stack-var _check-for-cust-code-var
 	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-dtap/Pulumi.yaml ${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml
 	@sed -i 's|ingenii-|${CUSTOMER_CODE}-|g' ${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.yaml
-	@$(call pulumi_init,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS})
+	@cp ${STATES_DIR}/${STACK}.yaml	${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.${DTAP_CORE_STACK}.yaml
+	@$(call pulumi_init,${PULUMI_CORE_DTAP_SRC_DIR},${DTAP_CORE_STACK},${EXTRA_ARGS})
 
 preview-core-dtap: _check-for-stack-var
-	@$(call pulumi_preview,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
+	@$(call pulumi_preview,${PULUMI_CORE_DTAP_SRC_DIR},${DTAP_CORE_STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
 refresh-core-dtap: _check-for-stack-var
-	@$(call pulumi_refresh,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
+	@$(call pulumi_refresh,${PULUMI_CORE_DTAP_SRC_DIR},${DTAP_CORE_STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
 apply-core-dtap: _check-for-stack-var
-	@$(call pulumi_apply,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
+	@$(call pulumi_apply,${PULUMI_CORE_DTAP_SRC_DIR},${DTAP_CORE_STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
 post-deploy-core-dtap: az_login _check-for-stack-var
-	@$(call enable_trigger,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS})
+	@$(call enable_trigger,${PULUMI_CORE_DTAP_SRC_DIR},${DTAP_CORE_STACK},${EXTRA_ARGS})
 
 destroy-core-dtap: _check-for-stack-var init-core-dtap
-	@ingeniictl infra destroy ${PULUMI_ORGANIZATION}/${STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR}
+	@ingeniictl infra destroy ${DTAP_CORE_STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR}
 
 CORE_DTAP_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.${STACK}.json
 export-stack-core-dtap: _check-for-stack-var
 	@$(info Exporting stack to ${CORE_DTAP_STACK_OUTPUT_FILE})
-	@$(call pulumi_export_stack,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${CORE_DTAP_STACK_OUTPUT_FILE})
+	@$(call pulumi_export_stack,${PULUMI_CORE_DTAP_SRC_DIR},${DTAP_CORE_STACK},${EXTRA_ARGS},${CORE_DTAP_STACK_OUTPUT_FILE})
 
 import-stack-core-dtap: _check-for-stack-var
 	@$(info Importing stack file ${CORE_DTAP_STACK_OUTPUT_FILE})
-	@$(call pulumi_import_stack,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${CORE_DTAP_STACK_OUTPUT_FILE})
+	@$(call pulumi_import_stack,${PULUMI_CORE_DTAP_SRC_DIR},${DTAP_CORE_STACK},${EXTRA_ARGS},${CORE_DTAP_STACK_OUTPUT_FILE})
 
 destroy-tainted-role-assignments-core-dtap: _check-for-stack-var
-	@$(info Deleting all role assignments for ${PULUMI_ORGANIZATION}/${STACK})
-	@$(call pulumi_destroy_role_assignments,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
+	@$(info Deleting all role assignments for ${DTAP_CORE_STACK})
+	@$(call pulumi_destroy_role_assignments,${PULUMI_CORE_DTAP_SRC_DIR},${DTAP_CORE_STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
 DTAP_OUTPUTS_FILE_PATH := ${PROJECT_ROOT}/${STACK}_outputs.json
 export-stack-outputs-core-dtap:
 	@$(info Exporting stack outputs to ${DTAP_OUTPUTS_FILE_PATH})
-	@$(call pulumi_export_stack_outputs,${PULUMI_CORE_DTAP_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${DTAP_OUTPUTS_FILE_PATH})
+	@$(call pulumi_export_stack_outputs,${PULUMI_CORE_DTAP_SRC_DIR},${DTAP_CORE_STACK},${EXTRA_ARGS},${DTAP_OUTPUTS_FILE_PATH})
 
 upload-stack-outputs-core-dtap:
 	@$(info Uploading stack outputs to Azure Table...)
@@ -326,38 +331,39 @@ upload-stack-outputs-core-dtap:
 
 # DTAP Stack Extensions
 init-core-dtap-extensions: _check-for-stack-var _check-for-cust-code-var
-	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-extensions/Pulumi.yaml ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
+	@cp ${PULUMI_PRJ_CONF_TEMPLATES_DIR}/core-extensions/Pulumi.yaml ${PULUMI_SOURCE_DIR}/core-extensions/
 	@sed -i 's|ingenii-|${CUSTOMER_CODE}-|g' ${PULUMI_SOURCE_DIR}/core-extensions/Pulumi.yaml
-	@$(call pulumi_init,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS})
+	@cp ${STATES_DIR}/extensions.${STACK}.yaml	${PULUMI_SOURCE_DIR}/core-dtap/Pulumi.${DTAP_EXTENSIONS_STACK}.yaml
+	@$(call pulumi_init,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${DTAP_EXTENSIONS_STACK},${EXTRA_ARGS})
 
 preview-core-dtap-extensions: _check-for-stack-var
-	@$(call pulumi_preview,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
+	@$(call pulumi_preview,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${DTAP_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
 refresh-core-dtap-extensions: _check-for-stack-var
-	@$(call pulumi_refresh,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
+	@$(call pulumi_refresh,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${DTAP_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
 apply-core-dtap-extensions: _check-for-stack-var
-	@$(call pulumi_apply,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
+	@$(call pulumi_apply,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${DTAP_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
 destroy-core-dtap-extensions: _check-for-stack-var init-core-dtap-extensions
-	@ingeniictl infra destroy ${PULUMI_ORGANIZATION}/${STACK} --pulumi-project-dir ${PULUMI_CORE_EXTENSIONS_SRC_DIR}
+	@ingeniictl infra destroy ${DTAP_EXTENSIONS_STACK} --pulumi-project-dir ${PULUMI_CORE_EXTENSIONS_SRC_DIR}
 
 CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.extensions.json
 export-stack-core-dtap-extensions: _check-for-stack-var
 	@$(info Exporting stack to ${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
-	@$(call pulumi_export_stack,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
+	@$(call pulumi_export_stack,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${DTAP_EXTENSIONS_STACK},${EXTRA_ARGS},${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
 
 import-stack-core-dtap-extensions: _check-for-stack-var
 	@$(info Importing stack file ${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
-	@$(call pulumi_import_stack,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
+	@$(call pulumi_import_stack,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${DTAP_EXTENSIONS_STACK},${EXTRA_ARGS},${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
 
 destroy-tainted-role-assignments-core-dtap-extensions: _check-for-stack-var
-	@$(info Deleting all role assignments for ${PULUMI_ORGANIZATION}/${STACK})
-	@$(call pulumi_destroy_role_assignments,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
+	@$(info Deleting all role assignments for ${DTAP_EXTENSIONS_STACK})
+	@$(call pulumi_destroy_role_assignments,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${DTAP_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
 export-stack-outputs-core-dtap-extensions: _check-for-stack-var _check-for-output-file-var
 	@$(info Exporting stack outputs to ${PROJECT_ROOT}/${OUTPUT_FILE})
-	@$(call pulumi_export_stack_outputs,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${PULUMI_ORGANIZATION}/${STACK},${EXTRA_ARGS},${PROJECT_ROOT}/${OUTPUT_FILE})
+	@$(call pulumi_export_stack_outputs,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${DTAP_EXTENSIONS_STACK},${EXTRA_ARGS},${PROJECT_ROOT}/${OUTPUT_FILE})
 
 #####################################################################################################################
 # SETUP
@@ -452,11 +458,11 @@ _check_if_ci:
 cicd-init-shared: _check_if_ci init-core-shared
 cicd-refresh-shared: _check_if_ci refresh-core-shared
 cicd-preview-shared: _check_if_ci
-	@ingeniictl infra disable-resource-protection ${PULUMI_ORGANIZATION}/shared --pulumi-project-dir ${PULUMI_CORE_SHARED_SRC_DIR} --pulumi-locks-only \
+	@ingeniictl infra disable-resource-protection ${CORE_SHARED_STACK} --pulumi-project-dir ${PULUMI_CORE_SHARED_SRC_DIR} --pulumi-locks-only \
 	&& make preview-core-shared
 
 cicd-apply-shared: _check_if_ci
-	@ingeniictl infra disable-resource-protection ${PULUMI_ORGANIZATION}/shared --pulumi-project-dir ${PULUMI_CORE_SHARED_SRC_DIR} \
+	@ingeniictl infra disable-resource-protection ${CORE_SHARED_STACK} --pulumi-project-dir ${PULUMI_CORE_SHARED_SRC_DIR} \
 	&& ENABLE_RESOURCE_PROTECTION=0 make apply-core-shared EXTRA_ARGS="-f" \
 	&& ENABLE_RESOURCE_PROTECTION=1 make apply-core-shared EXTRA_ARGS="-f" \
 	&& make export-stack-outputs-core-shared \
@@ -466,11 +472,11 @@ cicd-apply-shared: _check_if_ci
 cicd-init-dtap: _check_if_ci init-core-dtap
 cicd-refresh-dtap: _check_if_ci refresh-core-dtap
 cicd-preview-dtap: _check_if_ci
-	@ingeniictl infra disable-resource-protection ${PULUMI_ORGANIZATION}/${STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR} --pulumi-locks-only \
+	@ingeniictl infra disable-resource-protection ${DTAP_CORE_STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR} --pulumi-locks-only \
 	&& make preview-core-dtap
 
 cicd-apply-dtap: _check_if_ci
-	@ingeniictl infra disable-resource-protection ${PULUMI_ORGANIZATION}/${STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR} \
+	@ingeniictl infra disable-resource-protection ${DTAP_CORE_STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR} \
 	&& ENABLE_RESOURCE_PROTECTION=0 make apply-core-dtap EXTRA_ARGS="-f" \
 	&& ENABLE_RESOURCE_PROTECTION=1 make apply-core-dtap EXTRA_ARGS="-f" \
 	&& make export-stack-outputs-core-dtap \

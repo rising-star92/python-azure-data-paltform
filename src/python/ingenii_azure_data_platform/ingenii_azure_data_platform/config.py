@@ -263,11 +263,9 @@ class PlatformConfiguration:
 
 
 class SharedOutput:
-    def __init__(self, pulumi_org_name: str, project_name: str, stack_name: str):
+    def __init__(self, stack_name: str):
 
-        shared_stack_reference = StackReference(
-            name="/".join([pulumi_org_name, project_name, stack_name])
-        )
+        shared_stack_reference = StackReference(name=stack_name)
 
         self.outputs = shared_stack_reference.get_output("root")
 

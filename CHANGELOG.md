@@ -1,5 +1,10 @@
 # 1.0.0 (TBD)
 
+# 0.4.0 (2022-06-27)
+
+### Improvements
+- [state] - State files held in blob storage.
+
 # 0.3.1 (2022-06-17)
 ### Improvements
 - [databricks] - Persist cluster logs.

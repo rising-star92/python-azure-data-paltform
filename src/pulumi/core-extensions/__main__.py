@@ -4,7 +4,6 @@ from importlib import import_module
 from project_config import (
     SHARED_OUTPUTS,
     platform_config,
-    CURRENT_PROJECT_NAME,
     CURRENT_STACK_NAME,
     DTAP_OUTPUTS,
 )

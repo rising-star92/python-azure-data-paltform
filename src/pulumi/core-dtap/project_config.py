@@ -1,12 +1,15 @@
-from os import getcwd, getenv
+from os import getenv
 import pulumi
 from pulumi_azure_native import authorization, Provider
 
 from ingenii_azure_data_platform.config import PlatformConfiguration, SharedOutput
 
+CURRENT_STACK_NAME = pulumi.get_stack()
+ENV = CURRENT_STACK_NAME.split(".")[-1]
+
 # Load the config files.
 platform_config = PlatformConfiguration(
-    stack=pulumi.get_stack(),
+    stack=ENV,
     config_schema_file_path=getenv(
         "ADP_CONFIG_SCHEMA_FILE_PATH", "../../platform-config/schema.yml"
     ),
@@ -20,13 +23,7 @@ platform_config = PlatformConfiguration(
 # Load the current Azure auth session metadata
 azure_client = authorization.get_client_config()
 
-PULUMI_ORG_NAME = "ingenii"
-CURRENT_STACK_NAME = pulumi.get_stack()
-CURRENT_PROJECT_NAME = pulumi.get_project()
-
-SHARED_OUTPUTS = SharedOutput(
-    PULUMI_ORG_NAME, CURRENT_PROJECT_NAME.replace("dtap", "shared"), "shared"
-)
+SHARED_OUTPUTS = SharedOutput(CURRENT_STACK_NAME.replace(ENV, "shared"))
 
 # Particular configs
 quantum_workspace_config = platform_config["analytics_services"]["quantum"]

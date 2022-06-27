@@ -28,7 +28,11 @@ concurrency: "data-platform"
 # These variables are accessible from all jobs and their steps.
 #----------------------------------------------------------------------------------------------------------------------
 env:
-  PULUMI_ACCESS_TOKEN: {% raw %}${{ secrets.PULUMI_ACCESS_TOKEN }}{%- endraw %}
+  AZURE_STORAGE_ACCOUNT: {% raw %}${{ secrets.STATE_ACCOUNT_NAME }}{%- endraw %}
+  AZURE_STORAGE_KEY : {% raw %}${{ secrets.STATE_ACCOUNT_KEY }}{%- endraw %}
+  AZURE_TENANT_ID : {% raw %}${{ secrets.STATE_KEY_TENANT_ID }}{%- endraw %}
+  AZURE_CLIENT_ID : {% raw %}${{ secrets.STATE_KEY_CLIENT_ID }}{%- endraw %}
+  AZURE_CLIENT_SECRET : {% raw %}${{ secrets.STATE_KEY_CLIENT_SECRET }}{%- endraw %}
   AZDO_PERSONAL_ACCESS_TOKEN: {% raw %}${{ secrets.AZURE_DEVOPS_PERSONAL_ACCESS_TOKEN }}{%- endraw %}
   AZDO_ORG_SERVICE_URL: {% raw %}${{ secrets.AZURE_DEVOPS_ORG_SERVICE_URL }}{%- endraw %}
   PULUMI_SKIP_UPDATE_CHECK: true

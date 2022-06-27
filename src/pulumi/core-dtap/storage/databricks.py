@@ -1,7 +1,7 @@
 from pulumi_azure_native import authorization
 
 from management import resource_groups
-from project_config import CURRENT_STACK_NAME
+from project_config import ENV
 
 from .common import create_storage_account
 
@@ -10,7 +10,7 @@ databricks_storage_account_details = create_storage_account(
 
 databricks_logs_writer_role = authorization.RoleDefinition(
     "custom_role_databricks_log_writer",
-    role_name="DatabricksStorageAccountLogsWriter" + CURRENT_STACK_NAME.title(),
+    role_name="DatabricksStorageAccountLogsWriter" + ENV.title(),
     permissions=[
         authorization.PermissionArgs(
             data_actions=[
