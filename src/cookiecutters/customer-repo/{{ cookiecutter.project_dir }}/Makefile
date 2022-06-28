@@ -135,10 +135,20 @@ endef
 #####################################################################################################################
 # Stacks
 #####################################################################################################################
+
+# Files
 CORE_SHARED_STACK := ${CUSTOMER_CODE}.shared
 CORE_SHARED_EXTENSIONS_STACK := ${CUSTOMER_CODE}.extensions.shared
 DTAP_CORE_STACK := ${CUSTOMER_CODE}.${STACK}
 DTAP_EXTENSIONS_STACK := ${CUSTOMER_CODE}.extensions.${STACK}
+
+CORE_SHARED_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.shared.json
+CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.shared.extensions.json
+CORE_DTAP_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.${STACK}.json
+CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.extensions.${STACK}.json
+
+SHARED_OUTPUTS_FILE_PATH := ${PROJECT_ROOT}/shared_outputs.json
+DTAP_OUTPUTS_FILE_PATH := ${PROJECT_ROOT}/${STACK}_outputs.json
 
 # Shared Stack
 init-core-shared: _check-for-cust-code-var
@@ -191,7 +201,6 @@ else
 	@ingeniictl infra destroy ${CORE_SHARED_STACK} --pulumi-project-dir ${PULUMI_CORE_SHARED_SRC_DIR}
 endif
 
-CORE_SHARED_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.shared.json
 export-stack-core-shared: 
 	@$(info Exporting stack to ${CORE_SHARED_STACK_OUTPUT_FILE})
 	@$(call pulumi_export_stack,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${CORE_SHARED_STACK_OUTPUT_FILE})
@@ -204,7 +213,6 @@ destroy-tainted-role-assignments-core-shared:
 	@$(info Deleting all role assignments for ${CORE_SHARED_STACK})
 	@$(call pulumi_destroy_role_assignments,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
 
-SHARED_OUTPUTS_FILE_PATH := ${PROJECT_ROOT}/shared_outputs.json
 export-stack-outputs-core-shared:
 	@$(info Exporting stack outputs to ${SHARED_OUTPUTS_FILE_PATH})
 	@$(call pulumi_export_stack_outputs,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${SHARED_OUTPUTS_FILE_PATH})
@@ -268,7 +276,6 @@ else
 endif
 	
 
-CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.shared.extensions.json
 export-stack-core-shared-extensions: 
 	@$(info Exporting stack to ${CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE})
 	@$(call pulumi_export_stack,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE})
@@ -307,7 +314,6 @@ post-deploy-core-dtap: az_login _check-for-stack-var
 destroy-core-dtap: _check-for-stack-var init-core-dtap
 	@ingeniictl infra destroy ${DTAP_CORE_STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR}
 
-CORE_DTAP_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.${STACK}.json
 export-stack-core-dtap: _check-for-stack-var
 	@$(info Exporting stack to ${CORE_DTAP_STACK_OUTPUT_FILE})
 	@$(call pulumi_export_stack,${PULUMI_CORE_DTAP_SRC_DIR},${DTAP_CORE_STACK},${EXTRA_ARGS},${CORE_DTAP_STACK_OUTPUT_FILE})
@@ -320,7 +326,6 @@ destroy-tainted-role-assignments-core-dtap: _check-for-stack-var
 	@$(info Deleting all role assignments for ${DTAP_CORE_STACK})
 	@$(call pulumi_destroy_role_assignments,${PULUMI_CORE_DTAP_SRC_DIR},${DTAP_CORE_STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
 
-DTAP_OUTPUTS_FILE_PATH := ${PROJECT_ROOT}/${STACK}_outputs.json
 export-stack-outputs-core-dtap:
 	@$(info Exporting stack outputs to ${DTAP_OUTPUTS_FILE_PATH})
 	@$(call pulumi_export_stack_outputs,${PULUMI_CORE_DTAP_SRC_DIR},${DTAP_CORE_STACK},${EXTRA_ARGS},${DTAP_OUTPUTS_FILE_PATH})
@@ -348,7 +353,6 @@ apply-core-dtap-extensions: _check-for-stack-var
 destroy-core-dtap-extensions: _check-for-stack-var init-core-dtap-extensions
 	@ingeniictl infra destroy ${DTAP_EXTENSIONS_STACK} --pulumi-project-dir ${PULUMI_CORE_EXTENSIONS_SRC_DIR}
 
-CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE := ${PROJECT_ROOT}/pulumi.stack.core.dtap.extensions.json
 export-stack-core-dtap-extensions: _check-for-stack-var
 	@$(info Exporting stack to ${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
 	@$(call pulumi_export_stack,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${DTAP_EXTENSIONS_STACK},${EXTRA_ARGS},${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})

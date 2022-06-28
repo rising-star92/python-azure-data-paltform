@@ -8,7 +8,7 @@ ENV = CURRENT_STACK_NAME.split(".")[-1]
 
 # Load the config files.
 platform_config = PlatformConfiguration(
-    stack=pulumi.get_stack(),
+    stack=CURRENT_STACK_NAME,
     config_schema_file_path=getenv(
         "ADP_CONFIG_SCHEMA_FILE_PATH", "../../platform-config/schema.yml"
     ),
@@ -22,12 +22,10 @@ platform_config = PlatformConfiguration(
 # Load the current Azure auth session metadata
 azure_client = get_client_config()
 
-CURRENT_STACK_NAME = pulumi.get_stack()
-
 SHARED_OUTPUTS = SharedOutput(
-    CURRENT_STACK_NAME.replace(f".extensions.{ENV}", "shared"))
+    CURRENT_STACK_NAME.replace(f".extensions.{ENV}", ".shared"))
 
-if CURRENT_STACK_NAME == "shared":
+if ENV == "shared":
     DTAP_OUTPUTS = SHARED_OUTPUTS
 else:
     DTAP_OUTPUTS = SharedOutput(
