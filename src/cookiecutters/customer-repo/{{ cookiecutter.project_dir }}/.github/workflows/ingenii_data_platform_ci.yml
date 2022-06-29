@@ -44,6 +44,7 @@ env:
   WORKSPACE_DNS_ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets.WORKSPACE_DNS_ARM_SUBSCRIPTION_ID }}{%- endraw %}
   WORKSPACE_DNS_ARM_TENANT_ID: {% raw %}${{ secrets.WORKSPACE_DNS_ARM_TENANT_ID }}{%- endraw %}
   WORKSPACE_DNS_RESOURCE_GROUP_NAME: {% raw %}${{ secrets.WORKSPACE_DNS_RESOURCE_GROUP_NAME }}{%- endraw %}
+  PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: python
 
 #----------------------------------------------------------------------------------------------------------------------
 # Jobs
@@ -191,6 +192,7 @@ jobs:
       SHARED_ARM_CLIENT_SECRET: {% raw %}${{ secrets.SHARED_ARM_CLIENT_SECRET }}{%- endraw %}
       SHARED_ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets.SHARED_ARM_SUBSCRIPTION_ID }}{%- endraw %}
       SHARED_ARM_TENANT_ID: {% raw %}${{ secrets.SHARED_ARM_TENANT_ID }}{%- endraw %}
+      PULUMI_CONFIG_PASSPHRASE: ""
     steps:
       #---------------------------------
       - name: Checkout Customer Repo

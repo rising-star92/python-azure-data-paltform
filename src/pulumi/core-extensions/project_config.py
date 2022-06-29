@@ -8,7 +8,7 @@ ENV = CURRENT_STACK_NAME.split(".")[-1]
 
 # Load the config files.
 platform_config = PlatformConfiguration(
-    stack=CURRENT_STACK_NAME,
+    stack=ENV,
     config_schema_file_path=getenv(
         "ADP_CONFIG_SCHEMA_FILE_PATH", "../../platform-config/schema.yml"
     ),
