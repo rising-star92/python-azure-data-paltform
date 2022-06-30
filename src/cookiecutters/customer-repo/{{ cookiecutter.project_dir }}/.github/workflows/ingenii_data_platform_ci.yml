@@ -240,6 +240,7 @@ jobs:
       SHARED_ARM_CLIENT_SECRET: {% raw %}${{ secrets.SHARED_ARM_CLIENT_SECRET }}{%- endraw %}
       SHARED_ARM_SUBSCRIPTION_ID: {% raw %}${{ secrets.SHARED_ARM_SUBSCRIPTION_ID }}{%- endraw %}
       SHARED_ARM_TENANT_ID: {% raw %}${{ secrets.SHARED_ARM_TENANT_ID }}{%- endraw %}
+      DESTROY: 1
     steps:
       #---------------------------------
       - name: Checkout Customer Repo

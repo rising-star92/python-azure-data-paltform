@@ -63,11 +63,6 @@ define pulumi_apply
 	pulumi --cwd $(1) up --stack $(2) --parallel ${PULUMI_PARALLELISM} --color always --diff --skip-preview --non-interactive --yes $(3)
 endef
 
-define pulumi_destroy
-	pulumi destroy --cwd $(1) --stack $(2) --parallel ${PULUMI_PARALLELISM} --color always $(3)
-	pulumi stack rm --cwd $(1) --stack $(2) --non-interactive --yes $(3)
-endef
-
 define pulumi_export_stack
 	pulumi --cwd $(1) stack export --stack $(2) --file $(4) $(3) 
 endef
@@ -190,17 +185,6 @@ else
 	$(call pulumi_apply,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${PLATFORM_CONF_SHARED_DEFAULTS_FILE},${CONFIGS_DIR}/shared.yml)
 endif
 
-destroy-core-shared: init-core-shared
-ifdef SHARED_ARM_CLIENT_ID
-	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
-	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
-	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
-	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
-	&& ingeniictl infra destroy ${CORE_SHARED_STACK} --pulumi-project-dir ${PULUMI_CORE_SHARED_SRC_DIR}
-else
-	@ingeniictl infra destroy ${CORE_SHARED_STACK} --pulumi-project-dir ${PULUMI_CORE_SHARED_SRC_DIR}
-endif
-
 export-stack-core-shared: 
 	@$(info Exporting stack to ${CORE_SHARED_STACK_OUTPUT_FILE})
 	@$(call pulumi_export_stack,${PULUMI_CORE_SHARED_SRC_DIR},${CORE_SHARED_STACK},${EXTRA_ARGS},${CORE_SHARED_STACK_OUTPUT_FILE})
@@ -264,18 +248,6 @@ else
 endif
 	
 
-destroy-core-shared-extensions: init-core-shared-extensions
-ifdef SHARED_ARM_CLIENT_ID
-	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
-	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
-	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
-	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
-	&& ingeniictl infra destroy ${CORE_SHARED_EXTENSIONS_STACK} --pulumi-project-dir ${PULUMI_CORE_EXTENSIONS_SRC_DIR}
-else
-	@ingeniictl infra destroy ${CORE_SHARED_EXTENSIONS_STACK} --pulumi-project-dir ${PULUMI_CORE_EXTENSIONS_SRC_DIR}
-endif
-	
-
 export-stack-core-shared-extensions: 
 	@$(info Exporting stack to ${CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE})
 	@$(call pulumi_export_stack,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${CORE_SHARED_EXTENSIONS_STACK},${EXTRA_ARGS},${CORE_SHARED_EXTENSIONS_STACK_OUTPUT_FILE})
@@ -310,9 +282,6 @@ apply-core-dtap: _check-for-stack-var
 
 post-deploy-core-dtap: az_login _check-for-stack-var
 	@$(call enable_trigger,${PULUMI_CORE_DTAP_SRC_DIR},${DTAP_CORE_STACK},${EXTRA_ARGS})
-
-destroy-core-dtap: _check-for-stack-var init-core-dtap
-	@ingeniictl infra destroy ${DTAP_CORE_STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR}
 
 export-stack-core-dtap: _check-for-stack-var
 	@$(info Exporting stack to ${CORE_DTAP_STACK_OUTPUT_FILE})
@@ -349,9 +318,6 @@ refresh-core-dtap-extensions: _check-for-stack-var
 
 apply-core-dtap-extensions: _check-for-stack-var
 	@$(call pulumi_apply,${PULUMI_CORE_EXTENSIONS_SRC_DIR},${DTAP_EXTENSIONS_STACK},${EXTRA_ARGS},${PLATFORM_CONF_DEFAULTS_FILE},${CONFIGS_DIR}/${STACK}.yml)
-
-destroy-core-dtap-extensions: _check-for-stack-var init-core-dtap-extensions
-	@ingeniictl infra destroy ${DTAP_EXTENSIONS_STACK} --pulumi-project-dir ${PULUMI_CORE_EXTENSIONS_SRC_DIR}
 
 export-stack-core-dtap-extensions: _check-for-stack-var
 	@$(info Exporting stack to ${CORE_DTAP_EXTENSIONS_STACK_OUTPUT_FILE})
@@ -409,45 +375,32 @@ init-shared: init-core-shared
 preview-shared: preview-core-shared
 refresh-shared: refresh-core-shared
 apply-shared: apply-core-shared
-destroy-shared: destroy-core-shared
 
 init-shared-extensions: init-core-shared-extensions
 preview-shared-extensions: preview-core-shared-extensions
 refresh-shared-extensions: refresh-core-shared-extensions
 apply-shared-extensions: apply-core-shared-extensions
-destroy-shared-extensions:
-	-make destroy-core-shared-extensions
 
 init-dtap: init-core-dtap
 preview-dtap: preview-core-dtap
 refresh-dtap: refresh-core-dtap
 apply-dtap: apply-core-dtap
 post-deploy-dtap: post-deploy-core-dtap
-destroy-dtap:
-	-make destroy-core-dtap STACK=dev
-	-make destroy-core-dtap STACK=test
-	-make destroy-core-dtap STACK=prod
 
 init-dtap-extensions: init-core-dtap-extensions
 preview-dtap-extensions: preview-core-dtap-extensions
 refresh-dtap-extensions: refresh-core-dtap-extensions
 apply-dtap-extensions: apply-core-dtap-extensions
-destroy-dtap-extensions:
-	-make destroy-core-dtap-extensions STACK=dev 
-	-make destroy-core-dtap-extensions STACK=test
-	-make destroy-core-dtap-extensions STACK=prod
 
 init-extensions: init-core-dtap-extensions init-core-shared-extensions
 preview-extensions: preview-core-dtap-extensions preview-core-shared-extensions
 refresh-extensions: refresh-core-dtap-extensions refresh-core-shared-extensions
 apply-extensions: apply-core-dtap-extensions apply-core-shared-extensions
-destroy-extensions: destroy-dtap-extensions destroy-shared-extensions
 
 init: _check-for-stack-var init-shared init-dtap init-extensions
 preview: _check-for-stack-var preview-shared preview-dtap preview-extensions
 refresh: _check-for-stack-var refresh-shared refresh-dtap refresh-extensions
 apply: _check-for-stack-var apply-shared apply-dtap apply-extensions
-destroy: _confirm destroy-extensions destroy-dtap destroy-shared
 
 
 #####################################################################################################################
@@ -502,6 +455,67 @@ cicd-apply-dtap-ext:
 	@make _check_if_ci \
 	&& ENABLE_RESOURCE_PROTECTION=0 make apply-core-dtap-extensions  EXTRA_ARGS="-f" \
 	&& ENABLE_RESOURCE_PROTECTION=1 make apply-core-dtap-extensions  EXTRA_ARGS="-f"
+
+#####################################################################################################################
+# Danger Zone
+#####################################################################################################################
+
+define pulumi_destroy
+	pulumi destroy --cwd $(1) --stack $(2) --parallel ${PULUMI_PARALLELISM} --color always $(3)
+	pulumi stack rm --cwd $(1) --stack $(2) --non-interactive --yes $(3)
+endef
+
+_check_destroy_possible:
+ifneq ($(DESTROY_ENABLED), 1)
+	$(error Calling 'destroy' command, but destroy not enabled through DESTROY_ENABLED)
+endif
+
+destroy-shared: destroy-core-shared
+
+destroy-shared-extensions:
+	-make destroy-core-shared-extensions
+
+destroy-dtap:
+	-make destroy-core-dtap STACK=dev
+	-make destroy-core-dtap STACK=test
+	-make destroy-core-dtap STACK=prod
+
+destroy-dtap-extensions:
+	-make destroy-core-dtap-extensions STACK=dev 
+	-make destroy-core-dtap-extensions STACK=test
+	-make destroy-core-dtap-extensions STACK=prod
+
+destroy-extensions: destroy-dtap-extensions destroy-shared-extensions
+
+destroy: _confirm destroy-extensions destroy-dtap destroy-shared
+
+destroy-core-shared: _check_destroy_possible init-core-shared
+ifdef SHARED_ARM_CLIENT_ID
+	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
+	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
+	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
+	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
+	&& ingeniictl infra destroy ${CORE_SHARED_STACK} --pulumi-project-dir ${PULUMI_CORE_SHARED_SRC_DIR}
+else
+	@ingeniictl infra destroy ${CORE_SHARED_STACK} --pulumi-project-dir ${PULUMI_CORE_SHARED_SRC_DIR}
+endif
+
+destroy-core-shared-extensions: _check_destroy_possible init-core-shared-extensions
+ifdef SHARED_ARM_CLIENT_ID
+	@ARM_CLIENT_ID=${SHARED_ARM_CLIENT_ID}  \
+	&& ARM_CLIENT_SECRET=${SHARED_ARM_CLIENT_SECRET} \
+	&& ARM_SUBSCRIPTION_ID=${SHARED_ARM_SUBSCRIPTION_ID} \
+	&& ARM_TENANT_ID=${SHARED_ARM_TENANT_ID} \
+	&& ingeniictl infra destroy ${CORE_SHARED_EXTENSIONS_STACK} --pulumi-project-dir ${PULUMI_CORE_EXTENSIONS_SRC_DIR}
+else
+	@ingeniictl infra destroy ${CORE_SHARED_EXTENSIONS_STACK} --pulumi-project-dir ${PULUMI_CORE_EXTENSIONS_SRC_DIR}
+endif
+
+destroy-core-dtap: _check_destroy_possible _check-for-stack-var init-core-dtap
+	@ingeniictl infra destroy ${DTAP_CORE_STACK} --pulumi-project-dir ${PULUMI_CORE_DTAP_SRC_DIR}
+
+destroy-core-dtap-extensions: _check_destroy_possible _check-for-stack-var init-core-dtap-extensions
+	@ingeniictl infra destroy ${DTAP_EXTENSIONS_STACK} --pulumi-project-dir ${PULUMI_CORE_EXTENSIONS_SRC_DIR}
 
 # Platform Destroy
 cicd-destroy: _check_if_ci
