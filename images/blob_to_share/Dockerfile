@@ -4,8 +4,7 @@ RUN mkdir /build
 WORKDIR /build
 
 # Pull in files and get dependencies
-COPY *.go .
-COPY go.* .
+COPY src/* .
 RUN go mod download
 
 # CGO_ENABLED: https://pkg.go.dev/cmd/cgo
