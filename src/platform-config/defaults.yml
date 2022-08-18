@@ -325,6 +325,8 @@ analytics_services:
     user_factories:
       data:
         display_name: data
+    orchestration_factories_contributors:
+      - user_group_ref_key: engineers
     user_factories_contributors:
       - user_group_ref_key: engineers
   dbt:

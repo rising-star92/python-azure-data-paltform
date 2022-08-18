@@ -1,5 +1,6 @@
 from os import getcwd, environ
-from pulumi import FileAsset, ResourceOptions, Output
+from pulumi import FileAsset, Output, ResourceOptions, \
+    ResourceTransformationArgs, ResourceTransformationResult
 import pulumi_azuread as azuread
 from pulumi_azure_native import containerservice, network, storage
 from pulumi_kubernetes import batch, core, helm, meta
@@ -427,14 +428,49 @@ chart_values = Output.all(
     databricks_url=workspace.workspace_url, databricks_id=workspace.workspace_id,
     quantum_workspace_name=quantum_outputs.get("workspace", {}).get("name"),
 ).apply(create_chart_values)
+
+def remove_compat(args: ResourceTransformationArgs):
+    if "compat" in args.props:
+        del args.props["compat"]
+    return ResourceTransformationResult(
+        props=args.props,
+        opts=args.opts,
+        )
+
 jupyterlab = helm.v3.Release(
     resource_name=resource_name,
+    atomic=False,
     chart=f"{getcwd()}/../../helm_charts/jupyterhub",
+    cleanup_on_fail=False,
+    create_namespace=False,
+    dependency_update=False,
+    description="Jupyterlab Deployment",
+    devel=False,
+    disable_crd_hooks=False,
+    disable_openapi_validation=False,
+    disable_webhooks=False,
+    force_update=False,
+    keyring="",
+    lint=False,
     namespace=namespace.metadata.name,
+    postrender="",
+    recreate_pods=False,
+    render_subchart_notes=False,
+    replace=False,
+    reset_values=False,
+    reuse_values=False,
+    skip_await=False,
+    skip_crds=False,
     timeout=600,
     values=chart_values,
+    verify=False,
     version=jupyterlab_config["version"],
-    opts=ResourceOptions(provider=shared_kubernetes_provider)
+    wait_for_jobs=False,
+    opts=ResourceOptions(
+        ignore_changes=["apiVersion", "kind", "resourceNames"],
+        provider=shared_kubernetes_provider,
+        transformations=[remove_compat],
+    )
 )
 # For when we can run the full image: https://github.com/traefik/traefik/issues/8803
 #     chart="jupyterhub",

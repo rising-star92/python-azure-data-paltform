@@ -1,5 +1,5 @@
 from pulumi import ResourceOptions
-from pulumi_azure_native.resources import ResourceGroup
+from pulumi_azure_native.resources import ResourceGroup as BaseResourceGroup
 from pulumi_azure_native.authorization import (
     ManagementLockAtResourceGroupLevel,
     LockLevel,
@@ -10,7 +10,7 @@ from ingenii_azure_data_platform.config import PlatformConfiguration
 from ingenii_azure_data_platform.utils import generate_resource_name
 
 
-class ResourceGroup(ResourceGroup):
+class ResourceGroup(BaseResourceGroup):
     """
     #TODO
     """
@@ -31,7 +31,14 @@ class ResourceGroup(ResourceGroup):
             resource_group_name=name,
             location=platform_config.region.long_name,
             tags=platform_config.tags,
-            opts=ResourceOptions(protect=platform_config.resource_protection),
+            opts=ResourceOptions(
+                # Sometimes after a refresh Pulumi records the location as
+                # lower case, flagging it as a required change. Since this is
+                # very unlikely to need changing for real, this is a less than
+                # ideal fix, but an acceptable one.
+                ignore_changes=["location"],
+                protect=platform_config.resource_protection
+            ),
         )
 
         if enable_delete_protection:

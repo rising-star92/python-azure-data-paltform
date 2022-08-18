@@ -28,13 +28,13 @@ datafactory_name = generate_resource_name(
     resource_name=datafactory_config.get("display_name", "orchestration"),
     platform_config=platform_config,
 )
-datafactory_resource_group = resource_groups["infra"].name
+datafactory_resource_group = resource_groups["infra"]
 
 datafactory = adf.Factory(
     resource_name=datafactory_name,
     factory_name=datafactory_name,
     location=platform_config.region.long_name,
-    resource_group_name=datafactory_resource_group,
+    resource_group_name=datafactory_resource_group.name,
     identity=adf.FactoryIdentityArgs(type=adf.FactoryIdentityType.SYSTEM_ASSIGNED),
     global_parameters={
         "DataLakeName": adf.GlobalParameterSpecificationArgs(
@@ -49,7 +49,7 @@ datafactory = adf.Factory(
 
 outputs["id"] = datafactory.id
 outputs["name"] = datafactory.name
-outputs["url"] = Output.all(datafactory_resource_group, datafactory.name).apply(
+outputs["url"] = Output.all(datafactory_resource_group.name, datafactory.name).apply(
     lambda args: f"https://adf.azure.com/en-us/home?factory=%2Fsubscriptions%2F{azure_client.subscription_id}%2FresourceGroups%2F{args[0]}%2Fproviders%2FMicrosoft.DataFactory%2Ffactories%2F{args[1]}"
 )
 # ----------------------------------------------------------------------------------------------------------------------
@@ -81,7 +81,7 @@ for config in datafactory_config.get("integration_runtimes", []):
                 "Managed by the Ingenii's deployment process. Manual changes are discouraged as they will be overridden.",
             ),
             factory_name=datafactory.name,
-            resource_group_name=datafactory_resource_group,
+            resource_group_name=datafactory_resource_group.name,
             platform_config=platform_config,
         )
 
@@ -127,7 +127,7 @@ if datafactory_config.get("pipeline_failure_action_groups"):
         enabled=True,
         evaluation_frequency="PT15M",
         location="global",
-        resource_group_name=datafactory_resource_group,
+        resource_group_name=datafactory_resource_group.name,
         rule_name="Pipeline Failures - orchestration",
         scopes=[datafactory.id],
         severity=1,
@@ -148,3 +148,23 @@ log_diagnostic_settings(
     logs_config=datafactory_config.get("logs", {}),
     metrics_config=datafactory_config.get("metrics", {}),
 )
+
+
+# Permissions must be granted against the resource group, not the individual resource
+# https://docs.microsoft.com/en-us/azure/data-factory/concepts-roles-permissions#roles-and-requirements
+for group_ref in platform_config["analytics_services"]["datafactory"].get("orchestration_factories_contributors", []):
+    if group_ref.get("user_group_ref_key"):
+        group_object_id = user_groups[group_ref["user_group_ref_key"]]["object_id"]
+        group_name = group_ref["user_group_ref_key"]
+    elif group_ref.get("object_id"):
+        group_object_id = group_ref["object_id"]
+        group_name = group_ref["object_id"]
+    else:
+        raise Exception("No group reference key or object ID in user_factories_contributors setting!")
+    GroupRoleAssignment(
+        principal_id=group_object_id,
+        principal_name=group_name,
+        role_name="Data Factory Contributor",
+        scope=datafactory_resource_group.id,
+        scope_description="datafactory-orchestration-resourcegroup",
+    )

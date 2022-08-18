@@ -82,6 +82,10 @@ workspace = azure_native.databricks.Workspace(
     sku=azure_native.databricks.SkuArgs(name="Premium"),
     resource_group_name=resource_groups["infra"].name,
     opts=ResourceOptions(
+        depends_on=[
+            vnet.dbw_analytics_containers_subnet,
+            vnet.dbw_analytics_hosts_subnet
+        ],
         protect=platform_config.resource_protection,
     ),
 )
@@ -134,12 +138,10 @@ for assignment in workspace_config.get("iam", {}).get("role_assignments", []):
 # ----------------------------------------------------------------------------------------------------------------------
 databricks_provider = DatabricksProvider(
     resource_name=workspace_name,
-    args=DatabricksProviderArgs(
-        azure_client_id=getenv("ARM_CLIENT_ID", azure_client.client_id),
-        azure_client_secret=getenv("ARM_CLIENT_SECRET"),
-        azure_tenant_id=getenv("ARM_TENANT_ID", azure_client.tenant_id),
-        azure_workspace_resource_id=workspace.id,
-    ),
+    azure_client_id=getenv("ARM_CLIENT_ID", azure_client.client_id),
+    azure_client_secret=getenv("ARM_CLIENT_SECRET"),
+    azure_tenant_id=getenv("ARM_TENANT_ID", azure_client.tenant_id),
+    azure_workspace_resource_id=workspace.id,
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -157,6 +159,25 @@ databricks.WorkspaceConf(
     },
     opts=ResourceOptions(provider=databricks_provider),
 )
+
+# ----------------------------------------------------------------------------------------------------------------------
+# ANALYTICS DATABRICKS WORKSPACE -> USERS
+# ----------------------------------------------------------------------------------------------------------------------
+for user_config in workspace_config.get("users", []):
+    roles = user_config.get("roles", [])
+    is_admin = "admin" in roles
+    databricks.User(
+        resource_name=f"analytics_workspace_user_{user_config['email_address']}",
+        active=user_config.get("active", True),
+        allow_cluster_create=is_admin or "cluster_create" in roles,
+        allow_instance_pool_create=is_admin or "instance_pool_create" in roles,
+        databricks_sql_access=is_admin or "sql_access" in roles,
+        display_name=user_config["email_address"],
+        external_id=user_config["email_address"],
+        user_name=user_config["email_address"],
+        workspace_access=is_admin or "workspace_access" in roles,
+        opts=ResourceOptions(provider=databricks_provider),
+    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS DATABRICKS WORKSPACE -> FIREWALL
@@ -332,6 +353,7 @@ storage_mounts_sp_app = azuread.Application(
     display_name=storage_mounts_sp_name,
     identifier_uris=[f"api://{storage_mounts_sp_name}"],
     owners=[azure_client.object_id],
+    opts=ResourceOptions(ignore_changes=["owners"]),
 )
 
 storage_mounts_sp = azuread.ServicePrincipal(
@@ -401,8 +423,9 @@ for definition in workspace_config.get("storage_mounts", []):
             ),
             opts=ResourceOptions(
                 delete_before_replace=True,
-                depends_on=[storage_accounts["datalake"]
-                            ["service_principal_access"]],
+                depends_on=[
+                    storage_accounts["datalake"]["service_principal_access"]
+                ],
                 provider=databricks_provider,
                 replace_on_changes=["*"],
             ),

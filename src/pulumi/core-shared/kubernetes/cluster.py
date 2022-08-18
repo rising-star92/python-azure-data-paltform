@@ -114,7 +114,7 @@ if cluster_config["enabled"]:
         ),
         opts=ResourceOptions(
             delete_before_replace=True,
-            ignore_changes=["agent_pool_profiles"]
+            ignore_changes=["agentPoolProfiles", "kubernetesVersion"]
         ),
     )
     if platform_config.resource_protection:
@@ -183,7 +183,7 @@ if cluster_config["enabled"]:
     for idx, pool in enumerate(platform_config["shared_kubernetes_cluster"]["cluster"].get("linux_agent_pools", [])):
         agent_pool_name = pool.get("name", f"linux{idx}")
         autoscaling = pool.get("auto_scaling", True)
-        ignore_changes = []
+        ignore_changes = ["orchestratorVersion"]
         if autoscaling:
             ignore_changes.append("count")
         containerservice.AgentPool(

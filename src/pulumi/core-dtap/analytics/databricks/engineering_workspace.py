@@ -83,6 +83,10 @@ workspace = azure_native.databricks.Workspace(
     sku=azure_native.databricks.SkuArgs(name="Premium"),
     resource_group_name=resource_groups["infra"].name,
     opts=ResourceOptions(
+        depends_on=[
+            vnet.dbw_engineering_containers_subnet,
+            vnet.dbw_engineering_hosts_subnet
+        ],
         protect=platform_config.resource_protection,
     ),
 )
@@ -135,12 +139,10 @@ for assignment in workspace_config.get("iam", {}).get("role_assignments", []):
 # ----------------------------------------------------------------------------------------------------------------------
 databricks_provider = DatabricksProvider(
     resource_name=workspace_name,
-    args=DatabricksProviderArgs(
-        azure_client_id=getenv("ARM_CLIENT_ID", azure_client.client_id),
-        azure_client_secret=getenv("ARM_CLIENT_SECRET"),
-        azure_tenant_id=getenv("ARM_TENANT_ID", azure_client.tenant_id),
-        azure_workspace_resource_id=workspace.id,
-    ),
+    azure_client_id=getenv("ARM_CLIENT_ID", azure_client.client_id),
+    azure_client_secret=getenv("ARM_CLIENT_SECRET"),
+    azure_tenant_id=getenv("ARM_TENANT_ID", azure_client.tenant_id),
+    azure_workspace_resource_id=workspace.id,
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -158,6 +160,23 @@ databricks.WorkspaceConf(
     },
     opts=ResourceOptions(provider=databricks_provider),
 )
+
+# ----------------------------------------------------------------------------------------------------------------------
+# ENGINEERING DATABRICKS WORKSPACE -> USERS
+# ----------------------------------------------------------------------------------------------------------------------
+for user_config in workspace_config.get("users", []):
+    roles = user_config.get("roles", [])
+    is_admin = "admin" in roles
+    databricks.User(
+        resource_name=f"engineering_workspace_user_{user_config['email_address']}",
+        active=user_config.get("active", True),
+        allow_cluster_create=is_admin or "cluster_create" in roles,
+        allow_instance_pool_create=is_admin or "instance_pool_create" in roles,
+        databricks_sql_access=is_admin or "sql_access" in roles,
+        user_name=user_config["email_address"],
+        workspace_access=is_admin or "workspace_access" in roles,
+        opts=ResourceOptions(provider=databricks_provider),
+    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> FIREWALL
@@ -267,7 +286,7 @@ for ref_key, config in workspace_config.get("instance_pools", {}).items():
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> AZURE DEVOPS REPOSITORIES
 # ----------------------------------------------------------------------------------------------------------------------
-# Unable to assign this using a servie principal
+# Unable to assign this using a service principal
 # for repo_config in shared_workspace_config.get("devops_repositories", []):
 #     repo_name = repo_config["name"]
 #     databricks.Repo(
@@ -325,6 +344,7 @@ storage_mounts_sp_app = azuread.Application(
     display_name=storage_mounts_sp_name,
     identifier_uris=[f"api://{storage_mounts_sp_name}"],
     owners=[azure_client.object_id],
+    opts=ResourceOptions(ignore_changes=["owners"]),
 )
 
 storage_mounts_sp = azuread.ServicePrincipal(
@@ -406,9 +426,7 @@ pre_processing_blob = azure_native.storage.Blob(
     container_name=storage_accounts["datalake"]["containers"]["preprocess"].name,
     resource_group_name=resource_groups["data"].name,
     source=pre_processing_package,
-    opts=ResourceOptions(
-        ignore_changes=["content_md5"], depends_on=[storage_mounts["preprocess"]]
-    ),
+    opts=ResourceOptions(ignore_changes=["content_md5"]),
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -476,7 +494,7 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
         cluster_config=cluster_config,
         cluster_defaults=cluster_defaults,
         custom_tags=custom_tags,
-        depends_on=[pre_processing_blob],
+        depends_on=[pre_processing_blob] + list(storage_mounts.values()),
         instance_pools=instance_pools,
     )
 
@@ -484,14 +502,14 @@ for ref_key, cluster_config in workspace_config.get("clusters", {}).items():
 # ENGINEERING DATABRICKS WORKSPACE -> CLUSTERS -> PERMISSIONS
 # ----------------------------------------------------------------------------------------------------------------------
 
-# Allow all users to be able to attach to the clusters
+# Allow all users to be able to use the clusters
 for ref_key, cluster_config in clusters.items():
     databricks.Permissions(
         resource_name=generate_hash(workspace_short_name, ref_key, "users"),
         cluster_id=clusters[ref_key].cluster_id,
         access_controls=[
             databricks.PermissionsAccessControlArgs(
-                permission_level="CAN_ATTACH_TO", group_name="users"
+                permission_level="CAN_RESTART", group_name="users"
             )
         ],
         opts=ResourceOptions(provider=databricks_provider),

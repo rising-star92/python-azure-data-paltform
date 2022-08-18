@@ -30,5 +30,5 @@ data_lake_folder = adf.Dataset(
         },
         type="AzureBlob",
     ),
-    resource_group_name=datafactory_resource_group
+    resource_group_name=datafactory_resource_group.name
 )
