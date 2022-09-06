@@ -9,4 +9,4 @@ from . import routing
 from . import nsg
 from . import vnet
 from . import dns
-from . import privatelink_endpoints
+from . import container_registry

@@ -67,7 +67,13 @@ network:
   nat_gateway:
     enabled: bool()
     public_ip: include('_logs_and_metrics', required=False)
+  private_endpoints: include('_network_private_endpoints', required=False)
   virtual_network: include('_network_virtual_network')
+
+# network.virtual_networks
+_network_private_endpoints:
+  enabled: bool()
+  resource_types: list(str(), required=False)
 
 # network.virtual_networks
 _network_virtual_network:

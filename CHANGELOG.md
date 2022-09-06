@@ -1,9 +1,10 @@
 # 1.0.0 (TBD)
 
-# 0.4.1 (2022-08-05)
+# 0.4.1 (TBD)
 
 ### Improvements
 - [databricks] - Users for each workspace are specified through config
+- [networking] - Private endpoints are configurable at the environment and resource type level
 
 # 0.4.0 (2022-06-27)
 

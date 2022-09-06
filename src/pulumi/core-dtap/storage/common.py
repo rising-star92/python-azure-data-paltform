@@ -1,30 +1,20 @@
 import pulumi_azure as azure_classic
 from pulumi import Output, ResourceOptions
-from pulumi_azure_native import keyvault, network, storage
+from pulumi_azure_native import storage
 
 from ingenii_azure_data_platform.defaults import STORAGE_ACCOUNT_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
-    UserAssignedIdentityRoleAssignment,
 )
-from ingenii_azure_data_platform.logs import (
-    log_diagnostic_settings,
-    log_network_interfaces,
-)
+from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.network import PlatformFirewall
 from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
 from logs import log_analytics_workspace
-from management import resource_groups
 from management.user_groups import user_groups
-from network import dns, vnet
-from platform_shared import (
-    add_config_registry_secret,
-    get_devops_principal_id,
-)
+from network import dns, private_endpoints, vnet
 from project_config import platform_config, platform_outputs, azure_client
-from security import credentials_store
 
 common_outputs = platform_outputs["storage"] = {}
 
@@ -145,9 +135,7 @@ def create_storage_account(storage_ref_key, datalake_resource_group):
         metrics_config=blob_logs_and_metrics.get("metrics", {}),
     )
 
-    table_logs_and_metrics = datalake_config.get("storage_type_logging", {}).get(
-        "table", {}
-    )
+    table_logs_and_metrics = datalake_config.get("storage_type_logging", {}).get("table", {})
     log_diagnostic_settings(
         platform_config,
         log_analytics_workspace.id,
@@ -162,130 +150,24 @@ def create_storage_account(storage_ref_key, datalake_resource_group):
     # DATA LAKE -> PRIVATE ENDPOINTS
     # ----------------------------------------------------------------------------------------------------------------------
 
-    # BLOB PRIVATE ENDPOINT
-    blob_private_endpoint_name = generate_resource_name(
-        resource_type="private_endpoint",
-        resource_name=f"for-{storage_ref_key}-blob",
-        platform_config=platform_config,
-    )
-    blob_private_endpoint = network.PrivateEndpoint(
-        resource_name=blob_private_endpoint_name,
-        location=platform_config.region.long_name,
-        private_endpoint_name=blob_private_endpoint_name,
-        private_link_service_connections=[
-            network.PrivateLinkServiceConnectionArgs(
-                name=vnet.vnet.name,
-                group_ids=["blob"],
-                private_link_service_id=datalake.id,
-                request_message="none",
-            )
-        ],
-        custom_dns_configs=[],
-        resource_group_name=resource_groups["infra"].name,
-        subnet=network.SubnetArgs(id=vnet.privatelink_subnet.id),
+    private_endpoint_config = \
+        datalake_config.get("network", {}).get("private_endpoint", {})
+
+    private_endpoints.create_dtap_private_endpoint(
+        name=f"for-{storage_ref_key}-blob",
+        resource_id=datalake.id,
+        group_ids=["blob"],
+        logs_metrics_config=private_endpoint_config.get("blob", {}),
+        private_dns_zone_id=dns.storage_blob_private_dns_zone.id,
     )
 
-    if platform_config.resource_protection:
-        lock_resource(blob_private_endpoint_name, blob_private_endpoint.id)
-
-    # To Log Analytics Workspace
-    blob_private_endpoint_details = (
-        datalake_config.get("network", {}).get("private_endpoint", {}).get("blob", {})
+    private_endpoints.create_dtap_private_endpoint(
+        name=f"for-{storage_ref_key}-dfs",
+        resource_id=datalake.id,
+        group_ids=["dfs"],
+        logs_metrics_config=private_endpoint_config.get("dfs", {}),
+        private_dns_zone_id=dns.storage_dfs_private_dns_zone.id,
     )
-    log_network_interfaces(
-        platform_config,
-        log_analytics_workspace.id,
-        blob_private_endpoint_name,
-        blob_private_endpoint.network_interfaces,
-        logs_config=blob_private_endpoint_details.get("logs", {}),
-        metrics_config=blob_private_endpoint_details.get("metrics", {}),
-    )
-
-    # BLOB PRIVATE DNS ZONE GROUP
-    blob_private_endpoint_dns_zone_group_name = (
-        f"{blob_private_endpoint_name}-dns-zone-group"
-    )
-
-    blob_private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
-        resource_name=blob_private_endpoint_dns_zone_group_name,
-        private_dns_zone_configs=[
-            network.PrivateDnsZoneConfigArgs(
-                name=blob_private_endpoint_name,
-                private_dns_zone_id=dns.storage_blob_private_dns_zone.id,
-            )
-        ],
-        private_dns_zone_group_name="privatelink",
-        private_endpoint_name=blob_private_endpoint.name,
-        resource_group_name=resource_groups["infra"].name,
-    )
-    if platform_config.resource_protection:
-        lock_resource(
-            blob_private_endpoint_dns_zone_group_name,
-            blob_private_endpoint_dns_zone_group.id,
-        )
-
-    # DFS PRIVATE ENDPOINT
-    dfs_private_endpoint_name = generate_resource_name(
-        resource_type="private_endpoint",
-        resource_name=f"for-{storage_ref_key}-dfs",
-        platform_config=platform_config,
-    )
-
-    dfs_private_endpoint = network.PrivateEndpoint(
-        resource_name=dfs_private_endpoint_name,
-        location=platform_config.region.long_name,
-        private_endpoint_name=dfs_private_endpoint_name,
-        private_link_service_connections=[
-            network.PrivateLinkServiceConnectionArgs(
-                name=vnet.vnet.name,
-                group_ids=["dfs"],
-                private_link_service_id=datalake.id,
-                request_message="none",
-            )
-        ],
-        resource_group_name=resource_groups["infra"].name,
-        custom_dns_configs=[],
-        subnet=network.SubnetArgs(id=vnet.privatelink_subnet.id),
-        opts=ResourceOptions(replace_on_changes=[
-            "privateLinkServiceConnections[*].privateLinkServiceId"
-        ]),
-    )
-
-    if platform_config.resource_protection:
-        lock_resource(dfs_private_endpoint_name, dfs_private_endpoint.id)
-
-    # To Log Analytics Workspace
-    dfs_private_endpoint_details = (
-        datalake_config.get("network", {}).get("private_endpoint", {}).get("dfs", {})
-    )
-    log_network_interfaces(
-        platform_config,
-        log_analytics_workspace.id,
-        dfs_private_endpoint_name,
-        dfs_private_endpoint.network_interfaces,
-        logs_config=dfs_private_endpoint_details.get("logs", {}),
-        metrics_config=dfs_private_endpoint_details.get("metrics", {}),
-    )
-
-    # DFS PRIVATE DNS ZONE GROUP
-    dfs_private_endpoint_dns_zone_group_name = f"{dfs_private_endpoint_name}-dns-zone-group"
-    dfs_private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
-        resource_name=dfs_private_endpoint_dns_zone_group_name,
-        private_dns_zone_configs=[
-            network.PrivateDnsZoneConfigArgs(
-                name=dfs_private_endpoint_name,
-                private_dns_zone_id=dns.storage_dfs_private_dns_zone.id,
-            )
-        ],
-        private_dns_zone_group_name="privatelink",
-        private_endpoint_name=dfs_private_endpoint.name,
-        resource_group_name=resource_groups["infra"].name,
-    )
-
-    if platform_config.resource_protection:
-        lock_resource(
-            dfs_private_endpoint_dns_zone_group_name, dfs_private_endpoint_dns_zone_group.id
-        )
 
     # ----------------------------------------------------------------------------------------------------------------------
     # DATA LAKE -> IAM -> ROLE ASSIGNMENTS

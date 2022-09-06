@@ -1,5 +1,5 @@
 from pulumi import ResourceOptions
-from pulumi_azure_native import keyvault, network
+from pulumi_azure_native import keyvault
 
 from ingenii_azure_data_platform.defaults import KEY_VAULT_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import (
@@ -7,10 +7,7 @@ from ingenii_azure_data_platform.iam import (
     ServicePrincipalRoleAssignment,
     UserAssignedIdentityRoleAssignment,
 )
-from ingenii_azure_data_platform.logs import (
-    log_diagnostic_settings,
-    log_network_interfaces,
-)
+from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.network import PlatformFirewall
 from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
@@ -23,7 +20,7 @@ from platform_shared import (
 )
 from management import resource_groups
 from management.user_groups import user_groups
-from network import dns, vnet
+from network import dns, private_endpoints
 from platform_shared import shared_azure_client
 from project_config import azure_client, platform_config, platform_outputs
 
@@ -136,76 +133,21 @@ UserAssignedIdentityRoleAssignment(
 # KEY VAULT -> PRIVATE ENDPOINT
 # ----------------------------------------------------------------------------------------------------------------------
 
-# PRIVATE ENDPOINT
-private_endpoint_name = generate_resource_name(
-    resource_type="private_endpoint",
-    resource_name="for-cred-store",
-    platform_config=platform_config,
-)
-private_endpoint = network.PrivateEndpoint(
-    resource_name=private_endpoint_name,
-    private_endpoint_name=private_endpoint_name,
-    location=platform_config.region.long_name,
-    private_link_service_connections=[
-        network.PrivateLinkServiceConnectionArgs(
-            name=vnet.vnet.name,
-            group_ids=["vault"],
-            private_link_service_id=key_vault.id,
-            request_message="none",
-        )
-    ],
-    resource_group_name=resource_groups["infra"].name,
-    custom_dns_configs=[],
-    subnet=network.SubnetArgs(id=vnet.privatelink_subnet.id),
-    tags=platform_config.tags,
+private_endpoints.create_dtap_private_endpoint(
+    name="for-cred-store",
+    resource_id=key_vault.id,
+    group_ids=["vault"],
+    logs_metrics_config=key_vault_config.get("network", {}).get("private_endpoint", {}),
+    private_dns_zone_id=dns.key_vault_private_dns_zone.id,
 )
 
-if platform_config.resource_protection:
-    lock_resource(private_endpoint_name, private_endpoint.id)
-
-# To Log Analytics Workspace
-private_endpoint_logs_and_metrics = key_vault_config.get("network", {}).get(
-    "private_endpoint", {}
-)
-log_network_interfaces(
-    platform_config,
-    log_analytics_workspace.id,
-    private_endpoint_name,
-    private_endpoint.network_interfaces,
-    logs_config=private_endpoint_logs_and_metrics.get("logs", {}),
-    metrics_config=private_endpoint_logs_and_metrics.get("metrics", {}),
-)
-
-# PRIVATE DNS ZONE GROUP
-private_endpoint_dns_zone_group_name = generate_resource_name(
-    resource_type="private_dns_zone",
-    resource_name="for-cred-store",
-    platform_config=platform_config,
-)
-private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
-    resource_name=private_endpoint_dns_zone_group_name,
-    private_dns_zone_configs=[
-        network.PrivateDnsZoneConfigArgs(
-            name=private_endpoint_name,
-            private_dns_zone_id=dns.key_vault_private_dns_zone.id,
-        )
-    ],
-    private_dns_zone_group_name="privatelink",
-    private_endpoint_name=private_endpoint.name,
-    resource_group_name=resource_groups["infra"].name,
-)
-if platform_config.resource_protection:
-    lock_resource(
-        private_endpoint_dns_zone_group_name, private_endpoint_dns_zone_group.id
-    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> PRIVATE ENDPOINT FOR DEVOPS
 # ----------------------------------------------------------------------------------------------------------------------
 
 shared_vnet = SHARED_OUTPUTS.get(
-    "network",
-    "virtual_network",
+    "network", "virtual_network",
     preview={
         "name": "Preview vNet Name",
         "location": "Preview vNet Location",
@@ -213,72 +155,25 @@ shared_vnet = SHARED_OUTPUTS.get(
     },
 )
 shared_infra_resource_group_name = SHARED_OUTPUTS.get(
-    "management", "resource_groups", "infra", "name", preview="previewresourcegroupname"
+    "management", "resource_groups", "infra", "name",
+    preview="previewresourcegroupname"
+)
+shared_private_dns_zone_id = SHARED_OUTPUTS.get(
+    "network", "dns", "private_zones", "key_vault", "id",
+    preview="Preview Private DNS Zone ID",
 )
 
-# PRIVATE ENDPOINT
-private_endpoint_name_devops = generate_resource_name(
-    resource_type="private_endpoint",
-    resource_name="for-cred-store-devops",
-    platform_config=platform_config,
-)
-private_endpoint_devops = network.PrivateEndpoint(
-    resource_name=private_endpoint_name_devops,
-    private_endpoint_name=private_endpoint_name_devops,
+private_endpoints.create_dtap_private_endpoint(
+    name="for-cred-store-devops",
+    resource_id=key_vault.id,
+    group_ids=["vault"],
+    logs_metrics_config=key_vault_config.get("network", {}).get("private_endpoint", {}),
+    private_dns_zone_id=shared_private_dns_zone_id,
+    provider=shared_services_provider,
     location=shared_vnet["location"],
-    private_link_service_connections=[
-        network.PrivateLinkServiceConnectionArgs(
-            name=shared_vnet["name"],
-            group_ids=["vault"],
-            private_link_service_id=key_vault.id,
-            request_message="none",
-        )
-    ],
     resource_group_name=shared_infra_resource_group_name,
-    custom_dns_configs=[],
-    subnet=network.SubnetArgs(id=shared_vnet["subnets"]["privatelink"]["id"]),
-    opts=ResourceOptions(provider=shared_services_provider),
-    tags=platform_config.tags,
-)
-
-# To Log Analytics Workspace
-private_endpoint_logs_and_metrics = key_vault_config.get("network", {}).get(
-    "private_endpoint", {}
-)
-log_network_interfaces(
-    platform_config,
-    log_analytics_workspace.id,
-    private_endpoint_name_devops,
-    private_endpoint_devops.network_interfaces,
-    logs_config=private_endpoint_logs_and_metrics.get("logs", {}),
-    metrics_config=private_endpoint_logs_and_metrics.get("metrics", {}),
-)
-
-# PRIVATE DNS ZONE GROUP
-private_endpoint_dns_zone_group_name_devops = generate_resource_name(
-    resource_type="private_dns_zone",
-    resource_name="for-cred-store-devops",
-    platform_config=platform_config,
-)
-private_endpoint_dns_zone_group_devops = network.PrivateDnsZoneGroup(
-    resource_name=private_endpoint_dns_zone_group_name_devops,
-    private_dns_zone_configs=[
-        network.PrivateDnsZoneConfigArgs(
-            name=private_endpoint_name_devops,
-            private_dns_zone_id=SHARED_OUTPUTS.get(
-                "network",
-                "dns",
-                "private_zones",
-                "key_vault",
-                "id",
-                preview="Preview Private DNS Zone ID",
-            ),
-        )
-    ],
-    private_dns_zone_group_name="privatelink",
-    private_endpoint_name=private_endpoint_devops.name,
-    resource_group_name=shared_infra_resource_group_name,
-    opts=ResourceOptions(provider=shared_services_provider),
+    vnet_name=shared_vnet["name"],
+    subnet_id=shared_vnet["subnets"]["privatelink"]["id"],
 )
 
 # ----------------------------------------------------------------------------------------------------------------------

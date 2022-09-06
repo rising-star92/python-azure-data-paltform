@@ -1,22 +1,19 @@
 from pulumi import ResourceOptions
-from pulumi_azure_native import keyvault, network
+from pulumi_azure_native import keyvault
 
 from ingenii_azure_data_platform.defaults import KEY_VAULT_DEFAULT_FIREWALL
 from ingenii_azure_data_platform.iam import (
     GroupRoleAssignment,
     ServicePrincipalRoleAssignment,
 )
-from ingenii_azure_data_platform.logs import (
-    log_diagnostic_settings,
-    log_network_interfaces,
-)
-from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
+from ingenii_azure_data_platform.logs import log_diagnostic_settings
 from ingenii_azure_data_platform.network import PlatformFirewall
+from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
 from logs import log_analytics_workspace
 from management import resource_groups
 from management.user_groups import user_groups
-from network import dns, vnet
+from network import dns, private_endpoints
 from project_config import azure_client, platform_config, platform_outputs
 
 outputs = platform_outputs["security"]["config_registry"] = {}
@@ -82,66 +79,13 @@ outputs["key_vault_name"] = key_vault.name
 # KEY VAULT -> PRIVATE ENDPOINT
 # ----------------------------------------------------------------------------------------------------------------------
 
-# PRIVATE ENDPOINT
-private_endpoint_name = generate_resource_name(
-    resource_type="private_endpoint",
-    resource_name="for-conf-registry",
-    platform_config=platform_config,
+private_endpoints.create_shared_private_endpoint(
+    name="for-conf-registry",
+    resource_id=key_vault.id,
+    group_ids=["vault"],
+    logs_metrics_config=key_vault_config.get("network", {}).get("private_endpoint", {}),
+    private_dns_zone_id=dns.key_vault_private_dns_zone.id,
 )
-private_endpoint = network.PrivateEndpoint(
-    resource_name=private_endpoint_name,
-    private_endpoint_name=private_endpoint_name,
-    location=platform_config.region.long_name,
-    private_link_service_connections=[
-        network.PrivateLinkServiceConnectionArgs(
-            name=vnet.vnet.name,
-            group_ids=["vault"],
-            private_link_service_id=key_vault.id,
-            request_message="none",
-        )
-    ],
-    resource_group_name=resource_groups["infra"].name,
-    custom_dns_configs=[],
-    subnet=network.SubnetArgs(id=vnet.privatelink_subnet.id),
-)
-
-if platform_config.resource_protection:
-    lock_resource(private_endpoint_name, private_endpoint.id)
-
-# To Log Analytics Workspace
-log_and_metrics_config = key_vault_config.get("network", {}).get("private_endpoint", {})
-log_network_interfaces(
-    platform_config,
-    log_analytics_workspace.id,
-    private_endpoint_name,
-    private_endpoint.network_interfaces,
-    logs_config=log_and_metrics_config.get("logs", {}),
-    metrics_config=log_and_metrics_config.get("metrics", {}),
-)
-
-# PRIVATE DNS ZONE GROUP
-private_endpoint_dns_zone_group_name = generate_resource_name(
-    resource_type="private_dns_zone",
-    resource_name="for-conf-registry",
-    platform_config=platform_config,
-)
-private_endpoint_dns_zone_group = network.PrivateDnsZoneGroup(
-    resource_name=private_endpoint_dns_zone_group_name,
-    private_dns_zone_configs=[
-        network.PrivateDnsZoneConfigArgs(
-            name=private_endpoint_name,
-            private_dns_zone_id=dns.key_vault_private_dns_zone.id,
-        )
-    ],
-    private_dns_zone_group_name="privatelink",
-    private_endpoint_name=private_endpoint.name,
-    resource_group_name=resource_groups["infra"].name,
-)
-
-if platform_config.resource_protection:
-    lock_resource(
-        private_endpoint_dns_zone_group_name, private_endpoint_dns_zone_group.id
-    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # KEY VAULT -> IAM -> ROLE ASSIGNMENTS
