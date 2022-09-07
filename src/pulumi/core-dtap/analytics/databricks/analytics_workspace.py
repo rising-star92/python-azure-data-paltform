@@ -2,11 +2,7 @@ from os import getenv
 from pulumi import Output, ResourceOptions
 import pulumi_azure_native as azure_native
 import pulumi_azuread as azuread
-from pulumi_databricks import (
-    Provider as DatabricksProvider,
-    ProviderArgs as DatabricksProviderArgs,
-    databricks,
-)
+from pulumi_databricks import Provider as DatabricksProvider, databricks
 
 from ingenii_azure_data_platform.databricks import create_cluster
 from ingenii_azure_data_platform.iam import (

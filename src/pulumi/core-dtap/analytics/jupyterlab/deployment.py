@@ -150,11 +150,13 @@ if databricks_connect:
 
         cluster = user.get("cluster", {})
 
-        if not cluster.get("spark_version", "9.1").startswith("9.1"):
+        cluster_version = cluster.get("spark_version", "10.4")
+
+        if not any([cluster_version.startswith(ver) for ver in ("9.1", "10.4")]):
             raise Exception(
                 f"Databricks Connect, user {user['email_address']}. "
                 f"Spark version set to {cluster.get('spark_version')}, "
-                "but needs to be set to '9.1.x-scala2.12' to support "
+                "but needs to be set to '9.1.x-scala2.12' or '10.4.x-scala2.12' to support "
                 "Databricks Connect and match the python version 3.8. "
                 "See https://docs.microsoft.com/en-us/azure/databricks/dev-tools/databricks-connect#requirements"
             )
@@ -182,7 +184,7 @@ if databricks_connect:
                     "spark.databricks.delta.preview.enabled": "true",
                     "spark.databricks.passthrough.enabled": "true"
                 },
-                "spark_version": "9.1.x-scala2.12",
+                "spark_version": "10.4.x-scala2.12",
             },
         )
 
