@@ -62,7 +62,7 @@ def create_private_endpoint(
         ),
     )
     if platform_config.resource_protection:
-        lock_resource(private_endpoint_name, private_endpoint.id)
+        lock_resource(private_endpoint_name, private_endpoint.id, provider=provider)
 
     # To Log Analytics Workspace
     log_network_interfaces(
@@ -97,7 +97,8 @@ def create_private_endpoint(
         if platform_config.resource_protection:
             lock_resource(
                 private_endpoint_dns_zone_group_name,
-                private_endpoint_dns_zone_group.id
+                private_endpoint_dns_zone_group.id,
+                provider=provider,
             )
     else:
         private_endpoint_dns_zone_group = None

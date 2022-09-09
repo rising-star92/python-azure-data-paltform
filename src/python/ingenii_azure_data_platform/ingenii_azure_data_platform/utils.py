@@ -3,7 +3,7 @@ from ipaddress import ip_network
 from hashlib import md5
 from typing import Any
 
-from pulumi import Output
+from pulumi import Output, ResourceOptions
 from pulumi_azure_native.authorization import ManagementLockByScope, LockLevel
 
 from ingenii_azure_data_platform.config import PlatformConfiguration
@@ -180,10 +180,12 @@ def lock_resource(
     resource_name: str,
     resource_id: Output,
     lock_level: LockLevel = LockLevel.CAN_NOT_DELETE,
+    provider = None,
 ):
     ManagementLockByScope(
         resource_name=resource_name,
         level=lock_level,
         lock_name="Managed by Ingenii",
         scope=resource_id,
+        opts=ResourceOptions(provider=provider)
     )
