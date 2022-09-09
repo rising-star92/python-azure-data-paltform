@@ -5,6 +5,7 @@
 ### Improvements
 - [databricks] - Users for each workspace are specified through config
 - [databricks] - Default runtime version changed from 9.1 to 10.4, default Ingenii Runtime to 0.6.2
+- [databricks] - Update Pulumi package version to 0.4.0
 - [networking] - Private endpoints are configurable at the environment and resource type level
 
 # 0.4.0 (2022-06-27)

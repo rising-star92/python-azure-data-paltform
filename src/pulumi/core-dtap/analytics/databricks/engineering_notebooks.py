@@ -1,6 +1,6 @@
 from os import listdir
 from pulumi import ResourceOptions
-from pulumi_databricks import databricks
+import pulumi_databricks as databricks
 
 from ingenii_azure_data_platform.utils import generate_resource_name
 

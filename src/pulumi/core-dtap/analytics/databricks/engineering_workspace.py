@@ -3,7 +3,7 @@ from os import getenv
 import pulumi_azure_native as azure_native
 import pulumi_azuread as azuread
 from pulumi import FileAsset, ResourceOptions
-from pulumi_databricks import Provider as DatabricksProvider, databricks
+import pulumi_databricks as databricks
 
 from ingenii_azure_data_platform.databricks import create_cluster
 from ingenii_azure_data_platform.iam import (
@@ -132,12 +132,13 @@ for assignment in workspace_config.get("iam", {}).get("role_assignments", []):
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> PROVIDER
 # ----------------------------------------------------------------------------------------------------------------------
-databricks_provider = DatabricksProvider(
+databricks_provider = databricks.Provider(
     resource_name=workspace_name,
     azure_client_id=getenv("ARM_CLIENT_ID", azure_client.client_id),
     azure_client_secret=getenv("ARM_CLIENT_SECRET"),
     azure_tenant_id=getenv("ARM_TENANT_ID", azure_client.tenant_id),
     azure_workspace_resource_id=workspace.id,
+    host=workspace.workspace_url,
 )
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -182,7 +183,7 @@ if workspace_firewall_config.get("enabled"):
         enabled=True, ip_access_list=workspace_firewall_config.get("ip_access_list", [])
     )
 
-    databricks.IPAccessList(
+    databricks.IpAccessList(
         resource_name=f"{workspace_name}-firewall",
         label="allow_in",
         list_type="ALLOW",
@@ -387,19 +388,19 @@ for definition in workspace_config.get("storage_mounts", []):
     storage_account = storage_accounts[
         definition["type"].split("_")[0]
     ]["account"]
-    storage_mounts[definition["mount_name"]] = databricks.DatabricksMount(
+    storage_mounts[definition["mount_name"]] = databricks.Mount(
         resource_name=f'{workspace_name}-{definition["mount_name"]}',
         name=definition["mount_name"],
-        cluster_id=system_cluster.id,
-        abfs=databricks.DatabricksMountAbfsArgs(
+        abfs=databricks.MountAbfsArgs(
             client_id=storage_mounts_sp.application_id,
             client_secret_key=storage_mounts_dbw_password.key,
-            tenant_id=azure_client.tenant_id,
             client_secret_scope=secret_scope.name,
-            storage_account_name=storage_account.name,
             container_name=definition["container_name"],
-            initialize_file_system=False
+            initialize_file_system=False,
+            storage_account_name=storage_account.name,
+            tenant_id=azure_client.tenant_id,
         ),
+        cluster_id=system_cluster.id,
         opts=ResourceOptions(
             delete_before_replace=True,
             depends_on=mounting_role_assignments,
