@@ -1,6 +1,6 @@
 # 1.0.0 (TBD)
 
-# 0.4.1 (TBD)
+# 0.4.1 (2022-09-09)
 
 ### Improvements
 - [databricks] - Users for each workspace are specified through config
