@@ -84,8 +84,7 @@ _network_virtual_network:
 # STORAGE
 #----------------------------------------------------------------------------------------------------------------------
 storage:
-  databricks: include('storage_datalake', required=False)
-  datalake: include('storage_datalake', required=False)
+  accounts: map(include('storage_datalake'), key=str())
   container_registry: map(include('storage_container_registry'), key=str(), required=False)
 
 # storage.datalake
@@ -93,9 +92,7 @@ storage_datalake:
   display_name: str(max=14)
   containers: map(include('storage_datalake_container'), key=str())
   tables: map(include('storage_datalake_table'), key=str(), required=False)
-  network:
-    firewall: include('_network_firewall', required=False)
-    private_endpoint: include('storage_datalake_network_private_endpoint', required=False)
+  network: include('storage_datalake_network', required=False)
   iam: include('_iam', required=False)
   logs: include('_logs', required=False)
   metrics: include('_metrics', required=False)
@@ -117,6 +114,11 @@ storage_datalake_table_entity:
   partition_key: str()
   row_key: str()
   entity: map(required=False)
+
+# storage.datalake.network
+storage_datalake_network:
+  firewall: include('_network_firewall', required=False)
+  private_endpoint: include('storage_datalake_network_private_endpoint', required=False)
 
 # storage.datalake.network.private_endpoint
 storage_datalake_network_private_endpoint:
@@ -235,7 +237,8 @@ _databricks_workspace_config:
   enable_container_services: str(required=False)
 
 _databricks_storage_mount:
-  type: enum("databricks", "datalake", "datalake_passthrough")
+  type: enum("mount", "passthrough")
+  account_ref_key: str()
   mount_name: str()
   container_name: str(required=False)
 

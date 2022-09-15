@@ -2,7 +2,7 @@ from os import getenv
 
 import pulumi_azure_native as azure_native
 import pulumi_azuread as azuread
-from pulumi import FileAsset, ResourceOptions
+from pulumi import FileAsset, Output, ResourceOptions
 import pulumi_databricks as databricks
 
 from ingenii_azure_data_platform.databricks import create_cluster
@@ -367,6 +367,15 @@ storage_mounts_dbw_password = databricks.Secret(
 # ENGINEERING DATABRICKS WORKSPACE -> STORAGE MOUNTS -> ADLS GEN 2
 # ----------------------------------------------------------------------------------------------------------------------
 
+storage_mount_configs = workspace_config.get("storage_mounts", [])
+
+# Distinct list of all accounts that have storage mounts
+accounts_with_mounts = set([
+    mount["account_ref_key"]
+    for mount in storage_mount_configs
+    if mount["type"] == "mount"
+])
+
 # IAM ROLE ASSIGNMENT
 # Allow the Storage Mounts service principal to access the Datalake.
 mounting_role_assignments = [
@@ -374,40 +383,64 @@ mounting_role_assignments = [
         principal_id=storage_mounts_sp.object_id,
         principal_name="engineering-storage-mounts-service-principal",
         role_name="Storage Blob Data Contributor",
-        scope=account_details["account"].id,
+        scope=storage_accounts[account_key]["account"].id,
         scope_description=account_key,
     )
-    for account_key, account_details in storage_accounts.items()
+    for account_key in accounts_with_mounts
 ]
 
 # STORAGE MOUNTS
-# If no storage mounts are defined in the YAML files, we'll not attempt
-# to create any.
+# If no storage mounts are defined in the YAML files, we'll not attempt to create any.
 storage_mounts = {}
-for definition in workspace_config.get("storage_mounts", []):
-    storage_account = storage_accounts[
-        definition["type"].split("_")[0]
-    ]["account"]
-    storage_mounts[definition["mount_name"]] = databricks.Mount(
-        resource_name=f'{workspace_name}-{definition["mount_name"]}',
-        name=definition["mount_name"],
-        abfs=databricks.MountAbfsArgs(
-            client_id=storage_mounts_sp.application_id,
-            client_secret_key=storage_mounts_dbw_password.key,
-            client_secret_scope=secret_scope.name,
-            container_name=definition["container_name"],
-            initialize_file_system=False,
-            storage_account_name=storage_account.name,
-            tenant_id=azure_client.tenant_id,
-        ),
-        cluster_id=system_cluster.id,
-        opts=ResourceOptions(
-            delete_before_replace=True,
-            depends_on=mounting_role_assignments,
-            provider=databricks_provider,
-            replace_on_changes=["*"],
-        ),
-    )
+
+for config in storage_mount_configs:
+
+    storage_account = storage_accounts[config["account_ref_key"]]
+    container_name = config["container_name"]
+    cluster_id = system_cluster.id
+    name = config["mount_name"]
+
+    if config["type"] == "passthrough":
+        storage_mounts[name] = databricks.Mount(
+            resource_name=f"{workspace_name}-{name}",
+            name=name,
+            cluster_id=cluster_id,
+            extra_configs={
+                "fs.azure.account.auth.type": "CustomAccessToken",
+                # "fs.azure.account.custom.token.provider.class": spark.conf.get("spark.databricks.passthrough.adls.gen2.tokenProviderClassName"),
+                "fs.azure.account.custom.token.provider.class": "com.databricks.backend.daemon.data.client.adl.AdlGen2CredentialContextTokenProvider"
+            },
+            uri=Output.concat("abfss://", container_name, "@", storage_account["account"].name, ".dfs.core.windows.net/"),
+            opts=ResourceOptions(
+                delete_before_replace=True,
+                depends_on=[storage_account["service_principal_access"]],
+                provider=databricks_provider,
+                replace_on_changes=["*"],
+            ),
+        )
+    elif config["type"] == "mount":
+        storage_mounts[name] = databricks.Mount(
+            resource_name=f'{workspace_name}-{name}',
+            name=name,
+            abfs=databricks.MountAbfsArgs(
+                client_id=storage_mounts_sp.application_id,
+                client_secret_key=storage_mounts_dbw_password.key,
+                client_secret_scope=secret_scope.name,
+                container_name=container_name,
+                initialize_file_system=False,
+                storage_account_name=storage_account["account"].name,
+                tenant_id=azure_client.tenant_id,
+            ),
+            cluster_id=cluster_id,
+            opts=ResourceOptions(
+                delete_before_replace=True,
+                depends_on=mounting_role_assignments,
+                provider=databricks_provider,
+                replace_on_changes=["*"],
+            ),
+        )
+    else:
+        raise Exception(f"Mount type not recognised: {config['type']}")
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ENGINEERING DATABRICKS WORKSPACE -> PRE-PROCESSING PACKAGE
@@ -516,7 +549,9 @@ for ref_key, cluster_config in clusters.items():
 # ----------------------------------------------------------------------------------------------------------------------
 
 add_config_registry_secret(
-    "databricks-engineering-workspace-id", workspace.id, infrastructure_identifier=True
+    "databricks-engineering-workspace-id",
+    workspace.id,
+    infrastructure_identifier=True
 )
 add_config_registry_secret(
     "databricks-engineering-workspace-hostname",

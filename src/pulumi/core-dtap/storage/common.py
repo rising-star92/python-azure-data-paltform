@@ -33,7 +33,7 @@ firewall_ip_access_list = [
 # ----------------------------------------------------------------------------------------------------------------------
 def create_storage_account(storage_ref_key, datalake_resource_group):
     """ Create storage account and associated resources """
-    datalake_config = platform_config.from_yml["storage"][storage_ref_key]
+    datalake_config = platform_config.from_yml["storage"]["accounts"][storage_ref_key]
 
     outputs = common_outputs[storage_ref_key] = {}
 
@@ -174,7 +174,7 @@ def create_storage_account(storage_ref_key, datalake_resource_group):
     # ----------------------------------------------------------------------------------------------------------------------
 
     # Create role assignments defined in the YAML files
-    for assignment in datalake_config["iam"].get("role_assignments", {}):
+    for assignment in datalake_config.get("iam", {}).get("role_assignments", {}):
         # User Group Assignment
         user_group_ref_key = assignment.get("user_group_ref_key")
         if user_group_ref_key is not None:

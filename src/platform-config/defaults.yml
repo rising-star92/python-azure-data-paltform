@@ -108,115 +108,116 @@ network:
 # STORAGE
 # ----------------------------------------------------------------------------------------------------------------------
 storage:
-  databricks:
-    display_name: databricks
-    network:
-      firewall:
-        enabled: false
-    iam:
-      role_assignments:
-        - user_group_ref_key: admins
-          role_definition_name: "Storage Blob Data Contributor"
-        - user_group_ref_key: engineers
-          role_definition_name: "Storage Blob Data Contributor"
-    containers:
-      cluster_logs_analytics: # Mount in DBW Engineering(RW)
-        display_name: cluster-logs-analytics
-      cluster_logs_engineering: # Mount in DBW Engineering(RW)
-        display_name: cluster-logs-engineering
-    lifecycle_management:
-      archive_after: 10
-      cool_after: 1
-      delete_after: 30
-  datalake:
-    display_name: datalake
-    network:
-      firewall:
-        enabled: false
-    iam:
-      role_assignments:
-        - user_group_ref_key: admins
-          role_definition_name: "Storage Blob Data Contributor"
-    containers:
-      preprocess: # Mount in DBW Engineering(RW)
-        display_name: preprocess
-        iam:
-          role_assignments:
-            - user_group_ref_key: engineers
-              role_definition_name: "Storage Blob Data Contributor"
-      utilities: # Mount in DBW Engineering(RW), Analytics(RW)
-        display_name: utilities
-        iam:
-          role_assignments:
-            - user_group_ref_key: engineers
-              role_definition_name: "Storage Blob Data Contributor"
-            - user_group_ref_key: analysts
-              role_definition_name: "Storage Blob Data Contributor"
-      raw: # Mount in DBW Engineering(RW)
-        display_name: raw
-        iam:
-          role_assignments:
-            - user_group_ref_key: engineers
-              role_definition_name: "Storage Blob Data Contributor"
-      archive: # Mount in DBW Engineering(RW)
-        display_name: archive
-        iam:
-          role_assignments:
-            - user_group_ref_key: engineers
-              role_definition_name: "Storage Blob Data Contributor"
-      source: # Mount in DBW Engineering(RW), Analytics
-        display_name: source
-        iam:
-          role_assignments:
-            - user_group_ref_key: engineers
-              role_definition_name: "Storage Blob Data Contributor"
-            - user_group_ref_key: analysts
-              role_definition_name: "Storage Blob Data Reader"
-      models: # Mount in DBW Engineering(RW), Analytics
-        display_name: models
-        iam:
-          role_assignments:
-            - user_group_ref_key: engineers
-              role_definition_name: "Storage Blob Data Contributor"
-            - user_group_ref_key: analysts
-              role_definition_name: "Storage Blob Data Reader"
-      snapshots: # Mount in DBW Engineering(RW), Analytics
-        display_name: snapshots
-        iam:
-          role_assignments:
-            - user_group_ref_key: engineers
-              role_definition_name: "Storage Blob Data Contributor"
-            - user_group_ref_key: analysts
-              role_definition_name: "Storage Blob Data Reader"
-      orchestration: # Mount in DBW Engineering(RW), Analytics
-        display_name: orchestration
-        iam:
-          role_assignments:
-            - user_group_ref_key: engineers
-              role_definition_name: "Storage Blob Data Contributor"
-            - user_group_ref_key: analysts
-              role_definition_name: "Storage Blob Data Reader"
-      dbt: # Mount in DBW Engineering(RW)
-        display_name: dbt
-        iam:
-          role_assignments:
-            - user_group_ref_key: engineers
-              role_definition_name: "Storage Blob Data Contributor"
-      dbt_logs: # Mount in DBW Engineering(RW)
-        display_name: dbt-logs
-        iam:
-          role_assignments:
-            - user_group_ref_key: engineers
-              role_definition_name: "Storage Blob Data Reader"
-    tables:
-      sftp_known_files:
-        display_name: "SFTPKnownFiles"
-      select1:
-        display_name: "Select1"
-        entities:
-          empty:
-            row_key: "1"
-            partition_key: "1"
+  accounts:
+    databricks:
+      display_name: databricks
+      network:
+        firewall:
+          enabled: false
+      iam:
+        role_assignments:
+          - user_group_ref_key: admins
+            role_definition_name: "Storage Blob Data Contributor"
+          - user_group_ref_key: engineers
+            role_definition_name: "Storage Blob Data Contributor"
+      containers:
+        cluster_logs_analytics: # Mount in DBW Engineering(RW)
+          display_name: cluster-logs-analytics
+        cluster_logs_engineering: # Mount in DBW Engineering(RW)
+          display_name: cluster-logs-engineering
+      lifecycle_management:
+        archive_after: 10
+        cool_after: 1
+        delete_after: 30
+    datalake:
+      display_name: datalake
+      network:
+        firewall:
+          enabled: false
+      iam:
+        role_assignments:
+          - user_group_ref_key: admins
+            role_definition_name: "Storage Blob Data Contributor"
+      containers:
+        preprocess: # Mount in DBW Engineering(RW)
+          display_name: preprocess
+          iam:
+            role_assignments:
+              - user_group_ref_key: engineers
+                role_definition_name: "Storage Blob Data Contributor"
+        utilities: # Mount in DBW Engineering(RW), Analytics(RW)
+          display_name: utilities
+          iam:
+            role_assignments:
+              - user_group_ref_key: engineers
+                role_definition_name: "Storage Blob Data Contributor"
+              - user_group_ref_key: analysts
+                role_definition_name: "Storage Blob Data Contributor"
+        raw: # Mount in DBW Engineering(RW)
+          display_name: raw
+          iam:
+            role_assignments:
+              - user_group_ref_key: engineers
+                role_definition_name: "Storage Blob Data Contributor"
+        archive: # Mount in DBW Engineering(RW)
+          display_name: archive
+          iam:
+            role_assignments:
+              - user_group_ref_key: engineers
+                role_definition_name: "Storage Blob Data Contributor"
+        source: # Mount in DBW Engineering(RW), Analytics
+          display_name: source
+          iam:
+            role_assignments:
+              - user_group_ref_key: engineers
+                role_definition_name: "Storage Blob Data Contributor"
+              - user_group_ref_key: analysts
+                role_definition_name: "Storage Blob Data Reader"
+        models: # Mount in DBW Engineering(RW), Analytics
+          display_name: models
+          iam:
+            role_assignments:
+              - user_group_ref_key: engineers
+                role_definition_name: "Storage Blob Data Contributor"
+              - user_group_ref_key: analysts
+                role_definition_name: "Storage Blob Data Reader"
+        snapshots: # Mount in DBW Engineering(RW), Analytics
+          display_name: snapshots
+          iam:
+            role_assignments:
+              - user_group_ref_key: engineers
+                role_definition_name: "Storage Blob Data Contributor"
+              - user_group_ref_key: analysts
+                role_definition_name: "Storage Blob Data Reader"
+        orchestration: # Mount in DBW Engineering(RW), Analytics
+          display_name: orchestration
+          iam:
+            role_assignments:
+              - user_group_ref_key: engineers
+                role_definition_name: "Storage Blob Data Contributor"
+              - user_group_ref_key: analysts
+                role_definition_name: "Storage Blob Data Reader"
+        dbt: # Mount in DBW Engineering(RW)
+          display_name: dbt
+          iam:
+            role_assignments:
+              - user_group_ref_key: engineers
+                role_definition_name: "Storage Blob Data Contributor"
+        dbt_logs: # Mount in DBW Engineering(RW)
+          display_name: dbt-logs
+          iam:
+            role_assignments:
+              - user_group_ref_key: engineers
+                role_definition_name: "Storage Blob Data Reader"
+      tables:
+        sftp_known_files:
+          display_name: "SFTPKnownFiles"
+        select1:
+          display_name: "Select1"
+          entities:
+            empty:
+              row_key: "1"
+              partition_key: "1"
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ANALYTICS SERVICES
@@ -250,37 +251,48 @@ analytics_services:
             autotermination_minutes: 15
             docker_image_url: "ingeniisolutions/databricks-runtime:0.6.2"
         storage_mounts:
-          - type: datalake
+          - type: mount
+            account_ref_key: datalake
             container_name: utilities
             mount_name: utilities
-          - type: datalake
+          - type: mount
+            account_ref_key: datalake
             container_name: preprocess
             mount_name: preprocess
-          - type: datalake
+          - type: mount
+            account_ref_key: datalake
             container_name: dbt
             mount_name: dbt
-          - type: datalake
+          - type: mount
+            account_ref_key: datalake
             container_name: dbt-logs
             mount_name: dbt-logs
-          - type: datalake
+          - type: mount
+            account_ref_key: datalake
             container_name: raw
             mount_name: raw
-          - type: datalake
+          - type: mount
+            account_ref_key: datalake
             container_name: archive
             mount_name: archive
-          - type: datalake
+          - type: mount
+            account_ref_key: datalake
             container_name: source
             mount_name: source
-          - type: datalake
+          - type: mount
+            account_ref_key: datalake
             container_name: models
             mount_name: models
-          - type: datalake
+          - type: mount
+            account_ref_key: datalake
             container_name: snapshots
             mount_name: snapshots
-          - type: datalake
+          - type: mount
+            account_ref_key: datalake
             container_name: orchestration
             mount_name: orchestration
-          - type: databricks
+          - type: mount
+            account_ref_key: databricks
             container_name: cluster-logs-engineering
             mount_name: cluster_logs
       analytics:
@@ -303,22 +315,28 @@ analytics_services:
             auto_scale_max_workers: 4
             autotermination_minutes: 15
         storage_mounts:
-          - type: datalake
+          - type: mount
+            account_ref_key: datalake
             container_name: utilities
             mount_name: utilities
-          - type: datalake_passthrough
+          - type: passthrough
+            account_ref_key: datalake
             container_name: source
             mount_name: source
-          - type: datalake_passthrough
+          - type: passthrough
+            account_ref_key: datalake
             container_name: models
             mount_name: models
-          - type: datalake_passthrough
+          - type: passthrough
+            account_ref_key: datalake
             container_name: snapshots
             mount_name: snapshots
-          - type: datalake_passthrough
+          - type: passthrough
+            account_ref_key: datalake
             container_name: orchestration
             mount_name: orchestration
-          - type: databricks
+          - type: mount
+            account_ref_key: databricks
             container_name: cluster-logs-analytics
             mount_name: cluster_logs
   datafactory:
