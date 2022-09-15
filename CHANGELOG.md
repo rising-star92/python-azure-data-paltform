@@ -1,4 +1,4 @@
-# 0.4.2 (TBD)
+# 0.4.2 (2022-09-15)
 
 ### Improvements
 - [storage] - Able to specify extra storage accounts and mount containers to Databricks
