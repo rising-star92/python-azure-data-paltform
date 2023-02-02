@@ -187,5 +187,8 @@ def lock_resource(
         level=lock_level,
         lock_name="Managed by Ingenii",
         scope=resource_id,
-        opts=ResourceOptions(provider=provider)
+        opts=ResourceOptions(
+            delete_before_replace=True,
+            provider=provider,
+        )
     )

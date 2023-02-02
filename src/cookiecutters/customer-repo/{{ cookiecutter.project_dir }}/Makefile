@@ -344,7 +344,7 @@ clone-repo:
 	@if test -z "${PLATFORM_VERSION}"; then echo "PLATFORM_VERSION not set."; exit 1; fi
 	@git clone \
 	--depth 1 -b ${PLATFORM_VERSION} https://github.com/ingenii-solutions/azure-data-platform.git temp_clone \
-	&& mv temp_clone/src ${PROJECT_ROOT} \
+	&& mv temp_clone/src ${SOURCE_DIR} \
 	&& rm -rf temp_clone
 
 .PHONY: clone-repo-using-ssh
@@ -353,7 +353,7 @@ clone-repo-using-ssh:
 	@if test -z "${PLATFORM_VERSION}"; then echo "PLATFORM_VERSION not set."; exit 1; fi
 	@git clone \
 	--depth 1 -b ${PLATFORM_VERSION} git@github.com:ingenii-solutions/azure-data-platform.git temp_clone \
-	&& mv temp_clone/src ${PROJECT_ROOT} \
+	&& mv temp_clone/src ${SOURCE_DIR} \
 	&& rm -rf temp_clone
 
 .PHONY: set-platform-version

@@ -548,22 +548,25 @@ for ref_key, cluster_config in clusters.items():
 # DEVOPS ASSIGNMENT
 # ----------------------------------------------------------------------------------------------------------------------
 
-add_config_registry_secret(
+workspace_id_secret = add_config_registry_secret(
     "databricks-engineering-workspace-id",
     workspace.id,
     infrastructure_identifier=True
 )
-add_config_registry_secret(
+workspace_hostname_secret = add_config_registry_secret(
     "databricks-engineering-workspace-hostname",
     workspace.workspace_url,
     infrastructure_identifier=True,
+    depends_on=[workspace_id_secret]
 )
-add_config_registry_secret(
+cluster_id_secret = add_config_registry_secret(
     "databricks-engineering-cluster-id",
     clusters["default"].cluster_id,
     infrastructure_identifier=True,
+    depends_on=[workspace_hostname_secret]
 )
 add_config_registry_secret(
     "databricks-engineering-cluster-name",
     clusters["default"].cluster_name,
+    depends_on=[cluster_id_secret]
 )

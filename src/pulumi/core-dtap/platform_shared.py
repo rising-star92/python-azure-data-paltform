@@ -60,13 +60,15 @@ def get_devops_config_registry_resource_group():
 
 
 def add_config_registry_secret(
-    secret_name, secret_value, resource_name=None, infrastructure_identifier=False
+    secret_name, secret_value,
+    resource_name=None, infrastructure_identifier=False,
+    depends_on = None
 ):
     if infrastructure_identifier:
         tags = {"infrastructure_identifier": True}
     else:
         tags = None
-    keyvault.Secret(
+    return keyvault.Secret(
         resource_name=resource_name or f"devops-{secret_name}",
         resource_group_name=get_devops_config_registry_resource_group(),
         vault_name=SHARED_OUTPUTS.get(
@@ -78,7 +80,10 @@ def add_config_registry_secret(
         secret_name=f"{secret_name}-{platform_config.stack}",
         properties=keyvault.SecretPropertiesArgs(value=secret_value),
         tags=tags,
-        opts=ResourceOptions(provider=shared_services_provider),
+        opts=ResourceOptions(
+            depends_on=depends_on or [],
+            provider=shared_services_provider
+        ),
     )
 
 add_config_registry_secret(
