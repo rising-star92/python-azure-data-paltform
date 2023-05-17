@@ -134,7 +134,7 @@ analytics_services:
   datafactory:
     integrated_self_hosted_runtime:
       enabled: false
-      image: ingeniisolutions/adf-self-hosted-integration-runtime:1.0.1 
+      image: ingeniisolutions/adf-self-hosted-integration-runtime:1.0.2
     shared_self_hosted_runtime_factory:
       enabled: false
       runtime_names:
