@@ -1,3 +1,9 @@
+# 0.4.3 (2023-05-18)
+
+### Improvements
+- [data_factory] - Integration runtime has readiness probe
+- [kubernetes] - Container logs sent to Log Analytics Workspace
+
 # 0.4.2 (2022-09-15)
 
 ### Improvements

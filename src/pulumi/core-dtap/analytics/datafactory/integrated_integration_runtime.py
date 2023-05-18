@@ -112,6 +112,14 @@ for ref_key, datafactory_config in user_datafactories.items():
                             ),
                             core.v1.EnvVarArgs(name="ENABLE_HA", value="true"),
                         ],
+                        liveness_probe=core.v1.ProbeArgs(
+                            exec_=core.v1.ExecActionArgs(command=[
+                                "cmd", "/c", "powershell", "c:\\adf-runtime\healthcheck.ps1"
+                            ]),
+                            initial_delay_seconds=120,
+                            period_seconds=60,
+                            timeout_seconds=20,
+                        ),
                         ports=[
                             core.v1.ContainerPortArgs(container_port=port)
                             for port in (80, 8060)

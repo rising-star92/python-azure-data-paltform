@@ -8,6 +8,7 @@ from ingenii_azure_data_platform.iam import GroupRoleAssignment
 from ingenii_azure_data_platform.kubernetes import get_cluster_config
 from ingenii_azure_data_platform.utils import generate_resource_name, lock_resource
 
+from logs import log_analytics_workspace
 from management import resource_groups, resource_group_outputs, user_groups
 from network.vnet import hosted_services_subnet
 from project_config import azure_client, platform_config, platform_outputs
@@ -44,6 +45,8 @@ if cluster_config["enabled"]:
     # SHARED KUBERNETES CLUSTER -> CLUSTER
     # ----------------------------------------------------------------------------------------------------------------------
 
+    shared_cluster_config = platform_config["shared_kubernetes_cluster"]["cluster"]
+
     windows_admin_password = pulumi_random.RandomPassword(
         resource_name=generate_resource_name(
             resource_type="random_password",
@@ -58,6 +61,15 @@ if cluster_config["enabled"]:
         override_special="_%@",
     )
 
+    add_ons = {}
+    if shared_cluster_config.get("oms_agent", True):
+        add_ons["omsagent"] = containerservice.ManagedClusterAddonProfileArgs(
+            config={
+                "logAnalyticsWorkspaceResourceID": log_analytics_workspace.id,
+            },
+            enabled=True,
+        )
+
     kubernetes_cluster = containerservice.ManagedCluster(
         resource_name=generate_resource_name(
             resource_type="kubernetes_cluster",
@@ -69,6 +81,7 @@ if cluster_config["enabled"]:
             enable_azure_rbac=True,
             managed=True,
         ),
+        addon_profiles=add_ons if add_ons else None,
         agent_pool_profiles=[
             # At minimum, the cluster requires a system Linux pool
             containerservice.ManagedClusterAgentPoolProfileArgs(
@@ -138,7 +151,7 @@ if cluster_config["enabled"]:
     # SHARED KUBERNETES CLUSTER -> ROLE ASSIGNMENTS
     # ----------------------------------------------------------------------------------------------------------------------
 
-    for assignment in platform_config["shared_kubernetes_cluster"]["cluster"]["iam"]["role_assignments"]:
+    for assignment in shared_cluster_config["iam"]["role_assignments"]:
         # User Group Assignment
         user_group_ref_key = assignment.get("user_group_ref_key")
         if user_group_ref_key is not None:
@@ -180,7 +193,7 @@ if cluster_config["enabled"]:
     # SHARED KUBERNETES CLUSTER -> AGENT POOLS
     # ----------------------------------------------------------------------------------------------------------------------
 
-    for idx, pool in enumerate(platform_config["shared_kubernetes_cluster"]["cluster"].get("linux_agent_pools", [])):
+    for idx, pool in enumerate(shared_cluster_config.get("linux_agent_pools", [])):
         agent_pool_name = pool.get("name", f"linux{idx}")
         autoscaling = pool.get("auto_scaling", True)
         ignore_changes = ["orchestratorVersion"]
@@ -214,7 +227,7 @@ if cluster_config["enabled"]:
         )
 
     # Check if any of the enabled features need Windows machines
-    windows_pools = platform_config["shared_kubernetes_cluster"]["cluster"].get("windows_agent_pools", [])
+    windows_pools = shared_cluster_config.get("windows_agent_pools", [])
     if cluster_config["windows"] and not windows_pools:
         windows_pools = [{
             "labels": {"addedBy": "platform"},
@@ -225,7 +238,7 @@ if cluster_config["enabled"]:
         # Note: Windows pool names must be 6 characters or fewer: https://docs.microsoft.com/en-us/azure/aks/windows-container-cli#limitations
         agent_pool_name = pool.get("name", f"win{idx}")
         autoscaling = pool.get("auto_scaling", True)
-        ignore_changes = []
+        ignore_changes = ["orchestratorVersion", "osSKU"]
         if autoscaling:
             ignore_changes.append("count")
         containerservice.AgentPool(

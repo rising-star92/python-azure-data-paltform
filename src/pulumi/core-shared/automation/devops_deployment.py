@@ -87,6 +87,7 @@ devops_virtual_machine_scale_set = compute.VirtualMachineScaleSet(
         platform_config=platform_config,
     ),
     location=platform_config.region.long_name,
+    orchestration_mode=compute.OrchestrationMode.UNIFORM,
     overprovision=False,
     resource_group_name=resource_groups["infra"].name,
     sku=compute.SkuArgs(

@@ -180,6 +180,7 @@ shared_kubernetes_cluster: # Shared only
     iam: include('_iam')
     linux_agent_pools: list(include('_kubernetes_pool_details_linux'), required=False)
     windows_agent_pools: list(include('_kubernetes_pool_details_windows'), required=False)
+    oms_agent: bool(required=False)
   resource_group:
     display_name: str()
     iam: include('_iam')
